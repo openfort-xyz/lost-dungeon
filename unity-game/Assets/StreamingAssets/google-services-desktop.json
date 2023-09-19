@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "166260322273",
+    "project_id": "unity-sample-83ba2",
+    "storage_bucket": "unity-sample-83ba2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166260322273:android:de5459a681ce3ecf312ca0",
+        "android_client_info": {
+          "package_name": "com.openfort.lostDungeon"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "166260322273-hgtcd9poilu7s9kios2rrv1n7dpldhbg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAF5I6HLGDuRfVX9Gg9EfWZCB0RodCbyS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "166260322273-hgtcd9poilu7s9kios2rrv1n7dpldhbg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
