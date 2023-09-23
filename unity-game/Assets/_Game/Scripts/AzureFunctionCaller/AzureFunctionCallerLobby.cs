@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using PlayFab;
 using PlayFab.ClientModels;
 using PlayFab.CloudScriptModels;
@@ -8,21 +9,18 @@ using UnityEngine;
 [Serializable]
 public class ItemBalance
 {
-    public string @object;
-    public List<NftAsset> nftAssets;
-    public NativeAsset nativeAsset;
-    public List<TokenAsset> tokenAssets;
+    public List<AssetItem> data;
 }
 
 [Serializable]
-public class NftAsset
+public class AssetItem
 {
-    public int assetType;
+    public string assetType;
+    public string amount;
     public string address;
     public int tokenId;
-    public int amount;
+    public long lastTransferredAt;
 }
-
 
 [Serializable]
 public class NativeAsset
@@ -165,7 +163,7 @@ public static partial class AzureFunctionCaller
     {
         if (!IsFunctionResultValid(result)) return;
         
-        var itemBalance = JsonUtility.FromJson<ItemBalance>(result.FunctionResult.ToString());
+        ItemBalance itemBalance = JsonConvert.DeserializeObject<ItemBalance>(result.FunctionResult.ToString());
 
         // Check if deserialization was successful
         if (itemBalance == null)

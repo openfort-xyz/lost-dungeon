@@ -18,7 +18,6 @@ public static partial class AzureFunctionCaller
     public static Action onChallengeVerifySuccess;
     public static Action<string> onRegisterSessionSuccess;
     public static Action<string> onCompleteWeb3AuthSuccess;
-    public static Action onLogoutSuccess;
     public static Action<OpenfortPlayerResponse> onCreateOpenfortPlayerSuccess;
 
     public static Action onCreateOpenfortPlayerFailure;
@@ -113,22 +112,6 @@ public static partial class AzureFunctionCaller
         
         PlayFabCloudScriptAPI.ExecuteFunction(request, OnCompleteWeb3AuthSuccess, OnRequestFailure);
     }
-    
-    public static void Logout()
-    {
-        var request = new ExecuteFunctionRequest()
-        {
-            Entity = new PlayFab.CloudScriptModels.EntityKey()
-            {
-                Id = PlayFabSettings.staticPlayer.EntityId,
-                Type = PlayFabSettings.staticPlayer.EntityType,
-            },
-            FunctionName = "Logout",
-            GeneratePlayStreamEvent = true
-        };
-        
-        PlayFabCloudScriptAPI.ExecuteFunction(request, OnLogoutSuccess, OnRequestFailure);
-    }
 
     public static void CreateOpenfortPlayer()
     {
@@ -186,13 +169,6 @@ public static partial class AzureFunctionCaller
         if (!IsFunctionResultValid(result)) return;
 
         onCompleteWeb3AuthSuccess?.Invoke(result.FunctionResult.ToString());
-    }
-    
-    private static void OnLogoutSuccess(ExecuteFunctionResult result)
-    {
-        if (!IsFunctionResultValid(result)) return;
-
-        onLogoutSuccess?.Invoke();
     }
 
     private static void OnCreateOpenfortPlayerSuccess(ExecuteFunctionResult result)

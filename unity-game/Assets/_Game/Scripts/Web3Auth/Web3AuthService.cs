@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using MetaMask;
 using MetaMask.Models;
 using MetaMask.Transports.Unity.UI;
@@ -17,6 +19,7 @@ public class Web3AuthService : MonoBehaviour
     {
         None,
         WalletConnecting,
+        WalletConnecting_Web3AuthCompleted,
         WalletConnectionCancelled,
         WalletConnected,
         RequestingMessage,
@@ -26,8 +29,10 @@ public class Web3AuthService : MonoBehaviour
         SigningSession,
         SessionSigned,
         Web3AuthSuccessful,
+        WrongOwnerAddress,
         Disconnecting,
         Disconnected,
+        Disconnected_Web3AuthCompleted
     }
     
     public State currentState = State.None;
@@ -77,6 +82,7 @@ public class Web3AuthService : MonoBehaviour
         // Web3GL Events
         Web3GL.OnWeb3ConnectedEvent += OnWeb3GLConnected;
         Web3GL.OnWeb3ConnectErrorEvent += OnWeb3GLConnectionFailure;  
+        Web3GL.OnWeb3DisconnectedEvent += OnWeb3GLDisconnected;
 #endif
 
         // AzureFunctionCaller Events
@@ -119,62 +125,65 @@ public class Web3AuthService : MonoBehaviour
 
     private void Start()
     {
-        _openfort = new OpenfortClient(OpenfortStaticData.publishableKey);
+        _openfort = new OpenfortClient(OFStaticData.PublishableKey);
+        MetaMaskUnity.Instance.clearSessionData = true;
     }
+
+    private void OnApplicationQuit()
+    {
+        Disconnect();
+    }
+
     #endregion
 
     #region PUBLIC_METHODS
     public void Connect()
     {
-        ChangeState(State.WalletConnecting);
-        
+        ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
+
 #if UNITY_WEBGL
         Web3GL.Instance.Connect();
 #else
-        // Disconnect before connecting
-        MetaMaskUnity.Instance.Disconnect(true);
+        MetaMaskUnity.Instance.Wallet.Connect();
         // Connect
-        MetaMaskUnity.Instance.Connect();
+        //MetaMaskUnity.Instance.Connect();
 #endif
     }
     #endregion
 
-    #region WALLET_EVENT_HANDLERS
-    private void OnWalletReady(object sender, EventArgs e)
+    #region METAMASK_EVENT_HANDLERS
+    private async void OnWalletReady(object sender, EventArgs e)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET READY");
-        RequestMessage();
+        if (authCompletedOnce)
+        {
+            bool correctAddress = await CheckIfCorrectAccount();
+            if (correctAddress)
+            {
+                RequestMessage();
+            }
+            else
+            {
+                Disconnect();
+            }
+        }
+        else
+        {
+            RequestMessage();   
+        }
+    }
+    
+    private void OnWalletUnauthorized(object sender, EventArgs e)
+    {
+        Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
+        _metaMaskUIHandler.CloseQRCode();
+        Disconnect();
     }
 
     private void OnWalletDisconnected(object sender, EventArgs e)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
-        if (authCompletedOnce)
-        {
-            // We don't let the user create connect another EOA or even create a custodial player, this would lose their progress as they would log in with another OFplayer
-            ChangeState(State.None);
-        }
-        else
-        {
-            ChangeState(State.Disconnected); 
-        }
-    }
-
-    private void OnWalletUnauthorized(object sender, EventArgs e)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
-        _metaMaskUIHandler.CloseQRCode();
-
-        if (authCompletedOnce)
-        {
-            // We don't let the user create connect another EOA or even create a custodial player, this would lose their progress as they would log in with another OFplayer
-            ChangeState(State.None);
-        }
-        else
-        {
-            //We're not officially disconnecting as the wallet is still not connected, but setting the state to Disconnected is ok for UI reasons (managed in LoginSceneManager)
-            ChangeState(State.Disconnected);   
-        }
+        ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
 
     private void EventsOnEthereumRequestFailed(object sender, MetaMaskEthereumRequestFailedEventArgs eventArgs)
@@ -182,24 +191,14 @@ public class Web3AuthService : MonoBehaviour
         switch (eventArgs.Request.Method)
         {
             case "eth_requestAccounts":
-                _metaMaskUIHandler.CloseQRCode();
-                if (authCompletedOnce)
-                {
-                    // We don't let the user create connect another EOA or even create a custodial player, this would lose their progress as they would log in with another OFplayer
-                    ChangeState(State.None);
-                }
-                else
-                {
-                    //We're not officially disconnecting as the wallet is still not connected, but setting the state to Disconnected is ok for UI reasons (managed in LoginSceneManager)
-                    ChangeState(State.Disconnected);   
-                }
+                //TODO We don't need it? OnWalletUnauthorized(sender, eventArgs);
                 break;
             case "personal_sign":
                 Disconnect();
                 break;
         }
     }
-
+    
     // Not used as OnWalletReady works best
     private void OnWalletAuthorized(object sender, EventArgs e)
     {
@@ -211,15 +210,39 @@ public class Web3AuthService : MonoBehaviour
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
     }
-    
-    private void OnWeb3GLConnected(string obj)
+    #endregion
+
+    #region WEB3GL_WALLET_EVENTS
+    private async void OnWeb3GLConnected(string obj)
     {
-        RequestMessage();
+        if (authCompletedOnce)
+        {
+            bool correctAddress = await CheckIfCorrectAccount();
+            if (correctAddress)
+            {
+                RequestMessage();
+            }
+            else
+            {
+                Disconnect();
+            }
+        }
+        else
+        {
+            RequestMessage();   
+        }
     }
     
     private void OnWeb3GLConnectionFailure(string obj)
     {
+        Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
         Disconnect();
+    }
+    
+    private void OnWeb3GLDisconnected(string obj)
+    {
+        Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
+        ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
     #endregion
     
@@ -268,47 +291,40 @@ public class Web3AuthService : MonoBehaviour
     private void OnChallengeVerifySuccess()
     {
         Debug.Log("ChallengeVerify success.");
-        Debug.Log("Registering session...");
-        var loadedSessionKey = _openfort.LoadSessionKey();
         
-        if (loadedSessionKey == null)
+        //////// Get OF Player ID
+        // Create the request object
+        GetUserDataRequest request = new GetUserDataRequest
         {
-            //////// Get OF Player ID
-            // Create the request object
-            GetUserDataRequest request = new GetUserDataRequest
+            Keys = new List<string> {OFStaticData.OFplayerKey, OFStaticData.OFownerAddressKey}
+        };
+
+        // Make the API call
+        PlayFabClientAPI.GetUserReadOnlyData(request,
+            result =>  // Inline success callback
             {
-                Keys = new List<string> {"OFplayer"}
-            };
-
-            // Make the API call
-            PlayFabClientAPI.GetUserReadOnlyData(request,
-                result =>  // Inline success callback
+                if (result.Data == null || !result.Data.ContainsKey(OFStaticData.OFplayerKey) || !result.Data.ContainsKey(OFStaticData.OFownerAddressKey))
                 {
-                    if (result.Data == null || !result.Data.ContainsKey("OFplayer"))
-                    {
-                        Debug.LogError("OFplayer not found");
-                        Disconnect();
-                        return;
-                    }
-
-                    // Access the value of OFplayer
-                    string ofPlayer = result.Data["OFplayer"].Value;
-                    StaticPlayerData.OFplayer = ofPlayer;
-                    
-                    RegisterSession();
-                },
-                error =>  // Inline failure callback
-                {
-                    Debug.LogError("Failed to get OFplayer data: " + error.GenerateErrorReport());
+                    Debug.LogError("OFplayer or address not found");
                     Disconnect();
+                    return;
                 }
-            );
-        }
-        else
-        {
-            Debug.Log("Session already registered!");
-            ChangeState(State.Web3AuthSuccessful);
-        }
+
+                // Access the value of OFplayer
+                string ofPlayer = result.Data[OFStaticData.OFplayerKey].Value;
+                OFStaticData.OFplayerValue = ofPlayer;
+                
+                string ownerAddress = result.Data[OFStaticData.OFownerAddressKey].Value;
+                OFStaticData.OFownerAddressValue = ownerAddress;
+
+                RegisterSession();
+            },
+            error =>  // Inline failure callback
+            {
+                Debug.LogError("Failed to get OFplayer or address data: " + error.GenerateErrorReport());
+                Disconnect();
+            }
+        );
     }
     
     private async void OnRegisterSessionSuccess(string txString)
@@ -347,16 +363,18 @@ public class Web3AuthService : MonoBehaviour
         }
         
         ChangeState(State.SessionSigned);
-        
-        var sessionResponse = await _openfort.SendSignatureSessionRequest(tx.id, signature);
 
-        if (sessionResponse == null)
+        try
         {
-            Debug.Log("Session response null.");
-            Disconnect();
-            return;
+            await _openfort.SendSignatureSessionRequest(tx.id, signature);
         }
-        
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Disconnect();
+            throw;
+        }
+
         AzureFunctionCaller.CompleteWeb3Auth(tx.id);
     }
     
@@ -368,6 +386,8 @@ public class Web3AuthService : MonoBehaviour
         {
             _openfort.RemoveSessionKey();
         }
+        
+        Disconnect();
     }
     
     private void OnCompleteWeb3AuthSuccess(string result)
@@ -434,7 +454,37 @@ public class Web3AuthService : MonoBehaviour
         _openfort.SaveSessionKey();
         
         // Register session
-        AzureFunctionCaller.RegisterSession(sessionKey.Address, StaticPlayerData.OFplayer); //OFplayer was saved during login
+        AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
+    }
+
+    private async UniTask<bool> CheckIfCorrectAccount()
+    {
+        //TODO??
+#if UNITY_WEBGL
+        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
+#else
+        _currentAddress = MetaMaskUnity.Instance.Wallet.ConnectedAddress;
+#endif
+
+        if (string.IsNullOrEmpty(_currentAddress))
+        {
+            Debug.LogError("current address is null or empty");
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(OFStaticData.OFownerAddressValue))
+        {
+            Debug.LogError("No OFplayerOwnerAddress in Static Data");
+            return false;
+        }
+
+        if (_currentAddress.ToLower() != OFStaticData.OFownerAddressValue.ToLower())
+        {
+            Debug.LogError("You've connected with a wallet address that is not OFplayerOwnerAddress");
+            return false;
+        }
+
+        return true;
     }
     
     private void Disconnect()
@@ -442,10 +492,9 @@ public class Web3AuthService : MonoBehaviour
         ChangeState(State.Disconnecting);
 
 #if !UNITY_WEBGL
-        MetaMaskUnity.Instance.Disconnect(true);
+        MetaMaskUnity.Instance.Wallet.EndSession(true);
 #else
-        //TODO Real disconnect from Web3GL?
-        ChangeState(State.Disconnected);
+        Web3GL.Instance.Disconnect();
 #endif
     }
     #endregion

@@ -23,22 +23,10 @@ public class MenuSceneManager : MonoBehaviour
     private void Start()
     {
         // Get Openfort client with publishable key.
-        _openfortClient = new OpenfortClient(OpenfortStaticData.publishableKey);
+        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
         
         getTitleData();
         GetUserData();
-    }
-
-    private void OnEnable()
-    {
-        AzureFunctionCaller.onLogoutSuccess += OnLogoutSuccess;
-        AzureFunctionCaller.onRequestFailure += OnLogoutFailure;
-    }
-
-    private void OnDisable()
-    {
-        AzureFunctionCaller.onLogoutSuccess -= OnLogoutSuccess;
-        AzureFunctionCaller.onRequestFailure -= OnLogoutFailure;
     }
 
     private void Update()
@@ -93,14 +81,14 @@ public class MenuSceneManager : MonoBehaviour
 
     private void OnGetUserDataSuccess(GetUserDataResult result)
     {
-        if (result.Data == null || !result.Data.ContainsKey("address"))
+        if (result.Data == null || !result.Data.ContainsKey(OFStaticData.OFaddressKey))
         {
             Debug.Log("PlayFab user has no wallet address linked");
             username.text = "No Web3 Wallet connected";
         }
         else
         {
-            username.text = "Click here to checkout out your account: " + result.Data["address"].Value;
+            username.text = "Click here to checkout out your account: " + result.Data[OFStaticData.OFaddressKey].Value;
         }
     }
 
@@ -136,27 +124,27 @@ public class MenuSceneManager : MonoBehaviour
         LeaderboardPanel.SetActive(false);
         ConfigurationPanel.SetActive(true);
     }
+    
+    public void OnQuitClicked()
+    {
+        Application.Quit();
+    }
 
     public void OnLogoutClicked()
     {
-        // This is removing the sessionId from user data in case the user is self-custody. If it's not, removing it won't do anything :)
-        AzureFunctionCaller.Logout();
-    }
-    
-    private void OnLogoutSuccess()
-    {
         // Clear "RememberMe" stored PlayerPrefs (Ideally just the ones related to login, but here we clear all)
-        PlayerPrefs.DeleteKey("RememberMe");
-        PlayerPrefs.DeleteKey("CustomID");
-        PlayerPrefs.DeleteKey("LastPlayer");
+        PlayerPrefs.DeleteKey(PPStaticData.RememberMeKey);
+        PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
+        PlayerPrefs.DeleteKey(PPStaticData.LastPlayerKey);
 
         // Clear all locally saved data related to the PlayFab session
         PlayFabClientAPI.ForgetAllCredentials();
-        
+
         // Logout from Web3
-        //TODO Disconnect if WEBGL?
 #if !UNITY_WEBGL
         MetaMaskUnity.Instance.Disconnect(true);
+#else
+        Web3GL.Instance.Disconnect();        
 #endif
         
         // Remove openfort session key
@@ -168,10 +156,5 @@ public class MenuSceneManager : MonoBehaviour
 
         // Navigate back to the login scene
         SceneManager.LoadScene("Login");
-    }
-    
-    private void OnLogoutFailure()
-    {
-        Debug.Log("Logout call failed.");
     }
 }

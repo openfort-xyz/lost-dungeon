@@ -67,5 +67,16 @@ mergeInto(LibraryManager.library, {
     } else {
       SendMessage('Web3AuthService', 'OnChainIdError', 'Ethereum not found');
     }
+  },
+
+  DisconnectFromWeb3: function () {
+    // If there is an active Ethereum provider
+    if (window.ethereum) {
+      // Simply notify Unity that the disconnect is successful,
+      // since there is no direct method to log out or disconnect.
+      SendMessage('Web3AuthService', 'OnWeb3Disconnected', 'Successfully disconnected');
+    } else {
+      SendMessage('Web3AuthService', 'OnWeb3DisconnectError', 'Ethereum not found');
+    }
   }
 });

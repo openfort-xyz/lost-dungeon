@@ -59,10 +59,12 @@ const httpTrigger: AzureFunction = async function (
       chainId: 43113,
     });
 
+    context.log("BALANCE: " + balance.data);
+
     context.log("API call was successful.");
     context.res = {
       status: 200,
-      body: balance.data,
+      body: JSON.stringify({ data: balance.data })
     };
   } catch (error) {
     context.log(error);
