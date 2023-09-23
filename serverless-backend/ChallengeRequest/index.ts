@@ -40,7 +40,7 @@ const httpTrigger: AzureFunction = async function (
       body: JSON.stringify({
         address: address,
         chainId: chainId,
-        message: "Hello from the backend!",
+        message: "Message from Lost Dungeon's backend",
       }),
     };
   } catch (error) {

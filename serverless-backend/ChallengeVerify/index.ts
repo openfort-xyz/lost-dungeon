@@ -106,6 +106,7 @@ const httpTrigger: AzureFunction = async function (
       Data: {
         OFplayer: OFplayer.id,
         address: OFaccount.address,
+        ownerAddress: OFaccount.ownerAddress,
       },
     };
 

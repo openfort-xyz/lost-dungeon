@@ -12,6 +12,9 @@ public class Web3GL : MonoBehaviour
     // Import methods from our .jslib file
     [DllImport("__Internal")]
     private static extern void ConnectToWeb3();
+    
+    [DllImport("__Internal")]
+    private static extern void DisconnectFromWeb3();
 
     [DllImport("__Internal")]
     private static extern void PersonalSign(string message, string account);
@@ -26,11 +29,15 @@ public class Web3GL : MonoBehaviour
     // Declare events using Action
     public static event Action<string> OnWeb3ConnectedEvent;
     public static event Action<string> OnWeb3ConnectErrorEvent;
+    public static event Action<string> OnWeb3DisconnectedEvent;
+    public static event Action<string> OnWeb3DisconnectErrorEvent;
 
     // UCS to handle async responses
     private UniTaskCompletionSource<string> personalSignUcs;
     private UniTaskCompletionSource<int> chainIdUcs;
     private UniTaskCompletionSource<string> addressUcs;
+    
+    public static string connectedAccount; // To store the connected account address
 
     private void Awake()
     {
@@ -51,13 +58,18 @@ public class Web3GL : MonoBehaviour
         ConnectToWeb3();
     }
     
+    public void Disconnect()
+    {
+        DisconnectFromWeb3();
+    }
+    
     public UniTask<string> Sign(string message, string account)
     {
         personalSignUcs = new UniTaskCompletionSource<string>();
         PersonalSign(message, account);
         return personalSignUcs.Task;
     }
-    
+
     public UniTask<int> GetChainIdAsync()
     {
         chainIdUcs = new UniTaskCompletionSource<int>();
@@ -77,6 +89,9 @@ public class Web3GL : MonoBehaviour
     void OnWeb3Connected(string account)
     {
         Debug.Log("Connected to Web3. Account: " + account);
+        
+        // Store the connected account address
+        connectedAccount = account;
 
         // Trigger the event
         OnWeb3ConnectedEvent?.Invoke(account);
@@ -86,8 +101,30 @@ public class Web3GL : MonoBehaviour
     {
         Debug.Log("Error connecting to Web3: " + error);
 
+        // Clear the connected account on Disconnect
+        connectedAccount = null;
+        
         // Trigger the event
         OnWeb3ConnectErrorEvent?.Invoke(error);
+    }
+    
+    void OnWeb3Disconnected(string message)
+    {
+        Debug.Log("Disconnected from Web3: " + message);
+        
+        // Clear the connected account on Disconnect
+        connectedAccount = null;
+
+        // Trigger the event
+        OnWeb3DisconnectedEvent?.Invoke(message);
+    }
+
+    void OnWeb3DisconnectError(string error)
+    {
+        Debug.Log("Error disconnecting from Web3: " + error);
+
+        // Trigger the event
+        OnWeb3DisconnectErrorEvent?.Invoke(error);
     }
 
     public void OnPersonalSign(string signature)

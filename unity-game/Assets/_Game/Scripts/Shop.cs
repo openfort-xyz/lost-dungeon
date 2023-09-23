@@ -5,6 +5,7 @@ using UnityEngine;
 using Openfort;
 using PlayFab;
 using PlayFab.ClientModels;
+using UnityEngine.SceneManagement;
 
 public class Shop : MonoBehaviour
 {
@@ -34,7 +35,7 @@ public class Shop : MonoBehaviour
 
     private void Start()
     {
-        _openfort = new OpenfortClient(OpenfortStaticData.publishableKey);
+        _openfort = new OpenfortClient(OFStaticData.PublishableKey);
     }
 
     private void OnEnable()
@@ -117,7 +118,7 @@ public class Shop : MonoBehaviour
         };
 
         // Adding Player's Inventory assets (NFTs) to PlayFab player's inventory. Web3 to Web2.
-        foreach (var asset in itemBalance.nftAssets)
+        foreach (var asset in itemBalance.data)
         {
             int tokenId = asset.tokenId;
             if (tokenId >= 0 && tokenId <= 4)
@@ -220,8 +221,19 @@ public class Shop : MonoBehaviour
         // should sign using a session
         _openfort.LoadSessionKey();
 
-        var signature = _openfort.SignMessage(userOpHash);
-        await _openfort.SendSignatureTransactionIntentRequest(transactionIntentId, signature);
+        try
+        {
+            var signature = _openfort.SignMessage(userOpHash);
+            await _openfort.SendSignatureTransactionIntentRequest(transactionIntentId, signature);
+        }
+        catch (Exception e)
+        {
+            //TODO!!!!!!!!!!!!!!!!!!! newtonsoft error?
+            
+            Console.WriteLine(e);
+            SceneManager.LoadScene("Menu");
+            throw;
+        }
 
         _poolCoroutine = StartCoroutine(PoolEveryTwoSeconds(transactionIntentId));
     }

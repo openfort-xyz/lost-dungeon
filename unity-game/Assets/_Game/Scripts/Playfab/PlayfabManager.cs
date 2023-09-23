@@ -6,9 +6,28 @@ using UnityEngine;
 using System.Linq;
 
 #region OpenfortStaticData
-public static class OpenfortStaticData
+public static class OFStaticData
 {
-    public static string publishableKey = "***REMOVED***";
+    public const string PublishableKey = "***REMOVED***";
+
+    // PlayFab Keys
+    public const string OFplayerKey = "OFplayer";
+    public const string OFaddressKey = "address";
+    public const string OFownerAddressKey = "ownerAddress";
+    public const string Web3AuthCompletedOnceKey = "Web3AuthCompletedOnce";
+
+    // PlayFab Key Values
+    public static string OFplayerValue = "";
+    public static string OFownerAddressValue = "";
+}
+#endregion
+
+#region PlayerPrefs Static Data
+public static class PPStaticData
+{
+    public const string RememberMeKey = "RememberMe";
+    public const string CustomIdKey = "CustomID";
+    public const string LastPlayerKey = "LastPlayer";
 }
 #endregion
 
@@ -22,8 +41,6 @@ public static class StaticPlayerData
     public static string DisplayName = "";
 
     public static string EquipedWeapon = "";
-    
-    public static string OFplayer = "";
 }
 #endregion
 

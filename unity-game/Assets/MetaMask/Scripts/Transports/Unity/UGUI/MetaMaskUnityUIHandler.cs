@@ -150,11 +150,14 @@ namespace MetaMask.Transports.Unity.UI
         {
             if (otpPanel != null)
             {
+                //TODO OTP not used in our app!!
+                /*
                 otpPanel.gameObject.SetActive(true);
                 otpPanel.ShowOTP(otp);
                 qrCodePanel.SetActive(false);
                 
                 StartCoroutine(FadeBackground(1f));
+                */
             }
             else
             {

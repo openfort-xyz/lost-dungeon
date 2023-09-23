@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LobbyManager : StateMachineSingleton<LobbyManager>
 {
@@ -200,6 +201,12 @@ public class LobbyManager : StateMachineSingleton<LobbyManager>
         hintPanel.SetActive(false);
         currencyBalanceHelper.GetCurrencyBalance();
         ChangeState(LobbyState.Unarmed);
+    }
+
+    public void OnBackToMenuClicked()
+    {
+        //TODO something else?
+        SceneManager.LoadScene("Menu");
     }
     #endregion
 }

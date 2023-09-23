@@ -14,13 +14,13 @@ public class Hyperlinks : MonoBehaviour
         }, result =>
         {
             Debug.Log("Got user data");
-            if (result.Data == null || !result.Data.ContainsKey("address"))
+            if (result.Data == null || !result.Data.ContainsKey(OFStaticData.OFaddressKey))
             {
                 Debug.LogError("No address found");
             }
             else
             {
-                var address = result.Data["address"].Value;
+                var address = result.Data[OFStaticData.OFaddressKey].Value;
                 Application.OpenURL("https://testnet.snowtrace.io/address/" + address);
             }
         }, error => Debug.LogError(error.GenerateErrorReport()));
