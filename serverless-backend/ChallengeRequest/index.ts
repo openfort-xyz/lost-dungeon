@@ -1,11 +1,8 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { PlayFabServer } from "playfab-sdk";
-import { ethers } from "ethers";
 
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
-const GasWalletPK = process.env.GAS_WALLET_SECRET_KEY;
-const InfuraKey = process.env.INFURA_KEY;
 
 const httpTrigger: AzureFunction = async function (
   context: Context,

@@ -7,7 +7,7 @@ import { recoverPersonalSignature } from "@metamask/eth-sig-util";
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
 const GasWalletPK = process.env.GAS_WALLET_SECRET_KEY;
-const InfuraKey = process.env.INFURA_KEY;
+
 
 const openfort = new Openfort(process.env.OPENFORT_API_KEY);
 
@@ -72,7 +72,7 @@ const httpTrigger: AzureFunction = async function (
     if (!OFaccount) return;
     // Transfer one token to the player
     const provider = new ethers.providers.JsonRpcProvider(
-      "https://avalanche-fuji.infura.io/v3/" + InfuraKey
+      "https://subnets.avax.network/beam/mainnet/rpc"
     );
     const tankSigner = new ethers.Wallet(GasWalletPK, provider);
     // transfer 1 token to the player

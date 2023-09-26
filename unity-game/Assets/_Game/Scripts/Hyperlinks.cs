@@ -21,7 +21,7 @@ public class Hyperlinks : MonoBehaviour
             else
             {
                 var address = result.Data[OFStaticData.OFaddressKey].Value;
-                Application.OpenURL("https://testnet.snowtrace.io/address/" + address);
+                Application.OpenURL("https://subnets.avax.network/beam/address/" + address);
             }
         }, error => Debug.LogError(error.GenerateErrorReport()));
     }
