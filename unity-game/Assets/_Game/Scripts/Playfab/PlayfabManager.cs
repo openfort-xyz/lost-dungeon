@@ -8,7 +8,7 @@ using System.Linq;
 #region OpenfortStaticData
 public static class OFStaticData
 {
-    public const string PublishableKey = "pk_test_1ea91913-8d8b-5ca0-8b0f-3e1a5a97d970";
+    public const string PublishableKey = "pk_live_ef7727c0-dbf2-5f04-8c8c-2d779a42fd38";
 
     // PlayFab Keys
     public const string OFplayerKey = "OFplayer";
