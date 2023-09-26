@@ -58,7 +58,7 @@ const httpTrigger: AzureFunction = async function (
       .create({
         player: OFplayer.id,
         externalOwnerAddress: address,
-        chainId: 43113,
+        chainId: 4337,
       })
       .catch((error) => {
         context.log(error);

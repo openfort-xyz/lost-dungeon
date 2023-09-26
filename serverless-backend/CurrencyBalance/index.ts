@@ -1,12 +1,10 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { PlayFabServer } from "playfab-sdk";
-import Openfort from "@openfort/openfort-node";
 import { ethers } from "ethers";
+import axios from 'axios';
 
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
-
-const openfort = new Openfort(process.env.OPENFORT_API_KEY);
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
@@ -53,21 +51,26 @@ const httpTrigger: AzureFunction = async function (
       };
     });
     const resultData = result.data.Data;
-    const _receiver = resultData["OFplayer"].Value;
+    const _receiver = resultData["address"].Value;
 
-    const balance = await openfort.inventories.getPlayerCryptoCurrencyInventory({
-      playerId: _receiver,
-      chainId: 43113,
-    });
+    const balance = await axios.get(`https://glacier-api.avax.network/v1/chains/4337/addresses/${_receiver}/balances:listErc20`);
+    
+    if(balance.data.error) {
+      context.res = {
+        status: 500,
+        body: JSON.stringify(balance.data.error),
+      };
+      return;
+    }
 
     const goldTokenAddress = process.env.GOLD_CONTRACT_ADDRESS.toLowerCase();
 
-    let currencyBalance: any = balance.data.find(
+    let currencyBalance: any = balance.data.erc20TokenBalances.find(
       (tokenAsset) => tokenAsset.address.toLowerCase() === goldTokenAddress
     );
 
     if (currencyBalance) {
-      let amountInSmallestUnit = ethers.BigNumber.from(currencyBalance.amount);
+      let amountInSmallestUnit = ethers.BigNumber.from(currencyBalance.balance);
       let amountInUnit = ethers.utils.formatUnits(amountInSmallestUnit, 18);
       currencyBalance.amount = amountInUnit;
     }

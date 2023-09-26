@@ -73,4 +73,4 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # PlayFab shared settings
-unity-game/Assets/PlayFabSDK/Shared/Public/Resources/PlayFabSharedSettings.asset
+/Assets/PlayFabSDK/Shared/Public/Resources/PlayFabSharedSettings.asset

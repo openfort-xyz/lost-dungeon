@@ -1,11 +1,9 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { PlayFabServer } from "playfab-sdk";
-import Openfort from "@openfort/openfort-node";
+import axios from 'axios';
 
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
-
-const openfort = new Openfort(process.env.OPENFORT_API_KEY);
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
@@ -52,19 +50,28 @@ const httpTrigger: AzureFunction = async function (
       };
     });
     const resultData = result.data.Data;
-    const _receiver = resultData["OFplayer"].Value;
+    const _receiver = resultData["address"].Value;
 
-    const balance = await openfort.inventories.getPlayerNftInventory({
-      playerId: _receiver,
-      chainId: 43113,
-    });
+    const balance = await axios.get(`https://glacier-api.avax.network/v1/chains/4337/addresses/${_receiver}/balances:listErc1155`);
+    
+    if(balance.data.error) {
+      context.res = {
+        status: 500,
+        body: JSON.stringify(balance.data.error),
+      };
+      return;
+    }
+    const weaponTokenAddress = process.env.WEAPON_ADDRESS_CONTRACT.toLowerCase();
 
-    context.log("BALANCE: " + balance.data);
+    const weaponBalance = balance.data.erc1155TokenBalances.filter((tokenBalance: any) => tokenBalance.address.toLowerCase() === weaponTokenAddress);
+
+
+    context.log("BALANCE: " + weaponBalance);
 
     context.log("API call was successful.");
     context.res = {
       status: 200,
-      body: JSON.stringify({ data: balance.data })
+      body: JSON.stringify({ data: weaponBalance })
     };
   } catch (error) {
     context.log(error);

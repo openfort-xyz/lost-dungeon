@@ -117,8 +117,8 @@ const httpTrigger: AzureFunction = async function (
 
     const transactionIntentRequest: CreateTransactionIntentRequest = {
       player: _receiver,
-      chainId: 43113,
-      optimistic: true,
+      chainId: 4337,
+      optimistic: false,
       interactions: [interaction_1, interaction_2],
       policy: process.env.OF_TX_SPONSOR,
     };
