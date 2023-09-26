@@ -12,6 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8db34de749dd54f30b3ab269fc9a7298, type: 3}
   m_Name: Openfort
   m_EditorClassIdentifier: 
-  PublishedKey: 
-  SecretKey: 
+  PublishedKey: ***REMOVED***
   LogLevel: 0
