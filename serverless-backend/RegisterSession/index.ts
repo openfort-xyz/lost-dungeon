@@ -42,7 +42,7 @@ const httpTrigger: AzureFunction = async function (
       .create({
         player: playerId,
         address: sessionAddress,
-        chainId: 43113,
+        chainId: 4337,
         policy: process.env.OF_TX_SPONSOR || '',
         validAfter: 0,
         validUntil: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,

@@ -45,7 +45,7 @@ const httpTrigger: AzureFunction = async function (
     const OFaccount = await openfort.accounts
       .create({
         player: OFplayer.id,
-        chainId: 43113,
+        chainId: 4337,
       })
       .catch((error) => {
         context.log(error);
