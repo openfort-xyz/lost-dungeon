@@ -1,19 +1,34 @@
 # Lost Dungeon
 
-Lost Dungeon is a dungeon crawler game built on top of [Openfort](https://openfort.xyz/) to showcase what's possible. It is compatible with Desktop (Windows, Linux, Mac), Android and WebGL.
+Lost Dungeon is a dungeon crawler game built on top of [Openfort](https://openfort.xyz/) to showcase what's possible. 
+It's built on top of an Avalanche Subnet [Beam](https://www.onbeam.com/).
+
+## How to play
+
+It is compatible with Desktop (Windows, Linux, Mac), Android and WebGL.
+
+- WebGL: [https://lostdungeon.openfort.xyz/](https://lostdungeon.openfort.xyz/)
+- Mac Downloader: [Download now](https://lostdungeon.openfort.xyz/assets/downloads/lost-dungeon-mac.zip)
+- Linux Downloader: [Download now](https://lostdungeon.openfort.xyz/assets/downloads/lost-dungeon-linux.zip)
+- Windows Downloader: [Download now](https://lostdungeon.openfort.xyz/assets/downloads/lost-dungeon-windows.zip)
+- Android Play Store: [Download now](https://play.google.com/store/apps/details?id=com.Openfort.LostDungeon&pcampaignid=web_share)
+
+## Functional diagram
+
+![Functional diagram](https://blog-cms.openfort.xyz/uploads/schema_lost_dungeon_3639e1aa09.svg)
 
 ## Features
-- **Gold Coins**: ERC-20 token deployed at [0x658d55C80AB4D153774Fc5F1D08aA396Cc8243B7](https://testnet.snowtrace.io/address/0x658d55C80AB4D153774Fc5F1D08aA396Cc8243B7). These can be obtained after killing a monster and minted to the player when they are killed. Every player is airdropped 1 Gold coin at the beginning of the game.
-- **Weapons**: ERC-1155 tokens deployed at [0x898cf2A67E8887d3C69236147a201608565ff3B3](https://testnet.snowtrace.io/address/0x898cf2A67E8887d3C69236147a201608565ff3B3). Users can by them at the shop using Gold coins.
-- **Score**: Kept in Metafab as a `uint256` value. Every time a player kills a monster, their score is increased. It is later on used to create a leaderboard.
-- **Authentication**: Players can authenticate using email and password or can use a guest account.
+- **Gold Coins**: ERC-20 token deployed at [0x2a8cbec28b8e0e6e6c2ece080c269f5cdf2549ac](https://subnets.avax.network/beam/address/0x2a8cbec28b8e0e6e6c2ece080c269f5cdf2549ac). These can be obtained after killing a monster and minted to the player when they are killed. Every player is airdropped 1 Gold coin at the beginning of the game.
+- **Weapons**: ERC-1155 tokens deployed at [0x2b57688397a21c226cbc00dfe0414c4550d7bcc3](https://subnets.avax.network/beam/address/0x2b57688397a21c226cbc00dfe0414c4550d7bcc3). Users can by them at the shop using Gold coins.
+- **Score**: Kept in [Playfab](https://playfab.com/) as a `uint256` value. Every time a player kills a monster, their score is increased. It is later on used to create a leaderboard.
+- **Authentication**: Players can authenticate using email and password or can use a guest account. Powered by Playfab.
 
 This repository is divided into two parts:
 
-- Serverless backend: Azure functions that handle the game logic and communicate with Openfort and Playfab.
+- Serverless backend & Playfab: Azure functions that handle the game logic and communicate with Openfort and Playfab.
 - Unity game: The game itself, which is built using Unity.
   
-## Serverless backend
+## Serverless functions & Playfab
 
 ### Prerequisites
 - [Azure Functions Core Tools](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=windows%2Ccsharp%2Cbash)
