@@ -242,7 +242,6 @@ public class LoginSceneManager : MonoBehaviour
             statusTextLabel.text = "Error: " + error.GenerateErrorReport();
         });
 
-        statusTextLabel.text = "Deciding";
         DecideWhereToGoNext(result);
     }
     
@@ -456,15 +455,11 @@ public class LoginSceneManager : MonoBehaviour
         var userReadOnlyData = result.InfoResultPayload.UserReadOnlyData;
         
         // We check if the PlayFab user has an Openfort Player assigned to its ReadOnlyData values.
-        if (userReadOnlyData.ContainsKey(OFStaticData.OFplayerKey) && userReadOnlyData.ContainsKey(OFStaticData.OFownerAddressKey))
+        if (userReadOnlyData.ContainsKey(OFStaticData.OFplayerKey))
         {
             // Save OFplayer to static data
             var currentOFplayer = userReadOnlyData[OFStaticData.OFplayerKey].Value;
             OFStaticData.OFplayerValue = currentOFplayer;
-            
-            // Save ownerAddress to static data
-            var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
-            OFStaticData.OFownerAddressValue = currentOwnerAddress;
 
             if (userReadOnlyData.ContainsKey("custodial"))
             {
@@ -473,6 +468,10 @@ public class LoginSceneManager : MonoBehaviour
             }
             else
             {
+                // We assume it cointains OFownerAddressKey. We save it to static data
+                var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
+                OFStaticData.OFownerAddressValue = currentOwnerAddress;
+                
                 // Check if the device has a session key
                 var sessionKey = _openfortClient.LoadSessionKey();
                 if (sessionKey == null)
