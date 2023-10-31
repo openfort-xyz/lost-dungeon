@@ -47,8 +47,10 @@ public class LoginSceneManager : MonoBehaviour
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;
     }
 
-    private void Start()
+    public void StartLogin()
     {
+        loginPanel.SetActive(true);
+        
         // Get Openfort client with publishable key.
         _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
         
@@ -94,7 +96,21 @@ public class LoginSceneManager : MonoBehaviour
             }
         }
     }
+    
+    public void LoginUserWithGooglePlay(string googleAuthCode)
+    {
+        statusTextLabel.text = "Logging in with Google Play...";
+        
+        var loginRequest = new LoginWithGooglePlayGamesServicesRequest()
+        {
+            TitleId = PlayFabSettings.TitleId,
+            ServerAuthCode = googleAuthCode,
+            CreateAccount = true
+        };
 
+        PlayFabClientAPI.LoginWithGooglePlayGamesServices(loginRequest, OnLoginSuccess, OnLoginFailure);
+    }
+    
     private void Update()
     {
         if (Application.platform != RuntimePlatform.WindowsPlayer &&
