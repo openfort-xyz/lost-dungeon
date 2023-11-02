@@ -47,8 +47,10 @@ public class LoginSceneManager : MonoBehaviour
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;
     }
 
-    private void Start()
+    public void StartLogin()
     {
+        loginPanel.SetActive(true);
+        
         // Get Openfort client with publishable key.
         _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
         
@@ -94,7 +96,22 @@ public class LoginSceneManager : MonoBehaviour
             }
         }
     }
+    
+    public void LoginUserWithGooglePlay(string googleAuthCode)
+    {
+        statusTextLabel.text = "Logging in with Google Play...";
+        
+        var loginRequest = new LoginWithGooglePlayGamesServicesRequest()
+        {
+            TitleId = PlayFabSettings.TitleId,
+            ServerAuthCode = googleAuthCode,
+            CreateAccount = true,
+            InfoRequestParameters = infoRequestParams
+        };
 
+        PlayFabClientAPI.LoginWithGooglePlayGamesServices(loginRequest, OnLoginWithGooglePlaySuccess, OnLoginFailure);
+    }
+    
     private void Update()
     {
         if (Application.platform != RuntimePlatform.WindowsPlayer &&
@@ -183,44 +200,59 @@ public class LoginSceneManager : MonoBehaviour
     private void OnLoginSuccess(LoginResult result)
     {
         Debug.LogFormat("Logged In as: {0}", result.PlayFabId);
-        statusTextLabel.text = "";
-        
+        statusTextLabel.text = "Logged In";
+    
         // We get the CustomID we linked when we registered the user
         var request = new GetAccountInfoRequest();
         PlayFabClientAPI.GetAccountInfo(request, accountInfoResult =>
         {
             Debug.Log("Got account info");
+            statusTextLabel.text = "Account info retrieved";
 
             // You can check if result.AccountInfo contains the CustomId field
             if (accountInfoResult.AccountInfo != null && accountInfoResult.AccountInfo.CustomIdInfo.CustomId != null)
             {
                 string customId = accountInfoResult.AccountInfo.CustomIdInfo.CustomId;
+                statusTextLabel.text = "Custom ID found: " + customId;
+
                 // If "Remember Me" is checked, save this custom ID locally (securely)
                 if (rememberMeToggle.isOn)
                 {
                     PlayerPrefs.SetString(PPStaticData.CustomIdKey, customId);  // TODO Secure this using encryption in a real-world application
                     PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 1);
-                
+            
                     Debug.Log("Added user CustomID to PlayerPrefs");
+                    statusTextLabel.text = "Custom ID saved locally";
                 }
                 else
                 {
                     PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
                     PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 0);
+                    statusTextLabel.text = "Custom ID not saved";
                 }
             }
             else
             {
                 Debug.Log("Custom ID not found.");
+                statusTextLabel.text = "Custom ID not found";
             }
         }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
+            statusTextLabel.text = "Error: " + error.GenerateErrorReport();
         });
 
         DecideWhereToGoNext(result);
     }
     
+    private void OnLoginWithGooglePlaySuccess(LoginResult result)
+    {
+        Debug.LogFormat("Logged In as: {0}", result.PlayFabId);
+
+        statusTextLabel.text = "Logged in as: " + result.PlayFabId;
+        DecideWhereToGoNext(result);
+    }
+
     private void OnRegistrationSuccess(RegisterPlayFabUserResult result)
     {
         Debug.Log("User registered and logged in successfully!");
@@ -421,16 +453,13 @@ public class LoginSceneManager : MonoBehaviour
     private void DecideWhereToGoNext(LoginResult result)
     {
         var userReadOnlyData = result.InfoResultPayload.UserReadOnlyData;
+        
         // We check if the PlayFab user has an Openfort Player assigned to its ReadOnlyData values.
-        if (userReadOnlyData.ContainsKey(OFStaticData.OFplayerKey) && userReadOnlyData.ContainsKey(OFStaticData.OFownerAddressKey))
+        if (userReadOnlyData.ContainsKey(OFStaticData.OFplayerKey))
         {
             // Save OFplayer to static data
             var currentOFplayer = userReadOnlyData[OFStaticData.OFplayerKey].Value;
             OFStaticData.OFplayerValue = currentOFplayer;
-            
-            // Save ownerAddress to static data
-            var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
-            OFStaticData.OFownerAddressValue = currentOwnerAddress;
 
             if (userReadOnlyData.ContainsKey("custodial"))
             {
@@ -439,6 +468,10 @@ public class LoginSceneManager : MonoBehaviour
             }
             else
             {
+                // We assume it cointains OFownerAddressKey. We save it to static data
+                var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
+                OFStaticData.OFownerAddressValue = currentOwnerAddress;
+                
                 // Check if the device has a session key
                 var sessionKey = _openfortClient.LoadSessionKey();
                 if (sessionKey == null)
