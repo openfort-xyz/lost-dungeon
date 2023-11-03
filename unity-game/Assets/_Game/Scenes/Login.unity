@@ -790,10 +790,10 @@ MonoBehaviour:
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
-    m_HighlightedSprite: {fileID: -7151958888795693489, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
+    m_HighlightedSprite: {fileID: -5376358965234703051, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
     m_PressedSprite: {fileID: 8105364098890919055, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
-    m_SelectedSprite: {fileID: -7151958888795693489, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
-    m_DisabledSprite: {fileID: -7151958888795693489, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
+    m_SelectedSprite: {fileID: -5376358965234703051, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
+    m_DisabledSprite: {fileID: -5376358965234703051, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
   m_AnimationTriggers:
     m_NormalTrigger: Normal
     m_HighlightedTrigger: Highlighted
@@ -2901,9 +2901,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1176017639}
   - {fileID: 1556676547}
   - {fileID: 1425921587}
-  - {fileID: 1176017639}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3132,7 +3132,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1123846865}
-  m_RootOrder: 2
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1176017640
 MonoBehaviour:
@@ -3745,7 +3745,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1123846865}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1425921588
 MonoBehaviour:
@@ -3792,7 +3792,7 @@ MonoBehaviour:
     TitleDataKeys: []
     UserDataKeys: []
     UserReadOnlyDataKeys: []
-  googleClientId: 529781359305-b5mgknudvan98n8bqhinj2u6pt07k5s9.apps.googleusercontent.com
+  googleClientId: 
 --- !u!1 &1433892760
 GameObject:
   m_ObjectHideFlags: 0
@@ -3903,7 +3903,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1123846865}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1556676548
 MonoBehaviour:
@@ -4149,6 +4149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   web3AuthService: {fileID: 1204259165}
+  googleAuthController: {fileID: 1425921588}
   infoRequestParams:
     GetCharacterInventories: 1
     GetCharacterList: 1

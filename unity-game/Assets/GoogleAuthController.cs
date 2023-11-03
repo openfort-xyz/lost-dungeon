@@ -52,6 +52,7 @@ public class GoogleAuthController : PlayFabAuthControllerBase
             Debug.LogError("Google SDK not initialized.");
             return;
         }
+        
 #if UNITY_WEBGL && !UNITY_EDITOR
         StartGoogleSignIn();
 #endif
@@ -74,6 +75,7 @@ public class GoogleAuthController : PlayFabAuthControllerBase
         
         // Use the hashed token to log in with PlayFab
         LoginWithPlayFab(authData.customID, authData.email);
+        RaiseLoginStarted();
     }
     #endregion
 

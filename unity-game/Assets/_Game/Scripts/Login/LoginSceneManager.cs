@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine;
@@ -46,6 +45,7 @@ public class LoginSceneManager : MonoBehaviour
 
     private void OnEnable()
     {
+        PlayFabAuthControllerBase.OnLoginStarted += () => loginPanel.SetActive(false);
         googleAuthController.OnLoginSuccess += OnLoginSuccess;
         googleAuthController.OnLoginFailure += OnLoginFailure;
         
