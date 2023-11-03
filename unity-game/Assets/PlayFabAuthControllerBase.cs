@@ -6,11 +6,11 @@ using UnityEngine;
 public abstract class PlayFabAuthControllerBase : MonoBehaviour
 {
     [SerializeField]
-    private GetPlayerCombinedInfoRequestParams infoRequestParameters;
-    protected GetPlayerCombinedInfoRequestParams InfoRequestParameters => infoRequestParameters;
+    private GetPlayerCombinedInfoRequestParams playerCombinedInfoRequestParams;
+    protected GetPlayerCombinedInfoRequestParams PlayerCombinedInfoRequestParams => playerCombinedInfoRequestParams;
 
-    public static event Action<LoginResult> OnLoginSuccess;
-    public static event Action<PlayFabError> OnLoginFailure;
+    public event Action<LoginResult> OnLoginSuccess;
+    public event Action<PlayFabError> OnLoginFailure;
 
     protected void RaiseLoginSuccess(LoginResult result)
     {

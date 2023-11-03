@@ -11,6 +11,9 @@ public class LoginSceneManager : MonoBehaviour
 {
     [Header("Web3Auth")]
     public Web3AuthService web3AuthService;
+
+    [Header("PlayFab Auth Controllers")]
+    public GoogleAuthController googleAuthController;
     
     [Header("PlayFab")]
     // Settings for what data to get from playfab on login.
@@ -43,8 +46,8 @@ public class LoginSceneManager : MonoBehaviour
 
     private void OnEnable()
     {
-        GoogleAuthController.OnLoginSuccess += OnLoginSuccess;
-        GoogleAuthController.OnLoginFailure += OnLoginFailure;
+        googleAuthController.OnLoginSuccess += OnLoginSuccess;
+        googleAuthController.OnLoginFailure += OnLoginFailure;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess += OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure += OnCreateOpenfortPlayerFailure;
@@ -52,8 +55,8 @@ public class LoginSceneManager : MonoBehaviour
 
     private void OnDisable()
     {
-        GoogleAuthController.OnLoginSuccess -= OnLoginSuccess;
-        GoogleAuthController.OnLoginFailure -= OnLoginFailure;
+        googleAuthController.OnLoginSuccess -= OnLoginSuccess;
+        googleAuthController.OnLoginFailure -= OnLoginFailure;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess -= OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;

@@ -83,10 +83,7 @@ public class GoogleAuthController : PlayFabAuthControllerBase
         {
             CustomId = customId,
             CreateAccount = true, // set to true if you want to create an account if it doesn't exist
-            InfoRequestParameters = new GetPlayerCombinedInfoRequestParams
-            {
-                GetUserAccountInfo = true
-            }
+            InfoRequestParameters = PlayerCombinedInfoRequestParams
         };
 
         PlayFabClientAPI.LoginWithCustomID(request, RaiseLoginSuccess, RaiseLoginFailure);
