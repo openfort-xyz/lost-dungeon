@@ -3759,7 +3759,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b60f0c3d4b15fa45bbb203ff7c774c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  infoRequestParameters:
+  playerCombinedInfoRequestParams:
     GetCharacterInventories: 1
     GetCharacterList: 1
     GetPlayerProfile: 1
