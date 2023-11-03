@@ -55,36 +55,4 @@ public class GooglePlayAuth : MonoBehaviour
         Debug.Log("Google Play Games SDK only works on Android devices. Please build your app to an Android device.");
         #endif
     }
-
-    //TODO in another script
-    void Update() 
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            // Close the game
-            QuitGame();
-        }
-    }
-
-    void QuitGame()
-    {
-        // If we are running in a standalone build of the game
-#if UNITY_STANDALONE
-        // Quit the application
-        Application.Quit();
-#endif
-
-        // If we are running in the editor
-#if UNITY_EDITOR
-        // Stop playing the scene
-        UnityEditor.EditorApplication.isPlaying = false;
-#endif
-
-        // If we are running on mobile
-#if UNITY_ANDROID || UNITY_IOS
-        // Use native quit function
-        Application.Quit();
-#endif
-    }
-
 }

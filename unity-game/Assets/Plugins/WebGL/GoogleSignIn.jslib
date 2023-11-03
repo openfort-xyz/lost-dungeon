@@ -35,13 +35,13 @@ mergeInto(LibraryManager.library, {
                     var jsonData = JSON.stringify(data);
 
                     // Notify Unity with the serialized JSON data
-                    Module.SendMessage('GoogleSignInObject', 'OnReceiveAuthData', jsonData);
+                    Module.SendMessage('GoogleAuthController', 'OnReceiveAuthData', jsonData);
                 },
                 // Other configurations and event listeners can be added here...
             });
             
             // Notify Unity when Google SDK is initialized
-            Module.SendMessage('GoogleSignInObject', 'GoogleSDKLoaded');
+            Module.SendMessage('GoogleAuthController', 'GoogleSDKLoaded');
         };
         document.head.appendChild(script);
     },
