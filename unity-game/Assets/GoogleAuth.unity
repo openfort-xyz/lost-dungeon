@@ -311,7 +311,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1500679848}
         m_TargetAssemblyTypeName: GoogleSignInManager, Assembly-CSharp
-        m_MethodName: BeginGoogleLogin
+        m_MethodName: InitializeGoogleSDK
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

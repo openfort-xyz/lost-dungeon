@@ -35,14 +35,26 @@ public class LoginSceneManager : MonoBehaviour
     // OPENFORT
     private OpenfortClient _openfortClient;
 
+    private void Start()
+    {
+        // Get Openfort client with publishable key.
+        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
+    }
+
     private void OnEnable()
     {
+        GoogleAuthController.OnLoginSuccess += OnLoginSuccess;
+        GoogleAuthController.OnLoginFailure += OnLoginFailure;
+        
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess += OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure += OnCreateOpenfortPlayerFailure;
     }
 
     private void OnDisable()
     {
+        GoogleAuthController.OnLoginSuccess -= OnLoginSuccess;
+        GoogleAuthController.OnLoginFailure -= OnLoginFailure;
+        
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess -= OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;
     }
@@ -50,10 +62,7 @@ public class LoginSceneManager : MonoBehaviour
     public void StartLogin()
     {
         loginPanel.SetActive(true);
-        
-        // Get Openfort client with publishable key.
-        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
-        
+
         if (Application.platform == RuntimePlatform.WindowsPlayer ||
             Application.platform == RuntimePlatform.OSXPlayer ||
             Application.platform == RuntimePlatform.LinuxPlayer)
