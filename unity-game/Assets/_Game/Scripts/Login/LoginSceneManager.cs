@@ -212,20 +212,19 @@ public class LoginSceneManager : MonoBehaviour
     private void OnLoginSuccess(LoginResult result)
     {
         Debug.LogFormat("Logged In as: {0}", result.PlayFabId);
-        statusTextLabel.text = "Logged In";
+        statusTextLabel.text = "Logged in as: " + result.PlayFabId;
     
         // We get the CustomID we linked when we registered the user
         var request = new GetAccountInfoRequest();
         PlayFabClientAPI.GetAccountInfo(request, accountInfoResult =>
         {
             Debug.Log("Got account info");
-            statusTextLabel.text = "Account info retrieved";
 
             // You can check if result.AccountInfo contains the CustomId field
             if (accountInfoResult.AccountInfo != null && accountInfoResult.AccountInfo.CustomIdInfo.CustomId != null)
             {
                 string customId = accountInfoResult.AccountInfo.CustomIdInfo.CustomId;
-                statusTextLabel.text = "Custom ID found: " + customId;
+                Debug.Log("Custom ID found: " + customId);
 
                 // If "Remember Me" is checked, save this custom ID locally (securely)
                 if (rememberMeToggle.isOn)
@@ -234,19 +233,17 @@ public class LoginSceneManager : MonoBehaviour
                     PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 1);
             
                     Debug.Log("Added user CustomID to PlayerPrefs");
-                    statusTextLabel.text = "Custom ID saved locally";
                 }
                 else
                 {
                     PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
                     PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 0);
-                    statusTextLabel.text = "Custom ID not saved";
+                    Debug.Log("Custom ID not saved");
                 }
             }
             else
             {
                 Debug.Log("Custom ID not found.");
-                statusTextLabel.text = "Custom ID not found";
             }
         }, error =>
         {

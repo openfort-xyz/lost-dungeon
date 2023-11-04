@@ -54,6 +54,7 @@ public class GoogleAuthController : PlayFabAuthControllerBase
         }
         
 #if UNITY_WEBGL && !UNITY_EDITOR
+        Debug.Log("Starting Google Sign In...");
         StartGoogleSignIn();
 #endif
     }
