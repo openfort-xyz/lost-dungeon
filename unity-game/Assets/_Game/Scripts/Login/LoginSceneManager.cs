@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine;
@@ -11,6 +10,9 @@ public class LoginSceneManager : MonoBehaviour
 {
     [Header("Web3Auth")]
     public Web3AuthService web3AuthService;
+
+    [Header("PlayFab Auth Controllers")]
+    public GoogleAuthController googleAuthController;
     
     [Header("PlayFab")]
     // Settings for what data to get from playfab on login.
@@ -35,14 +37,27 @@ public class LoginSceneManager : MonoBehaviour
     // OPENFORT
     private OpenfortClient _openfortClient;
 
+    private void Start()
+    {
+        // Get Openfort client with publishable key.
+        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
+    }
+
     private void OnEnable()
     {
+        PlayFabAuthControllerBase.OnLoginStarted += () => loginPanel.SetActive(false);
+        googleAuthController.OnLoginSuccess += OnLoginSuccess;
+        googleAuthController.OnLoginFailure += OnLoginFailure;
+        
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess += OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure += OnCreateOpenfortPlayerFailure;
     }
 
     private void OnDisable()
     {
+        googleAuthController.OnLoginSuccess -= OnLoginSuccess;
+        googleAuthController.OnLoginFailure -= OnLoginFailure;
+        
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess -= OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;
     }
@@ -50,10 +65,7 @@ public class LoginSceneManager : MonoBehaviour
     public void StartLogin()
     {
         loginPanel.SetActive(true);
-        
-        // Get Openfort client with publishable key.
-        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
-        
+
         if (Application.platform == RuntimePlatform.WindowsPlayer ||
             Application.platform == RuntimePlatform.OSXPlayer ||
             Application.platform == RuntimePlatform.LinuxPlayer)
@@ -200,20 +212,19 @@ public class LoginSceneManager : MonoBehaviour
     private void OnLoginSuccess(LoginResult result)
     {
         Debug.LogFormat("Logged In as: {0}", result.PlayFabId);
-        statusTextLabel.text = "Logged In";
+        statusTextLabel.text = "Logged in as: " + result.PlayFabId;
     
         // We get the CustomID we linked when we registered the user
         var request = new GetAccountInfoRequest();
         PlayFabClientAPI.GetAccountInfo(request, accountInfoResult =>
         {
             Debug.Log("Got account info");
-            statusTextLabel.text = "Account info retrieved";
 
             // You can check if result.AccountInfo contains the CustomId field
             if (accountInfoResult.AccountInfo != null && accountInfoResult.AccountInfo.CustomIdInfo.CustomId != null)
             {
                 string customId = accountInfoResult.AccountInfo.CustomIdInfo.CustomId;
-                statusTextLabel.text = "Custom ID found: " + customId;
+                Debug.Log("Custom ID found: " + customId);
 
                 // If "Remember Me" is checked, save this custom ID locally (securely)
                 if (rememberMeToggle.isOn)
@@ -222,19 +233,17 @@ public class LoginSceneManager : MonoBehaviour
                     PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 1);
             
                     Debug.Log("Added user CustomID to PlayerPrefs");
-                    statusTextLabel.text = "Custom ID saved locally";
                 }
                 else
                 {
                     PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
                     PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 0);
-                    statusTextLabel.text = "Custom ID not saved";
+                    Debug.Log("Custom ID not saved");
                 }
             }
             else
             {
                 Debug.Log("Custom ID not found.");
-                statusTextLabel.text = "Custom ID not found";
             }
         }, error =>
         {
