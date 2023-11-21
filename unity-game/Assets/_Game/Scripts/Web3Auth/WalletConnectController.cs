@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using WalletConnect;
@@ -11,11 +12,24 @@ using WalletConnectUnity.Utils;
 public class WalletConnectController : MonoBehaviour
 {
     [SerializeField] private WCSignClient WC;
+
+    
+    [SerializeField] private bool autoDisconnect;
+    
+    [HideInInspector] public SessionStruct CurrentSession;
     
     private void Start()
     {
         WC.OnSessionApproved += WCOnOnSessionApproved;
         WC.SessionDeleted += WCOnSessionDeleted;
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (autoDisconnect)
+        {
+            WC.Disconnect(CurrentSession.Topic);   
+        }
     }
 
     private void OnDisable()
@@ -28,6 +42,7 @@ public class WalletConnectController : MonoBehaviour
     {
         //TODO Estem connectats!!!
         Debug.LogWarning("WC SESSION APPROVED");
+        //Session = e;
     });
 
     private void WCOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
@@ -66,17 +81,10 @@ public class WalletConnectController : MonoBehaviour
         {
             "chainChanged", "accountsChanged"
         };
-
-        //TODO check!
-        var chainIds = new[]
-        {
-            "80001",
-            "11155111"
-        };
         
         requiredNamespaces.Add(Chain.EvmNamespace, new ProposedNamespace()
         {
-            Chains = chainIds,
+            Chains = new []{"eip155:1"}, //TODO!!
             Events = events,
             Methods = methods
         });
@@ -99,6 +107,7 @@ public class WalletConnectController : MonoBehaviour
             MTQ.Enqueue(() =>
             {
                 Debug.Log($"Connection approved, URI: {connectData.Uri}");
+                CurrentSession = connectData.Approval.Result;
             });
         }
         catch (Exception e)
