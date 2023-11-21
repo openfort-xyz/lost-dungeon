@@ -7,10 +7,16 @@ using UnityEngine.Events;
 using Openfort;
 using PlayFab;
 using PlayFab.ClientModels;
+using UnityEngine.Serialization;
+using WalletConnect;
+using WalletConnectSharp.Sign.Models.Engine;
 
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
 public class Web3AuthService : MonoBehaviour
 {
+    [Header("Wallet Connectors")] [SerializeField]
+    private WalletConnectController walletConnect;
+    
     public enum State
     {
         None,
@@ -140,14 +146,12 @@ Disconnect();
 #region PUBLIC_METHODS
 public void Connect()
 {
-ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
+    ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
 
-#if UNITY_WEBGL
-Web3GL.Instance.Connect();
-#else
-//TODOMETAMASK MetaMaskUnity.Instance.Wallet.Connect();
-// Connect
-//MetaMaskUnity.Instance.Connect();
+    #if UNITY_WEBGL
+    Web3GL.Instance.Connect();
+    #else
+    //TODO METAMASK wc.Connect();
 #endif
 }
 #endregion
