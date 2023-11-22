@@ -205,18 +205,27 @@ public class WalletConnectController : MonoBehaviour
     #endregion
 
     #region PRIVATE_METHODS
-    private async Task<string> PersonalSignAsync(string message, string address)                                          
-    {                                                                                                                                                                                                         
-        var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
+    private async Task<string> PersonalSignAsync(string message, string address)
+    {
+        try
+        {
+            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
 
-        var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();                                    
-        var request = new PersonalSign(hexUtf8, address);                                        
-                                                                                                     
-        var result = await wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
-                     
-        Debug.Log("Got result from request: " + result);
+            var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
+            var request = new PersonalSign(hexUtf8, address);                                
         
-        return result;                                                                                 
-    }    
+            var result = await wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
+                 
+            Debug.Log("Got result from request: " + result);
+        
+            return result; 
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"An error occurred: {ex.Message}");
+            // Optionally, you can handle the exception more specifically or rethrow it
+            return null; // Or handle the failure case appropriately
+        }                                                                                 
+    }
     #endregion
 }
