@@ -67,18 +67,9 @@ public class Web3AuthService : MonoBehaviour
     #region UNITY_LIFECYCLE
     private void OnEnable()
     {
+        // WC Events
         wcController.OnConnected += WcController_OnConnected_Handler;
         wcController.OnDisconnected += WcController_OnDisconnected_Handler;
-        /*TODOMETAMASK
-        //TODO we could handle this managing MetaMask initialization manually.
-        // Get MetaMask UI Handler
-        _metaMaskUIHandler = FindObjectOfType<MetaMaskUnityUIHandler>();
-        _metaMaskUIHandler.onCancelClicked += OnWalletUnauthorized;
-        
-        MetaMaskUnity.Instance.Wallet.Events.WalletUnauthorized += OnWalletUnauthorized;
-        MetaMaskUnity.Instance.Events.EthereumRequestFailed += EventsOnEthereumRequestFailed;
-        
-        */
 
 #if UNITY_WEBGL
         // Web3GL Events
@@ -99,14 +90,9 @@ public class Web3AuthService : MonoBehaviour
 
     private void OnDisable()
     {
+        // WC Events
         wcController.OnConnected -= WcController_OnConnected_Handler;
         wcController.OnDisconnected -= WcController_OnDisconnected_Handler;
-        /*TODOMETAMASK
-        _metaMaskUIHandler.onCancelClicked -= OnWalletUnauthorized;
-        
-        MetaMaskUnity.Instance.Wallet.Events.WalletUnauthorized -= OnWalletUnauthorized;
-        MetaMaskUnity.Instance.Events.EthereumRequestFailed -= EventsOnEthereumRequestFailed;
-        */
         
 #if UNITY_WEBGL
         // Web3GL Events
@@ -176,29 +162,6 @@ public class Web3AuthService : MonoBehaviour
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
         ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
-
-    //TODOMETAMASK
-    private void OnWalletUnauthorized(object sender, EventArgs e)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
-        //TODOMETAMASK _metaMaskUIHandler.CloseQRCode();
-        Disconnect();
-    }
-
-    /*TODOMETAMASK
-    private void EventsOnEthereumRequestFailed(object sender, MetaMaskEthereumRequestFailedEventArgs eventArgs)
-    {
-    switch (eventArgs.Request.Method)
-    {
-        case "eth_requestAccounts":
-            //TODO We don't need it? OnWalletUnauthorized(sender, eventArgs);
-            break;
-        case "personal_sign":
-            Disconnect();
-            break;
-    }
-    }
-    */
     #endregion
 
     #region WEB3GL_WALLET_EVENTS

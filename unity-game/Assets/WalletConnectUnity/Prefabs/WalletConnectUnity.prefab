@@ -381,7 +381,7 @@ MonoBehaviour:
     Icons:
     - https://walletconnect.com/meta/favicon.ico
     Redirect:
-      Native: myapp://request
+      Native: lostdungeon://request
       Universal: 
     VerifyUrl: 
   ConnectOnAwake: 1
