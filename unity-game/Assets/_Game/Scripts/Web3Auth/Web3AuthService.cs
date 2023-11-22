@@ -68,6 +68,7 @@ public class Web3AuthService : MonoBehaviour
     private void OnEnable()
     {
         wcController.OnConnected += WcController_OnConnected_Handler;
+        wcController.OnDisconnected += WcController_OnDisconnected_Handler;
         /*TODOMETAMASK
         //TODO we could handle this managing MetaMask initialization manually.
         // Get MetaMask UI Handler
@@ -75,7 +76,6 @@ public class Web3AuthService : MonoBehaviour
         _metaMaskUIHandler.onCancelClicked += OnWalletUnauthorized;
         
         MetaMaskUnity.Instance.Wallet.Events.WalletUnauthorized += OnWalletUnauthorized;
-        MetaMaskUnity.Instance.Wallet.Events.WalletDisconnected += OnWalletDisconnected;
         MetaMaskUnity.Instance.Events.EthereumRequestFailed += EventsOnEthereumRequestFailed;
         
         */
@@ -100,11 +100,11 @@ public class Web3AuthService : MonoBehaviour
     private void OnDisable()
     {
         wcController.OnConnected -= WcController_OnConnected_Handler;
+        wcController.OnDisconnected -= WcController_OnDisconnected_Handler;
         /*TODOMETAMASK
         _metaMaskUIHandler.onCancelClicked -= OnWalletUnauthorized;
         
         MetaMaskUnity.Instance.Wallet.Events.WalletUnauthorized -= OnWalletUnauthorized;
-        MetaMaskUnity.Instance.Wallet.Events.WalletDisconnected -= OnWalletDisconnected;
         MetaMaskUnity.Instance.Events.EthereumRequestFailed -= EventsOnEthereumRequestFailed;
         */
         
@@ -170,6 +170,12 @@ public class Web3AuthService : MonoBehaviour
             RequestMessage();
         }
     }
+    
+    private void WcController_OnDisconnected_Handler()
+    {
+        Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
+        ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
+    }
 
     //TODOMETAMASK
     private void OnWalletUnauthorized(object sender, EventArgs e)
@@ -177,12 +183,6 @@ public class Web3AuthService : MonoBehaviour
         Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
         //TODOMETAMASK _metaMaskUIHandler.CloseQRCode();
         Disconnect();
-    }
-
-    private void OnWalletDisconnected(object sender, EventArgs e)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
-        ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
 
     /*TODOMETAMASK
@@ -348,16 +348,37 @@ public class Web3AuthService : MonoBehaviour
         AzureFunctionCaller.CompleteWeb3Auth(tx.id);
     }
 
-    private void OnRegisterSessionFailure()
+    private void OnRegisterSessionFailure(PlayFabError error)
     {
-        // Remove the session key if we have failed during registering a new session
-        var sessionKey = _openfort.LoadSessionKey();
-        if (sessionKey == null)
+        var errorReport = error.GenerateErrorReport();
+        
+        // If function timeout
+        if (errorReport.ToLower().Contains("10000ms"))
         {
-            _openfort.RemoveSessionKey();
-        }
+            //TODO we should retry the registration of the sessionKey
+            // Timeout means most probably succeeded.
+            Debug.Log("RegisterSession timeout.");
+            // Remove the session key if we have failed during registering a new session
+            var sessionKey = _openfort.LoadSessionKey();
+            if (sessionKey == null)
+            {
+                _openfort.RemoveSessionKey();
+            }
 
-        Disconnect();
+            Disconnect();
+        }
+        else
+        {
+            Debug.Log("RegisterSession failed.");
+            // Remove the session key if we have failed during registering a new session
+            var sessionKey = _openfort.LoadSessionKey();
+            if (sessionKey == null)
+            {
+                _openfort.RemoveSessionKey();
+            }
+
+            Disconnect();
+        }
     }
 
     private void OnCompleteWeb3AuthSuccess(string result)
@@ -462,7 +483,7 @@ public class Web3AuthService : MonoBehaviour
         ChangeState(State.Disconnecting);
 
         #if !UNITY_WEBGL
-        //TODOMETAMASK MetaMaskUnity.Instance.Wallet.EndSession(true);
+        wcController.Disconnect();
         #else
         Web3GL.Instance.Disconnect();
         #endif
