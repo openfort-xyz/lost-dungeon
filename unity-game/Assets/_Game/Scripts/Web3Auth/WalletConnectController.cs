@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 using WalletConnect;
 using WalletConnectSharp.Sign.Models;
 using WalletConnectSharp.Sign.Models.Engine;
@@ -11,8 +12,9 @@ using WalletConnectUnity.Utils;
 
 public class WalletConnectController : MonoBehaviour
 {
+    public event UnityAction<SessionStruct> OnConnected;
+    
     [SerializeField] private WCSignClient WC;
-
     
     [SerializeField] private bool autoDisconnect;
     
@@ -108,6 +110,7 @@ public class WalletConnectController : MonoBehaviour
             {
                 Debug.Log($"Connection approved, URI: {connectData.Uri}");
                 CurrentSession = connectData.Approval.Result;
+                OnConnected?.Invoke(CurrentSession);
             });
         }
         catch (Exception e)
@@ -115,5 +118,57 @@ public class WalletConnectController : MonoBehaviour
             Debug.LogError(("Connection failed: " + e.Message));
             Debug.LogError(e);
         }
+    }
+    
+    public string GetConnectedAddress()
+    {
+        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
+            
+        if (string.IsNullOrWhiteSpace(defaultChain))
+            return null;
+
+        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
+        
+        if (defaultNamespace.Accounts.Length == 0)
+            return null;
+            
+        var fullAddress = defaultNamespace.Accounts[0];
+        var addressParts = fullAddress.Split(":");
+            
+        var address = addressParts[2];
+
+        return address;
+    }
+    
+    public int? GetChainId()
+    {
+        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
+    
+        if (string.IsNullOrWhiteSpace(defaultChain))
+            return null;
+
+        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
+    
+        if (defaultNamespace.Chains.Length == 0)
+            return null;
+
+        // Assuming we need the last chain if there are multiple chains
+        var fullChain = defaultNamespace.Chains.LastOrDefault();
+
+        if (string.IsNullOrWhiteSpace(fullChain))
+            return null;
+
+        var chainParts = fullChain.Split(':');
+
+        // Check if the split operation gives at least 2 parts
+        if (chainParts.Length < 2)
+            return null;
+
+        if (int.TryParse(chainParts[1], out int chainId))
+        {
+            return chainId;
+        }
+
+        return null;
     }
 }
