@@ -31,53 +31,58 @@ public class WalletConnectController : MonoBehaviour
     public event UnityAction<SessionStruct> OnConnected;
     public event UnityAction OnDisconnected;
     
-    [SerializeField] private WCSignClient WC;
-    
-    [SerializeField] private bool autoDisconnect;
+    [Header("WC Components")]
+    [SerializeField] private WCSignClient wcSignClient;
+    [SerializeField] private WCQRCodeHandler wcQrCodeHandler;
     
     [HideInInspector] public SessionStruct CurrentSession;
 
     #region UNITY_LIFECYCLE
     private void Start()
     {
-        WC.OnSessionApproved += WCOnOnSessionApproved;
-        WC.SessionDeleted += WCOnSessionDeleted;
+        wcSignClient.OnSessionApproved += WcSignClientOnOnSessionApproved;
+        wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
+        wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
     }
 
     private void OnDisable()
     {
-        WC.OnSessionApproved -= WCOnOnSessionApproved;
-        WC.SessionDeleted -= WCOnSessionDeleted;
+        wcSignClient.OnSessionApproved -= WcSignClientOnOnSessionApproved;
+        wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
+        wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
 
-    private void WCOnOnSessionApproved(object sender, SessionStruct e) => MTQ.Enqueue(() =>
+    private void WcSignClientOnOnSessionApproved(object sender, SessionStruct e) => MTQ.Enqueue(() =>
     {
         //TODO Estem connectats!!!
         Debug.LogWarning("WC SESSION APPROVED");
         //Session = e;
     });
 
-    private void WCOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
+    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
     {
         Debug.LogWarning("WC SESSION DELETED");
         OnDisconnected?.Invoke();
     });
+    
+    private void WcQrCodeHandlerOnOnCancelButtonClicked()
+    {
+        // No need for real disconnection as we're not connected yet.
+        OnDisconnected?.Invoke();
+    }
 
     public void Disconnect()
     {
-        if (autoDisconnect)
-        {
-            WC.Disconnect(CurrentSession.Topic);   
-        }
+        wcSignClient.Disconnect(CurrentSession.Topic); 
     }
     
     public async void Connect()
     {
-        if (WC.SignClient == null)
-            await WC.InitSignClient();
+        if (wcSignClient.SignClient == null)
+            await wcSignClient.InitSignClient();
 
-        if (WC == null)
+        if (wcSignClient == null)
         {
             Debug.LogError("No WCSignClient scripts found in scene!");
             return;
@@ -115,7 +120,7 @@ public class WalletConnectController : MonoBehaviour
             RequiredNamespaces = requiredNamespaces
         };
 
-        var connectData = await WC.Connect(dappConnectOptions);
+        var connectData = await wcSignClient.Connect(dappConnectOptions);
         
         Debug.Log($"Connection successful, URI: {connectData.Uri}");
 
@@ -205,7 +210,7 @@ public class WalletConnectController : MonoBehaviour
         var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();                                    
         var request = new PersonalSign(hexUtf8, address);                                        
                                                                                                      
-        var result = await WC.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
+        var result = await wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
                      
         Debug.Log("Got result from request: " + result);
         
