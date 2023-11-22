@@ -1,5 +1,4 @@
 using System;
-using MetaMask.Unity;
 using Openfort;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -142,7 +141,7 @@ public class MenuSceneManager : MonoBehaviour
 
         // Logout from Web3
 #if !UNITY_WEBGL
-        MetaMaskUnity.Instance.Disconnect(true);
+        //TODOMETAMASK MetaMaskUnity.Instance.Disconnect(true);
 #else
         Web3GL.Instance.Disconnect();        
 #endif

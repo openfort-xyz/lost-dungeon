@@ -2,19 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using MetaMask;
-using MetaMask.Models;
-using MetaMask.Transports.Unity.UI;
-using MetaMask.Unity;
 using UnityEngine;
 using UnityEngine.Events;
 using Openfort;
 using PlayFab;
 using PlayFab.ClientModels;
+using UnityEngine.Serialization;
+using WalletConnect;
+using WalletConnectSharp.Sign.Models;
+using WalletConnectSharp.Sign.Models.Engine;
 
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
 public class Web3AuthService : MonoBehaviour
 {
+    [Header("Wallet Connectors")] [SerializeField]
+    private WalletConnectController wcController;
+    
     public enum State
     {
         None,
@@ -58,25 +61,15 @@ public class Web3AuthService : MonoBehaviour
     private int? _currentChainId;
     
     private OpenfortClient _openfort;
-    private MetaMaskUnityUIHandler _metaMaskUIHandler;
 
     [HideInInspector] public bool authCompletedOnce;
 
     #region UNITY_LIFECYCLE
     private void OnEnable()
     {
-        //TODO we could handle this managing MetaMask initialization manually.
-        // Get MetaMask UI Handler
-        _metaMaskUIHandler = FindObjectOfType<MetaMaskUnityUIHandler>();
-        _metaMaskUIHandler.onCancelClicked += OnWalletUnauthorized;
-        
-        // MetaMaskUnity Events
-        MetaMaskUnity.Instance.Wallet.Events.WalletConnected += OnWalletConnected;
-        MetaMaskUnity.Instance.Wallet.Events.WalletAuthorized += OnWalletAuthorized;
-        MetaMaskUnity.Instance.Wallet.Events.WalletReady += OnWalletReady;
-        MetaMaskUnity.Instance.Wallet.Events.WalletUnauthorized += OnWalletUnauthorized;
-        MetaMaskUnity.Instance.Wallet.Events.WalletDisconnected += OnWalletDisconnected;
-        MetaMaskUnity.Instance.Events.EthereumRequestFailed += EventsOnEthereumRequestFailed;
+        // WC Events
+        wcController.OnConnected += WcController_OnConnected_Handler;
+        wcController.OnDisconnected += WcController_OnDisconnected_Handler;
 
 #if UNITY_WEBGL
         // Web3GL Events
@@ -97,15 +90,9 @@ public class Web3AuthService : MonoBehaviour
 
     private void OnDisable()
     {
-        _metaMaskUIHandler.onCancelClicked -= OnWalletUnauthorized;
-        
-        // MetaMaskUnity Events
-        MetaMaskUnity.Instance.Wallet.Events.WalletConnected -= OnWalletConnected;
-        MetaMaskUnity.Instance.Wallet.Events.WalletAuthorized -= OnWalletAuthorized;
-        MetaMaskUnity.Instance.Wallet.Events.WalletReady -= OnWalletReady;
-        MetaMaskUnity.Instance.Wallet.Events.WalletUnauthorized -= OnWalletUnauthorized;
-        MetaMaskUnity.Instance.Wallet.Events.WalletDisconnected -= OnWalletDisconnected;
-        MetaMaskUnity.Instance.Events.EthereumRequestFailed -= EventsOnEthereumRequestFailed;
+        // WC Events
+        wcController.OnConnected -= WcController_OnConnected_Handler;
+        wcController.OnDisconnected -= WcController_OnDisconnected_Handler;
         
 #if UNITY_WEBGL
         // Web3GL Events
@@ -126,7 +113,6 @@ public class Web3AuthService : MonoBehaviour
     private void Start()
     {
         _openfort = new OpenfortClient(OFStaticData.PublishableKey);
-        MetaMaskUnity.Instance.clearSessionData = true;
     }
 
     private void OnApplicationQuit()
@@ -141,20 +127,18 @@ public class Web3AuthService : MonoBehaviour
     {
         ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
 
-#if UNITY_WEBGL
+        #if UNITY_WEBGL
         Web3GL.Instance.Connect();
-#else
-        MetaMaskUnity.Instance.Wallet.Connect();
-        // Connect
-        //MetaMaskUnity.Instance.Connect();
-#endif
+        #else
+        wcController.Connect();
+        #endif
     }
     #endregion
 
-    #region METAMASK_EVENT_HANDLERS
-    private async void OnWalletReady(object sender, EventArgs e)
+    #region WC_EVENT_HANDLERS
+    private async void WcController_OnConnected_Handler(SessionStruct session)
     {
-        Debug.Log("WEB3AUTHSERVICE: WALLET READY");
+        Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
         if (authCompletedOnce)
         {
             bool correctAddress = await CheckIfCorrectAccount();
@@ -169,46 +153,14 @@ public class Web3AuthService : MonoBehaviour
         }
         else
         {
-            RequestMessage();   
+            RequestMessage();
         }
     }
     
-    private void OnWalletUnauthorized(object sender, EventArgs e)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
-        _metaMaskUIHandler.CloseQRCode();
-        Disconnect();
-    }
-
-    private void OnWalletDisconnected(object sender, EventArgs e)
+    private void WcController_OnDisconnected_Handler()
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
         ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
-    }
-
-    private void EventsOnEthereumRequestFailed(object sender, MetaMaskEthereumRequestFailedEventArgs eventArgs)
-    {
-        switch (eventArgs.Request.Method)
-        {
-            case "eth_requestAccounts":
-                //TODO We don't need it? OnWalletUnauthorized(sender, eventArgs);
-                break;
-            case "personal_sign":
-                Disconnect();
-                break;
-        }
-    }
-    
-    // Not used as OnWalletReady works best
-    private void OnWalletAuthorized(object sender, EventArgs e)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET AUTHORIZED");
-    }
-    
-    // Not used as OnWalletReady works best
-    private void OnWalletConnected(object sender, EventArgs e)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
     }
     #endregion
 
@@ -229,23 +181,23 @@ public class Web3AuthService : MonoBehaviour
         }
         else
         {
-            RequestMessage();   
+            RequestMessage();
         }
     }
-    
+
     private void OnWeb3GLConnectionFailure(string obj)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
         Disconnect();
     }
-    
+
     private void OnWeb3GLDisconnected(string obj)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
         ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
     #endregion
-    
+
     #region AZURE_FUNCTION_CALLER_EVENT_HANDLERS
     private async void OnChallengeRequestSuccess(string requestResponse)
     {
@@ -254,29 +206,19 @@ public class Web3AuthService : MonoBehaviour
         var response = JsonUtility.FromJson<ChallengeRequestResponse>(requestResponse);
 
         string signature = null;
-        
-#if UNITY_WEBGL
-        signature = await Web3GL.Instance.Sign(response.message, response.address);
-#else
-        string fromAddress = MetaMaskUnity.Instance.Wallet.SelectedAddress;
-        var paramsArray = new string[] { fromAddress, response.message };
 
-        var ethereumRequest = new MetaMaskEthereumRequest
-        {
-            Method = "personal_sign",
-            Parameters = paramsArray
-        };
-        
-        var ethRequestResult = await MetaMaskUnity.Instance.Wallet.Request(ethereumRequest);
-        signature = ethRequestResult.ToString();
-#endif
+        #if UNITY_WEBGL
+        signature = await Web3GL.Instance.Sign(response.message, response.address);
+        #else
+        signature = await wcController.Sign(response.message, response.address);
+        #endif
 
         if (string.IsNullOrEmpty(signature))
         {
             Disconnect();
             return;
         }
-        
+
         if (authCompletedOnce)
         {
             RegisterSession();
@@ -287,11 +229,11 @@ public class Web3AuthService : MonoBehaviour
             ChangeState(State.VerifyingSignature);
         }
     }
-    
+
     private void OnChallengeVerifySuccess()
     {
         Debug.Log("ChallengeVerify success.");
-        
+
         //////// Get OF Player ID
         // Create the request object
         GetUserDataRequest request = new GetUserDataRequest
@@ -313,7 +255,7 @@ public class Web3AuthService : MonoBehaviour
                 // Access the value of OFplayer
                 string ofPlayer = result.Data[OFStaticData.OFplayerKey].Value;
                 OFStaticData.OFplayerValue = ofPlayer;
-                
+
                 string ownerAddress = result.Data[OFStaticData.OFownerAddressKey].Value;
                 OFStaticData.OFownerAddressValue = ownerAddress;
 
@@ -326,42 +268,33 @@ public class Web3AuthService : MonoBehaviour
             }
         );
     }
-    
+
     private async void OnRegisterSessionSuccess(string txString)
     {
         Debug.Log("RegisterSessionSuccess");
         ChangeState(State.SigningSession);
-        
+
         var tx = JsonUtility.FromJson<Transaction>(txString);
-        
+
         Debug.Log("USEROPHASH: " + tx.userOpHash);
 
         string signature = null;
-        
-#if UNITY_WEBGL
+
+        #if UNITY_WEBGL
         var address = await Web3GL.Instance.GetConnectedAddressAsync();
         signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
-#else
-        string fromAddress = MetaMaskUnity.Instance.Wallet.SelectedAddress;
-        var paramsArray = new string[] { fromAddress, tx.userOpHash };
+        #else
+        var address = wcController.GetConnectedAddress();
+        signature = await wcController.Sign(tx.userOpHash, address);
+        #endif
 
-        var ethereumRequest = new MetaMaskEthereumRequest
-        {
-            Method = "personal_sign",
-            Parameters = paramsArray
-        };
-        
-        var ethRequestResult = await MetaMaskUnity.Instance.Wallet.Request(ethereumRequest);
-        signature = ethRequestResult.ToString();
-#endif
-        
         if (string.IsNullOrEmpty(signature))
         {
             Debug.Log("Signature failed.");
             Disconnect();
             return;
         }
-        
+
         ChangeState(State.SessionSigned);
 
         try
@@ -377,19 +310,40 @@ public class Web3AuthService : MonoBehaviour
 
         AzureFunctionCaller.CompleteWeb3Auth(tx.id);
     }
-    
-    private void OnRegisterSessionFailure()
+
+    private void OnRegisterSessionFailure(PlayFabError error)
     {
-        // Remove the session key if we have failed during registering a new session
-        var sessionKey = _openfort.LoadSessionKey();
-        if (sessionKey == null)
-        {
-            _openfort.RemoveSessionKey();
-        }
+        var errorReport = error.GenerateErrorReport();
         
-        Disconnect();
+        // If function timeout
+        if (errorReport.ToLower().Contains("10000ms"))
+        {
+            //TODO we should retry the registration of the sessionKey
+            // Timeout means most probably succeeded.
+            Debug.Log("RegisterSession timeout.");
+            // Remove the session key if we have failed during registering a new session
+            var sessionKey = _openfort.LoadSessionKey();
+            if (sessionKey == null)
+            {
+                _openfort.RemoveSessionKey();
+            }
+
+            Disconnect();
+        }
+        else
+        {
+            Debug.Log("RegisterSession failed.");
+            // Remove the session key if we have failed during registering a new session
+            var sessionKey = _openfort.LoadSessionKey();
+            if (sessionKey == null)
+            {
+                _openfort.RemoveSessionKey();
+            }
+
+            Disconnect();
+        }
     }
-    
+
     private void OnCompleteWeb3AuthSuccess(string result)
     {
         Debug.Log(result);
@@ -410,13 +364,13 @@ public class Web3AuthService : MonoBehaviour
     {
         ChangeState(State.WalletConnected);
 
-#if UNITY_WEBGL
+        #if UNITY_WEBGL
         _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
         _currentChainId = await Web3GL.Instance.GetChainIdAsync();
-#else
-        _currentAddress = MetaMaskUnity.Instance.Wallet.ConnectedAddress;
-        _currentChainId = (int)MetaMaskUnity.Instance.Wallet.ChainId;
-#endif
+        #else
+        _currentAddress = wcController.GetConnectedAddress();
+        _currentChainId = wcController.GetChainId();
+        #endif
 
         Debug.Log("Address: " + _currentAddress);
         Debug.Log("IntegerChainId: " + _currentChainId);
@@ -426,22 +380,22 @@ public class Web3AuthService : MonoBehaviour
             Debug.Log("Wallet Address or ChainId null or empty.");
             return;
         }
-        
+
         AzureFunctionCaller.ChallengeRequest(_currentAddress, _currentChainId);
         ChangeState(State.RequestingMessage);
     }
-    
+
     private void RegisterSession()
     {
         ChangeState(State.RegisteringSession);
-            
+
         // IMPORTANT Clear current session key if existent
         var loadedSessionKey = _openfort.LoadSessionKey();
         if (loadedSessionKey != null)
         {
-            _openfort.RemoveSessionKey();   
+            _openfort.RemoveSessionKey();
         }
-        
+
         // To get public key use keyPair.PublicBase64 property
         var sessionKey = _openfort.CreateSessionKey();
         if (sessionKey == null)
@@ -449,10 +403,10 @@ public class Web3AuthService : MonoBehaviour
             Disconnect();
             return;
         }
-            
+
         // In case of the previous step success save the key
         _openfort.SaveSessionKey();
-        
+
         // Register session
         AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
     }
@@ -460,11 +414,11 @@ public class Web3AuthService : MonoBehaviour
     private async UniTask<bool> CheckIfCorrectAccount()
     {
         //TODO??
-#if UNITY_WEBGL
+        #if UNITY_WEBGL
         _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
-#else
-        _currentAddress = MetaMaskUnity.Instance.Wallet.ConnectedAddress;
-#endif
+        #else
+        _currentAddress = wcController.GetConnectedAddress(); 
+        #endif
 
         if (string.IsNullOrEmpty(_currentAddress))
         {
@@ -486,19 +440,19 @@ public class Web3AuthService : MonoBehaviour
 
         return true;
     }
-    
+
     private void Disconnect()
     {
         ChangeState(State.Disconnecting);
 
-#if !UNITY_WEBGL
-        MetaMaskUnity.Instance.Wallet.EndSession(true);
-#else
+        #if !UNITY_WEBGL
+        wcController.Disconnect();
+        #else
         Web3GL.Instance.Disconnect();
-#endif
+        #endif
     }
     #endregion
-    
+
     #region STATE_MACHINE
     public void ChangeState(State newState)
     {
