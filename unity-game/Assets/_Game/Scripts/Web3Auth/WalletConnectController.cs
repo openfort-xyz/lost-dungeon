@@ -29,6 +29,7 @@ public class WalletConnectController : MonoBehaviour
     }
     
     public event UnityAction<SessionStruct> OnConnected;
+    public event UnityAction OnDisconnected;
     
     [SerializeField] private WCSignClient WC;
     
@@ -41,14 +42,6 @@ public class WalletConnectController : MonoBehaviour
     {
         WC.OnSessionApproved += WCOnOnSessionApproved;
         WC.SessionDeleted += WCOnSessionDeleted;
-    }
-
-    private void OnApplicationQuit()
-    {
-        if (autoDisconnect)
-        {
-            WC.Disconnect(CurrentSession.Topic);   
-        }
     }
 
     private void OnDisable()
@@ -67,9 +60,17 @@ public class WalletConnectController : MonoBehaviour
 
     private void WCOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
     {
-        //TODO
         Debug.LogWarning("WC SESSION DELETED");
+        OnDisconnected?.Invoke();
     });
+
+    public void Disconnect()
+    {
+        if (autoDisconnect)
+        {
+            WC.Disconnect(CurrentSession.Topic);   
+        }
+    }
     
     public async void Connect()
     {
