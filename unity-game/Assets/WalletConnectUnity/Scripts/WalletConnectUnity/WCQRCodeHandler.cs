@@ -13,6 +13,8 @@ using WalletConnectUnity.Utils;
 
 public class WCQRCodeHandler : BindableMonoBehavior
 {
+    public event UnityAction OnCancelButtonClicked;
+    
     [Inject]
     private WCSignClient _signClient;
     
@@ -132,5 +134,10 @@ public class WCQRCodeHandler : BindableMonoBehavior
     {
         // Copy the URL to the clipboard to allow for manual connection in wallet apps that support it
         GUIUtility.systemCopyBuffer = currentConnectData.Uri;
+    }
+
+    public void CancelButtonClickHandler()
+    {
+        OnCancelButtonClicked?.Invoke();
     }
 }
