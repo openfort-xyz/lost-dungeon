@@ -40,42 +40,18 @@ public class WalletConnectController : MonoBehaviour
     #region UNITY_LIFECYCLE
     private void Start()
     {
-        wcSignClient.OnSessionApproved += WcSignClientOnOnSessionApproved;
+        wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
         wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
     }
 
     private void OnDisable()
     {
-        wcSignClient.OnSessionApproved -= WcSignClientOnOnSessionApproved;
+        wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
         wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
-
-    private void WcSignClientOnOnSessionApproved(object sender, SessionStruct e) => MTQ.Enqueue(() =>
-    {
-        //TODO Estem connectats!!!
-        Debug.LogWarning("WC SESSION APPROVED");
-        //Session = e;
-    });
-
-    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
-    {
-        Debug.LogWarning("WC SESSION DELETED");
-        OnDisconnected?.Invoke();
-    });
-    
-    private void WcQrCodeHandlerOnOnCancelButtonClicked()
-    {
-        // No need for real disconnection as we're not connected yet.
-        OnDisconnected?.Invoke();
-    }
-
-    public void Disconnect()
-    {
-        wcSignClient.Disconnect(CurrentSession.Topic); 
-    }
     
     public async void Connect()
     {
@@ -144,6 +120,11 @@ public class WalletConnectController : MonoBehaviour
         }
     }
     
+    public void Disconnect()
+    {
+        wcSignClient.Disconnect(CurrentSession.Topic); 
+    }
+    
     public async Task<string> Sign(string message, string address)
     {
         var result = await PersonalSignAsync(message, address);
@@ -201,6 +182,27 @@ public class WalletConnectController : MonoBehaviour
 
         return null;
     }
+
+    #region EVENT_HANDLERS
+    private void WcSignClientOnSessionConnectionErrored(object sender, Exception e)
+    {
+        Debug.LogWarning("WC SESSION CONNECTION ERROR");
+        // No need for real disconnection as we're not connected yet.
+        OnDisconnected?.Invoke();
+    }
+    
+    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
+    {
+        Debug.LogWarning("WC SESSION DELETED");
+        OnDisconnected?.Invoke();
+    });
+    
+    private void WcQrCodeHandlerOnOnCancelButtonClicked()
+    {
+        Debug.LogWarning("WC CANCEL BUTTON CLICKED");
+        OnDisconnected?.Invoke();
+    }
+    #endregion
 
     #region PRIVATE_METHODS
     private async Task<string> PersonalSignAsync(string message, string address)                                          
