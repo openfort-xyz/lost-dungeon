@@ -21,7 +21,7 @@ public static partial class AzureFunctionCaller
     public static Action<OpenfortPlayerResponse> onCreateOpenfortPlayerSuccess;
 
     public static Action onCreateOpenfortPlayerFailure;
-    public static Action onRegisterSessionFailure;
+    public static Action<PlayFabError> onRegisterSessionFailure;
     // Any Request failure
     public static Action onRequestFailure;
 
@@ -202,7 +202,7 @@ public static partial class AzureFunctionCaller
     private static void OnRegisterSessionFailure(PlayFabError error)
     {
         Debug.Log($"Oops, something went wrong: {error.GenerateErrorReport()}");
-        onRegisterSessionFailure?.Invoke();
+        onRegisterSessionFailure?.Invoke(error);
     }
     
     // Almost all AzureFunctionCaller partial classes use this.
