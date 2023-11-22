@@ -1,17 +1,33 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using WalletConnect;
+using WalletConnectSharp.Common.Utils;
+using WalletConnectSharp.Network.Models;
 using WalletConnectSharp.Sign.Models;
 using WalletConnectSharp.Sign.Models.Engine;
 using WalletConnectSharp.Sign.Models.Engine.Events;
-using WalletConnectUnity.Demo.SimpleSign;
 using WalletConnectUnity.Utils;
 
 public class WalletConnectController : MonoBehaviour
 {
+    [RpcMethod("personal_sign")]
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99998)]
+    private class PersonalSign : List<string>
+    {
+        public PersonalSign(string hexUtf8, string account) : base(new[] { hexUtf8, account })
+        {
+        }
+        
+        public PersonalSign()                                              
+        {                                                                  
+        }     
+    }
+    
     public event UnityAction<SessionStruct> OnConnected;
     
     [SerializeField] private WCSignClient WC;
@@ -19,7 +35,8 @@ public class WalletConnectController : MonoBehaviour
     [SerializeField] private bool autoDisconnect;
     
     [HideInInspector] public SessionStruct CurrentSession;
-    
+
+    #region UNITY_LIFECYCLE
     private void Start()
     {
         WC.OnSessionApproved += WCOnOnSessionApproved;
@@ -39,6 +56,7 @@ public class WalletConnectController : MonoBehaviour
         WC.OnSessionApproved -= WCOnOnSessionApproved;
         WC.SessionDeleted -= WCOnSessionDeleted;
     }
+    #endregion
 
     private void WCOnOnSessionApproved(object sender, SessionStruct e) => MTQ.Enqueue(() =>
     {
@@ -120,6 +138,12 @@ public class WalletConnectController : MonoBehaviour
         }
     }
     
+    public async Task<string> Sign(string message, string address)
+    {
+        var result = await PersonalSignAsync(message, address);
+        return result;
+    }
+    
     public string GetConnectedAddress()
     {
         var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
@@ -171,4 +195,20 @@ public class WalletConnectController : MonoBehaviour
 
         return null;
     }
+
+    #region PRIVATE_METHODS
+    private async Task<string> PersonalSignAsync(string message, string address)                                          
+    {                                                                                                                                                                                                         
+        var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
+
+        var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();                                    
+        var request = new PersonalSign(hexUtf8, address);                                        
+                                                                                                     
+        var result = await WC.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
+                     
+        Debug.Log("Got result from request: " + result);
+        
+        return result;                                                                                 
+    }    
+    #endregion
 }

@@ -247,19 +247,7 @@ public class Web3AuthService : MonoBehaviour
         #if UNITY_WEBGL
         signature = await Web3GL.Instance.Sign(response.message, response.address);
         #else
-            /*TODOMETAMASK
-        string fromAddress = MetaMaskUnity.Instance.Wallet.SelectedAddress;
-        var paramsArray = new string[] { fromAddress, response.message };
-
-        var ethereumRequest = new MetaMaskEthereumRequest
-        {
-            Method = "personal_sign",
-            Parameters = paramsArray
-        };
-
-        var ethRequestResult = await MetaMaskUnity.Instance.Wallet.Request(ethereumRequest);
-        signature = ethRequestResult.ToString();
-        */
+        signature = await wcController.Sign(response.message, response.address);
         #endif
 
         if (string.IsNullOrEmpty(signature))
@@ -333,19 +321,8 @@ public class Web3AuthService : MonoBehaviour
         var address = await Web3GL.Instance.GetConnectedAddressAsync();
         signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
         #else
-            /*TODOMETAMASK
-        string fromAddress = MetaMaskUnity.Instance.Wallet.SelectedAddress;
-        var paramsArray = new string[] { fromAddress, tx.userOpHash };
-
-        var ethereumRequest = new MetaMaskEthereumRequest
-        {
-            Method = "personal_sign",
-            Parameters = paramsArray
-        };
-
-        var ethRequestResult = await MetaMaskUnity.Instance.Wallet.Request(ethereumRequest);
-        signature = ethRequestResult.ToString();
-        */
+        var address = wcController.GetConnectedAddress();
+        signature = await wcController.Sign(tx.userOpHash, address);
         #endif
 
         if (string.IsNullOrEmpty(signature))
