@@ -36,6 +36,9 @@ public class WCQRCodeHandler : BindableMonoBehavior
     
     [Serializable]
     public class SignClientAuthorizedEventArgs : UnityEvent<SessionStruct> {}
+    
+    [Serializable]
+    public class SignClientConnectionErrorEvent : UnityEvent {}
 
     [SerializeField]
     private SignClientConnectEvent onSignClientReady = new SignClientConnectEvent();
@@ -47,6 +50,8 @@ public class WCQRCodeHandler : BindableMonoBehavior
     private SignClientAuthorizedEvent onSignClientAuthorized = new SignClientAuthorizedEvent();
     [SerializeField]
     private SignClientAuthorizedEventArgs onSignClientAuthorizedWithArgs = new SignClientAuthorizedEventArgs();
+    [SerializeField]
+    private SignClientConnectionErrorEvent onSignClientConnectionError = new SignClientConnectionErrorEvent();
 
     private ConnectedData currentConnectData;
 
@@ -56,6 +61,7 @@ public class WCQRCodeHandler : BindableMonoBehavior
         
         _signClient.OnConnect += SignClientOnOnConnect;
         _signClient.OnSessionApproved += SignClientOnOnSessionApproved;
+        _signClient.SessionConnectionErrored += SignClientOnSessionConnectionErrored;
     }
 
     private void SignClientOnOnSessionApproved(object sender, SessionStruct e)
@@ -83,6 +89,14 @@ public class WCQRCodeHandler : BindableMonoBehavior
             StartCoroutine(ShowLoader(e));
         }
         TriggerEvents(e);
+    }
+    
+    private void SignClientOnSessionConnectionErrored(object sender, Exception e)
+    {
+        MTQ.Enqueue(() =>
+        {
+            onSignClientConnectionError?.Invoke();
+        });
     }
 
     private void TriggerEvents(ConnectedData e)
