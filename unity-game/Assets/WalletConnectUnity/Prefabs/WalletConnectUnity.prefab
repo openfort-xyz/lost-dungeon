@@ -333,6 +333,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2565653752300045184}
   - component: {fileID: 2565653752300045185}
+  - component: {fileID: 2128927510}
   - component: {fileID: 2565653752300045186}
   - component: {fileID: 2565653752300045191}
   - component: {fileID: 2565653752300045190}
@@ -393,6 +394,19 @@ MonoBehaviour:
   AlwaysUseDeeplink: 0
   DefaultWalletId: 4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0
   StorageType: 1
+--- !u!114 &2128927510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2565653752300045187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be269e370f994eb4d8a9448d1803b7e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  wcQrCodeHandler: {fileID: 2565653752300045191}
 --- !u!114 &2565653752300045186
 MonoBehaviour:
   m_ObjectHideFlags: 0
