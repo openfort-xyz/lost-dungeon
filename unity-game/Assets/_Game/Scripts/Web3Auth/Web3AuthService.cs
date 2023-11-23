@@ -15,8 +15,7 @@ using WalletConnectSharp.Sign.Models.Engine;
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
 public class Web3AuthService : MonoBehaviour
 {
-    [Header("Wallet Connectors")] [SerializeField]
-    private WalletConnectController wcController;
+    private WalletConnectController _wcController;
     
     public enum State
     {
@@ -65,11 +64,21 @@ public class Web3AuthService : MonoBehaviour
     [HideInInspector] public bool authCompletedOnce;
 
     #region UNITY_LIFECYCLE
+
+    private void Awake()
+    {
+        _wcController = FindObjectOfType<WalletConnectController>();
+        if (_wcController == null)
+        {
+            Debug.LogError("WalletConnectController not found. Web3AuthService needs it to function.");
+        }
+    }
+
     private void OnEnable()
     {
         // WC Events
-        wcController.OnConnected += WcController_OnConnected_Handler;
-        wcController.OnDisconnected += WcController_OnDisconnected_Handler;
+        _wcController.OnConnected += WcController_OnConnected_Handler;
+        _wcController.OnDisconnected += WcController_OnDisconnected_Handler;
 
 #if UNITY_WEBGL
         // Web3GL Events
@@ -91,8 +100,8 @@ public class Web3AuthService : MonoBehaviour
     private void OnDisable()
     {
         // WC Events
-        wcController.OnConnected -= WcController_OnConnected_Handler;
-        wcController.OnDisconnected -= WcController_OnDisconnected_Handler;
+        _wcController.OnConnected -= WcController_OnConnected_Handler;
+        _wcController.OnDisconnected -= WcController_OnDisconnected_Handler;
         
 #if UNITY_WEBGL
         // Web3GL Events
@@ -130,7 +139,7 @@ public class Web3AuthService : MonoBehaviour
         #if UNITY_WEBGL
         Web3GL.Instance.Connect();
         #else
-        wcController.Connect();
+        _wcController.Connect();
         #endif
     }
     #endregion
@@ -210,7 +219,7 @@ public class Web3AuthService : MonoBehaviour
         #if UNITY_WEBGL
         signature = await Web3GL.Instance.Sign(response.message, response.address);
         #else
-        signature = await wcController.Sign(response.message, response.address);
+        signature = await _wcController.Sign(response.message, response.address);
         #endif
 
         if (string.IsNullOrEmpty(signature))
@@ -284,8 +293,8 @@ public class Web3AuthService : MonoBehaviour
         var address = await Web3GL.Instance.GetConnectedAddressAsync();
         signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
         #else
-        var address = wcController.GetConnectedAddress();
-        signature = await wcController.Sign(tx.userOpHash, address);
+        var address = _wcController.GetConnectedAddress();
+        signature = await _wcController.Sign(tx.userOpHash, address);
         #endif
 
         if (string.IsNullOrEmpty(signature))
@@ -368,8 +377,8 @@ public class Web3AuthService : MonoBehaviour
         _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
         _currentChainId = await Web3GL.Instance.GetChainIdAsync();
         #else
-        _currentAddress = wcController.GetConnectedAddress();
-        _currentChainId = wcController.GetChainId();
+        _currentAddress = _wcController.GetConnectedAddress();
+        _currentChainId = _wcController.GetChainId();
         #endif
 
         Debug.Log("Address: " + _currentAddress);
@@ -417,7 +426,7 @@ public class Web3AuthService : MonoBehaviour
         #if UNITY_WEBGL
         _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
         #else
-        _currentAddress = wcController.GetConnectedAddress(); 
+        _currentAddress = _wcController.GetConnectedAddress(); 
         #endif
 
         if (string.IsNullOrEmpty(_currentAddress))
@@ -446,7 +455,7 @@ public class Web3AuthService : MonoBehaviour
         ChangeState(State.Disconnecting);
 
         #if !UNITY_WEBGL
-        wcController.Disconnect();
+        _wcController.Disconnect();
         #else
         Web3GL.Instance.Disconnect();
         #endif

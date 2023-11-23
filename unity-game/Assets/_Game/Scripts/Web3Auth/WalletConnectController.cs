@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityBinder;
 using UnityEngine;
 using UnityEngine.Events;
 using WalletConnect;
@@ -13,7 +14,7 @@ using WalletConnectSharp.Sign.Models.Engine;
 using WalletConnectSharp.Sign.Models.Engine.Events;
 using WalletConnectUnity.Utils;
 
-public class WalletConnectController : MonoBehaviour
+public class WalletConnectController : BindableMonoBehavior
 {
     [RpcMethod("personal_sign")]
     [RpcRequestOptions(Clock.ONE_MINUTE, 99998)]
@@ -31,8 +32,8 @@ public class WalletConnectController : MonoBehaviour
     public event UnityAction<SessionStruct> OnConnected;
     public event UnityAction OnDisconnected;
     
-    [Header("WC Components")]
-    [SerializeField] private WCSignClient wcSignClient;
+    [Inject]
+    private WCSignClient _wcSignClient;
     [SerializeField] private WCQRCodeHandler wcQrCodeHandler;
     
     [HideInInspector] public SessionStruct CurrentSession;
@@ -40,25 +41,25 @@ public class WalletConnectController : MonoBehaviour
     #region UNITY_LIFECYCLE
     private void Start()
     {
-        wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
-        wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
+        _wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
+        _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
     }
 
     private void OnDisable()
     {
-        wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
-        wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
+        _wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
+        _wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
     
     public async void Connect()
     {
-        if (wcSignClient.SignClient == null)
-            await wcSignClient.InitSignClient();
+        if (_wcSignClient.SignClient == null)
+            await _wcSignClient.InitSignClient();
 
-        if (wcSignClient == null)
+        if (_wcSignClient == null)
         {
             Debug.LogError("No WCSignClient scripts found in scene!");
             return;
@@ -96,7 +97,7 @@ public class WalletConnectController : MonoBehaviour
             RequiredNamespaces = requiredNamespaces
         };
 
-        var connectData = await wcSignClient.Connect(dappConnectOptions);
+        var connectData = await _wcSignClient.Connect(dappConnectOptions);
         
         Debug.Log($"Connection successful, URI: {connectData.Uri}");
 
@@ -122,7 +123,7 @@ public class WalletConnectController : MonoBehaviour
     
     public void Disconnect()
     {
-        wcSignClient.Disconnect(CurrentSession.Topic); 
+        _wcSignClient.Disconnect(CurrentSession.Topic); 
     }
     
     public async Task<string> Sign(string message, string address)
@@ -214,7 +215,7 @@ public class WalletConnectController : MonoBehaviour
             var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
             var request = new PersonalSign(hexUtf8, address);                                
         
-            var result = await wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
+            var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
                  
             Debug.Log("Got result from request: " + result);
         
