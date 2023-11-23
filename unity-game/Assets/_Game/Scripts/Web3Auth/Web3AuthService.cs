@@ -13,7 +13,7 @@ using WalletConnectSharp.Sign.Models;
 using WalletConnectSharp.Sign.Models.Engine;
 
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
-public class Web3AuthService : MonoBehaviour
+public class Web3AuthService : MySingleton<Web3AuthService>
 {
     [Header("Wallet Connectors")] [SerializeField]
     private WalletConnectController wcController;
