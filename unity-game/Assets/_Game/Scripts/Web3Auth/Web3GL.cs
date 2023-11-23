@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 using Cysharp.Threading.Tasks;
 
-#if UNITY_WEBGL
+#if UNITY_EDITOR || UNITY_WEBGL
 public class Web3GL : MonoBehaviour
 {
     // Singleton instance

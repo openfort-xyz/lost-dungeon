@@ -450,7 +450,7 @@ public class Web3AuthService : MonoBehaviour
         return true;
     }
 
-    private void Disconnect()
+    public void Disconnect()
     {
         ChangeState(State.Disconnecting);
 

@@ -8,6 +8,9 @@ using UnityEngine.UI;
 
 public class MenuSceneManager : MonoBehaviour
 {
+    public Web3AuthService web3AuthService;
+    
+    [Header("UI Panels")]
     public GameObject MenuPanel;
     public GameObject LeaderboardPanel;
     public GameObject ConfigurationPanel;
@@ -140,11 +143,7 @@ public class MenuSceneManager : MonoBehaviour
         PlayFabClientAPI.ForgetAllCredentials();
 
         // Logout from Web3
-#if !UNITY_WEBGL
-        //TODOMETAMASK MetaMaskUnity.Instance.Disconnect(true);
-#else
-        Web3GL.Instance.Disconnect();        
-#endif
+        web3AuthService.Disconnect();
         
         // Remove openfort session key
         var sessionKey = _openfortClient.LoadSessionKey();
