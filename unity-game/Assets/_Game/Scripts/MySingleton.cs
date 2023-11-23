@@ -1,53 +1,43 @@
 using UnityEngine;
 
-public class MySingleton<T> : MonoBehaviour where T : Component
+public class MySingleton<T> : MonoBehaviour where T : MonoBehaviour
 {
-    // Static instance of the class.
-    private static T _instance;
+    private static T instance;
+    private static object lockObject = new object();
 
-    // Flag to control destruction on load.
-    public bool destroyOnLoad = false;
-
-    // Public access to the instance.
     public static T Instance
     {
         get
         {
-            if (_instance == null)
+            lock (lockObject)
             {
-                // Find the instance in the scene.
-                _instance = FindObjectOfType<T>();
-                if (_instance == null)
+                if (instance == null)
                 {
-                    // Create a new GameObject if no instance is found.
-                    GameObject obj = new GameObject();
-                    obj.name = typeof(T).Name;
-                    _instance = obj.AddComponent<T>();
+                    instance = FindObjectOfType<T>();
+
+                    if (instance == null)
+                    {
+                        GameObject singletonGO = new GameObject(typeof(T).Name);
+                        instance = singletonGO.AddComponent<T>();
+                    }
+
+                    DontDestroyOnLoad(instance.gameObject);
                 }
+
+                return instance;
             }
-            return _instance;
         }
     }
 
     protected virtual void Awake()
     {
-        if (_instance == null)
+        if (instance != null && instance != this)
         {
-            // Initialize the singleton instance.
-            _instance = this as T;
-            if (!destroyOnLoad)
-            {
-                // Make the instance persistent across scenes.
-                DontDestroyOnLoad(this.gameObject);
-            }
+            Destroy(gameObject);
+            return;
         }
-        else
-        {
-            if (this != _instance)
-            {
-                // Destroy if another instance is already present.
-                Destroy(this.gameObject);
-            }
-        }
+
+        instance = this as T;
+        DontDestroyOnLoad(gameObject);
     }
 }

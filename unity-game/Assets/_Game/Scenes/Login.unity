@@ -3340,7 +3340,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b77cd591d44ef4c73b6cca8692a21959, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destroyOnLoad: 0
   wcController: {fileID: 1204259168}
   currentState: 0
   onStateChanged:
