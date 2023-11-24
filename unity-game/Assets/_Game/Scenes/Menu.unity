@@ -4420,7 +4420,7 @@ GameObject:
   - component: {fileID: 1369211552}
   - component: {fileID: 1369211551}
   m_Layer: 0
-  m_Name: TransferOwnershipService
+  m_Name: Web3AuthService
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
