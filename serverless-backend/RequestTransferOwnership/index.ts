@@ -58,6 +58,7 @@ const httpTrigger: AzureFunction = async function (
       context.log("Deployed Account ID: " + deployedAccount.id);
       context.log("New Owner Address: " + newOwnerAddress);
 
+      /*
       const transferResponse = await openfort.players.requestTransferAccountOwnership(
         {
           playerId: playerId,
@@ -66,8 +67,8 @@ const httpTrigger: AzureFunction = async function (
           newOwnerAddress: newOwnerAddress,
         }
       )
+      */
 
-      /*
       const transferResponse = await openfort.accounts.requestTransferOwnership(
         {
           accountId: deployedAccount.id,
@@ -75,7 +76,6 @@ const httpTrigger: AzureFunction = async function (
           newOwnerAddress: newOwnerAddress,
         }
       )
-      */
 
       // Extracting 'id' and 'userOperationHash' from transferResponse
       const transferId = transferResponse.id;
