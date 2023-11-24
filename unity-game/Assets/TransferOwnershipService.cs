@@ -87,7 +87,6 @@ public class TransferOwnershipService : MonoBehaviour
         AzureFunctionCaller.onRegisterSessionSuccess += OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess += OnCompleteWeb3AuthSuccess;
         
-        AzureFunctionCaller.onRequestTransferOwnershipFailure += OnTransferOwnershipFailure;
         AzureFunctionCaller.onRegisterSessionFailure += OnRegisterSessionFailure;
         AzureFunctionCaller.onRequestFailure += OnAnyRequestFailure;
     }
@@ -110,7 +109,6 @@ public class TransferOwnershipService : MonoBehaviour
         AzureFunctionCaller.onRegisterSessionSuccess -= OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess -= OnCompleteWeb3AuthSuccess;
         
-        AzureFunctionCaller.onRequestTransferOwnershipFailure -= OnTransferOwnershipFailure;
         AzureFunctionCaller.onRegisterSessionFailure -= OnRegisterSessionFailure;
         AzureFunctionCaller.onRequestFailure -= OnAnyRequestFailure;
     }
@@ -197,14 +195,9 @@ public class TransferOwnershipService : MonoBehaviour
         RequestTransferOwnership(response.address);
     }
     
-    private void OnTransferOwnershipSuccess(string arg1, string arg2)
+    private void OnTransferOwnershipSuccess(global::Transaction tx)
     {
-        //TODO!!!!!!!!!!!!!
-    }
-    
-    private void OnTransferOwnershipFailure()
-    {
-        Disconnect();
+        Debug.Log(tx);
     }
 
     private async void OnRegisterSessionSuccess(string txString)

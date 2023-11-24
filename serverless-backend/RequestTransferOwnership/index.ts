@@ -23,6 +23,7 @@ const httpTrigger: AzureFunction = async function (
     }
 
     const playerId = req.body.FunctionArgument.playerId;
+    const newOwnerAddress = req.body.FunctionArgument.newOwnerAddress;
 
     const accounts = await openfort.accounts
       .get({
@@ -44,13 +45,25 @@ const httpTrigger: AzureFunction = async function (
       // Retrieve the ID of the account
       const accountId = accounts.data[0].id;
 
-      // TODO: Perform other tasks with the accountId
-      // For example, request ownership transfer
+      const transferResponse = await openfort.players.transferAccountOwnership(
+        {
+          playerId: playerId,
+          policy: OF_TX_SPONSOR,
+          chainId: 4337,
+          newOwnerAddress: newOwnerAddress,
+        }
+      )
 
-      // Example response with account ID
+      // Extracting 'id' and 'userOperationHash' from transferResponse
+      const transferId = transferResponse.id;
+      const userOperationHash = transferResponse.userOperationHash;
+
       context.res = {
         status: 200,
-        body: { accountId: accountId }
+        body: JSON.stringify({
+          id: transferId,
+          userOpHash: userOperationHash,
+        })
       };
 
     } else {
