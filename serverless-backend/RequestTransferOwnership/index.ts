@@ -1,5 +1,5 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
-import Openfort from "@openfort/openfort-node";
+import Openfort, { AccountResponse } from "@openfort/openfort-node";
 
 const OF_TX_SPONSOR = process.env.OF_TX_SPONSOR;
 const openfort = new Openfort(process.env.OPENFORT_API_KEY);
@@ -46,16 +46,21 @@ const httpTrigger: AzureFunction = async function (
       const accountId = account.id;
       context.log("Account ID: " + accountId);
 
+      let deployedAccount: AccountResponse;
+
       // Deploy account if not deployed
       if (account.deployed === false)
       {
-        const deployResponse = await openfort.accounts.deploy({ id: accountId, policy: OF_TX_SPONSOR });
-        if (!deployResponse) return;
+        deployedAccount = await openfort.accounts.deploy({ id: accountId, policy: OF_TX_SPONSOR });
+        if (!deployedAccount) return;
       };
+
+      context.log("Deployed Account ID: " + deployedAccount.id);
+      context.log("New Owner Address: " + newOwnerAddress);
 
       const transferResponse = await openfort.accounts.requestTransferOwnership(
         {
-          accountId: accountId,
+          accountId: deployedAccount.id,
           policy: OF_TX_SPONSOR,
           newOwnerAddress: newOwnerAddress,
         }
