@@ -39,8 +39,18 @@ const httpTrigger: AzureFunction = async function (
 
     // Check if there is only one account
     if (accounts.data.length === 1) {
+
+      const account = accounts.data[0];
+
       // Retrieve the ID of the account
-      const accountId = accounts.data[0].id;
+      const accountId = account.id;
+      context.log("Account ID: " + accountId);
+
+      // Deploy account if not deployed
+      if (account.deployed === false)
+      {
+        //const deployResponse = await openfort.accounts.
+      };
 
       const transferResponse = await openfort.players.requestTransferAccountOwnership(
         {

@@ -55,6 +55,9 @@ public class Configuration : MonoBehaviour
             case TransferOwnershipService.State.SigningMessage:
                 statusTextLabel.text = "Please sign the message in your wallet.";
                 break;
+            case TransferOwnershipService.State.RequestingOwnershipTransfer:
+                statusTextLabel.text = "Requesting ownership transfer...";
+                break;
             case TransferOwnershipService.State.RegisteringSession:
                 statusTextLabel.text = "Registering openfort session...";
                 break;
