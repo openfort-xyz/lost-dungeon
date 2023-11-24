@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nethereum.Hex.HexTypes;
+using Nethereum.Web3;
 using UnityBinder;
 using UnityEngine;
 using UnityEngine.Events;
@@ -227,6 +229,42 @@ public class WalletConnectController : BindableMonoBehavior
             // Optionally, you can handle the exception more specifically or rethrow it
             return null; // Or handle the failure case appropriately
         }                                                                                 
+    }
+
+    public async Task<string> AcceptAccountOwnership(string contractAddress, string newOwnerAddress)
+    {
+        try
+        {
+            // Contract details
+            string contractABI = "[{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
+
+            // Initialize WalletConnect and Nethereum
+            var web3 = new Web3("https://subnets.avax.network/beam/mainnet/rpc"); // This gets the provider from WalletConnectUnity
+            var contract = web3.Eth.GetContract(contractABI, contractAddress);
+
+            // Get the function from the contract
+            var acceptOwnershipFunction = contract.GetFunction("acceptOwnership");
+
+            // Prepare the transaction input (if the function requires parameters, include them here)
+            var transactionInput = acceptOwnershipFunction.CreateTransactionInput(
+                from: newOwnerAddress,
+                gas: new HexBigInteger(300000), // Set an appropriate gas limit
+                value: new HexBigInteger(0) // Set value if needed, in wei
+            );
+
+            // Send the transaction
+            var transactionHash = await web3.Eth.Transactions.SendTransaction.SendRequestAsync(transactionInput);
+
+            // Handle the transaction hash (e.g., display it, log it, etc.)
+            Debug.Log("Transaction Hash: " + transactionHash);
+            return transactionHash;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"An error occurred: {e.Message}");
+            // Optionally, you can handle the exception more specifically or rethrow it
+            return null; // Or handle the failure case appropriately
+        }
     }
     #endregion
 }

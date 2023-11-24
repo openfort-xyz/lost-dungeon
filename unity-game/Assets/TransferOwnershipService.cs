@@ -14,6 +14,13 @@ using WalletConnectSharp.Sign.Models.Engine;
 
 public class TransferOwnershipService : MonoBehaviour
 {
+    [Serializable]
+    public class TransferOwnershipResponse
+    {
+        public string contractAddress;
+        public string newOwnerAddress;
+    }
+    
     private WalletConnectController _wcController;
     
     public enum State
@@ -273,9 +280,33 @@ public class TransferOwnershipService : MonoBehaviour
         RequestTransferOwnership(response.address);
     }
     
-    private void OnTransferOwnershipSuccess(global::Transaction tx)
+    private async void OnTransferOwnershipSuccess(string requestResponse)
     {
-        Debug.Log(tx);
+        Debug.Log("Received transfer ownership response.");
+        
+        var response = JsonUtility.FromJson<TransferOwnershipResponse>(requestResponse);
+
+        // Check if deserialization was successful
+        if (response == null)
+        {
+            Debug.Log("Failed to parse JSON");
+            Disconnect();
+            return;
+        }
+        
+#if UNITY_WEBGL
+        var address = await Web3GL.Instance.GetConnectedAddressAsync();
+        signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
+#else
+        //var address = _wcController.GetConnectedAddress();
+        var txHash = await _wcController.AcceptAccountOwnership(response.contractAddress, response.newOwnerAddress);
+
+        Debug.Log(txHash);
+
+        var signature = await _wcController.Sign(txHash, response.newOwnerAddress);
+        
+        Debug.Log(signature);
+#endif
     }
 
     private async void OnRegisterSessionSuccess(string txString)

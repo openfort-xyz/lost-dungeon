@@ -1,8 +1,13 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import Openfort, { AccountResponse } from "@openfort/openfort-node";
+import { recoverPersonalSignature } from "@metamask/eth-sig-util";
 
 const OF_TX_SPONSOR = process.env.OF_TX_SPONSOR;
 const openfort = new Openfort(process.env.OPENFORT_API_KEY);
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
@@ -12,6 +17,8 @@ const httpTrigger: AzureFunction = async function (
     if (
       !req.body ||
       !req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId ||
+      !req.body.FunctionArgument.message ||
+      !req.body.FunctionArgument.signature ||
       !req.body.FunctionArgument.playerId ||
       !req.body.FunctionArgument.newOwnerAddress
     ) {
@@ -22,8 +29,16 @@ const httpTrigger: AzureFunction = async function (
       return;
     }
 
+    const message = req.body.FunctionArgument.message;
+    const signature = req.body.FunctionArgument.signature;
     const playerId = req.body.FunctionArgument.playerId;
-    const newOwnerAddress = req.body.FunctionArgument.newOwnerAddress;
+    //const newOwnerAddress = req.body.FunctionArgument.newOwnerAddress;
+
+    // Recover the address of the account used to create the given Ethereum signature.
+    const newOwnerAddress = recoverPersonalSignature({
+      data: message,
+      signature: signature,
+    });
 
     const accounts = await openfort.accounts.list({ player: playerId })
     .catch((error) => {
@@ -55,6 +70,8 @@ const httpTrigger: AzureFunction = async function (
         if (!deployedAccount) return;
       };
 
+      await delay(500);
+
       context.log("Deployed Account ID: " + deployedAccount.id);
       context.log("New Owner Address: " + newOwnerAddress);
 
@@ -71,21 +88,19 @@ const httpTrigger: AzureFunction = async function (
 
       const transferResponse = await openfort.accounts.requestTransferOwnership(
         {
-          accountId: deployedAccount.id,
+          accountId: accountId,
           policy: OF_TX_SPONSOR,
           newOwnerAddress: newOwnerAddress,
         }
       )
 
-      // Extracting 'id' and 'userOperationHash' from transferResponse
-      const transferId = transferResponse.id;
-      const userOperationHash = transferResponse.userOperationHash;
+      if (!transferResponse) return;
 
       context.res = {
         status: 200,
         body: JSON.stringify({
-          id: transferId,
-          userOpHash: userOperationHash,
+          contractAddress: account.address,
+          newOwnerAddress: newOwnerAddress,
         })
       };
 

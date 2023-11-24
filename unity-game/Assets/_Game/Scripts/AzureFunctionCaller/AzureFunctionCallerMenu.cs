@@ -9,7 +9,7 @@ using UnityEngine;
 
 public static partial class AzureFunctionCaller
 {
-    public static Action<Transaction> onRequestTransferOwnershipSuccess;
+    public static Action<string> onRequestTransferOwnershipSuccess;
 
     #region FUNCTIONS
     public static void RequestTransferOwnership(string playerId, string newOwnerAddress)
@@ -41,17 +41,7 @@ public static partial class AzureFunctionCaller
     {
         if (!IsFunctionResultValid(result)) return;
         
-        var tx = JsonUtility.FromJson<Transaction>(result.FunctionResult.ToString());
-
-        // Check if deserialization was successful
-        if (tx == null)
-        {
-            Debug.Log("Failed to parse JSON");
-            onRequestFailure?.Invoke();
-            return;
-        }
-        
-        onRequestTransferOwnershipSuccess?.Invoke(tx);
+        onRequestTransferOwnershipSuccess?.Invoke(result.FunctionResult.ToString());
     }
     #endregion
 }
