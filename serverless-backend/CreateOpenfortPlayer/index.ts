@@ -58,7 +58,6 @@ const httpTrigger: AzureFunction = async function (
 
     if (!OFaccount) return;
 
-    /*
     // Transfer one token to the player
     const provider = new ethers.providers.JsonRpcProvider(
       "https://subnets.avax.network/beam/mainnet/rpc"
@@ -84,7 +83,6 @@ const httpTrigger: AzureFunction = async function (
     setImmediate(() => {
       tx.wait();
     });
-    */
 
     //TODO Set PlayFab player data with some of the verified data!
     PlayFabServer.settings.titleId = PlayFabTitleId;
