@@ -9,8 +9,7 @@ using UnityEngine;
 
 public static partial class AzureFunctionCaller
 {
-    public static Action<string, string> onRequestTransferOwnershipSuccess;
-    public static Action onRequestTransferOwnershipFailure;
+    public static Action<Transaction> onRequestTransferOwnershipSuccess;
 
     #region FUNCTIONS
     public static void RequestTransferOwnership(string playerId, string newOwnerAddress)
@@ -32,7 +31,7 @@ public static partial class AzureFunctionCaller
             GeneratePlayStreamEvent = true,
         };
         
-        PlayFabCloudScriptAPI.ExecuteFunction(request, OnRequestTransferOwnershipSuccess, OnRequestTransferOwnershipFailure);
+        PlayFabCloudScriptAPI.ExecuteFunction(request, OnRequestTransferOwnershipSuccess, OnRequestFailure);
     }
 
     #endregion
@@ -42,24 +41,17 @@ public static partial class AzureFunctionCaller
     {
         if (!IsFunctionResultValid(result)) return;
         
-        var functionResult = result.FunctionResult.ToString();
-        if (string.IsNullOrEmpty(functionResult))
+        var tx = JsonUtility.FromJson<Transaction>(result.FunctionResult.ToString());
+
+        // Check if deserialization was successful
+        if (tx == null)
         {
-            onRequestTransferOwnershipFailure?.Invoke();
+            Debug.Log("Failed to parse JSON");
+            onRequestFailure?.Invoke();
             return;
         }
         
-        //TODO GET things
-        AccountResponse accounts = JsonConvert.DeserializeObject<AccountResponse>(functionResult);
-
-        Debug.Log(accounts);
-        onRequestTransferOwnershipSuccess?.Invoke(null, null);
-    }
-    
-    private static void OnRequestTransferOwnershipFailure(PlayFabError error)
-    {
-        error.GenerateErrorReport();
-        onRequestTransferOwnershipFailure?.Invoke();
+        onRequestTransferOwnershipSuccess?.Invoke(tx);
     }
     #endregion
 }
