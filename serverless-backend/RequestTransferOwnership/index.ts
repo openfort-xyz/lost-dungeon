@@ -25,18 +25,15 @@ const httpTrigger: AzureFunction = async function (
     const playerId = req.body.FunctionArgument.playerId;
     const newOwnerAddress = req.body.FunctionArgument.newOwnerAddress;
 
-    const accounts = await openfort.accounts
-      .get({
-        player: playerId
-      })
-      .catch((error) => {
-        context.log(error);
-        context.res = {
-          status: 500,
-          body: JSON.stringify(error),
-        };
-        return;
-      });
+    const accounts = await openfort.accounts.list({ player: playerId })
+    .catch((error) => {
+      context.log(error);
+      context.res = {
+        status: 500,
+        body: JSON.stringify(error),
+      };
+      return;
+    });
 
     if (!accounts) return;
 
@@ -45,7 +42,7 @@ const httpTrigger: AzureFunction = async function (
       // Retrieve the ID of the account
       const accountId = accounts.data[0].id;
 
-      const transferResponse = await openfort.players.transferAccountOwnership(
+      const transferResponse = await openfort.players.requestTransferAccountOwnership(
         {
           playerId: playerId,
           policy: OF_TX_SPONSOR,
