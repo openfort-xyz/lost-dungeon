@@ -49,14 +49,14 @@ const httpTrigger: AzureFunction = async function (
       // Deploy account if not deployed
       if (account.deployed === false)
       {
-        //const deployResponse = await openfort.accounts.
+        const deployResponse = await openfort.accounts.deploy({ id: accountId, policy: OF_TX_SPONSOR });
+        if (!deployResponse) return;
       };
 
-      const transferResponse = await openfort.players.requestTransferAccountOwnership(
+      const transferResponse = await openfort.accounts.requestTransferOwnership(
         {
-          playerId: playerId,
+          accountId: accountId,
           policy: OF_TX_SPONSOR,
-          chainId: 4337,
           newOwnerAddress: newOwnerAddress,
         }
       )

@@ -1,6 +1,6 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { PlayFabServer } from "playfab-sdk";
-import Openfort from "@openfort/openfort-node";
+import Openfort, { GetTransactionIntentRequest } from "@openfort/openfort-node";
 
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
@@ -31,10 +31,13 @@ const httpTrigger: AzureFunction = async function (
 
     context.log("HTTP trigger function processed a request.");
 
+    const txIntentRequest: GetTransactionIntentRequest = {
+      id: transactionIntentId,
+      expand: ["player"]
+    };
+
     const transactionIntent = await openfort.transactionIntents
-      .get({
-        id: transactionIntentId,
-      })
+      .get(txIntentRequest)
       .catch((error) => {
         context.log(error);
         context.res = {
