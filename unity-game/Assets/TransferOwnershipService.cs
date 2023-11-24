@@ -171,6 +171,84 @@ public class TransferOwnershipService : MonoBehaviour
     }
     #endregion
 
+    #region PRIVATE_METHODS
+    private async void RequestMessage()
+    {
+        ChangeState(State.WalletConnected);
+
+        #if UNITY_WEBGL
+        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
+        _currentChainId = await Web3GL.Instance.GetChainIdAsync();
+        #else
+        _currentAddress = _wcController.GetConnectedAddress();
+        _currentChainId = _wcController.GetChainId();
+        #endif
+
+        Debug.Log("Address: " + _currentAddress);
+        Debug.Log("IntegerChainId: " + _currentChainId);
+
+        if (string.IsNullOrEmpty(_currentAddress) || _currentChainId == null)
+        {
+            Debug.Log("Wallet Address or ChainId null or empty.");
+            return;
+        }
+
+        AzureFunctionCaller.ChallengeRequest(_currentAddress, _currentChainId);
+        ChangeState(State.RequestingMessage);
+    }
+    
+    private void RequestTransferOwnership(string newOwnerAddress)
+    {
+        ChangeState(State.RequestingOwnershipTransfer);
+        
+        if (string.IsNullOrEmpty(OFStaticData.OFplayerValue))
+        {
+            Debug.LogError("No OFplayerValue found in OFStaticData.");
+            Disconnect();
+            return;
+        }
+        
+        AzureFunctionCaller.RequestTransferOwnership(OFStaticData.OFplayerValue, newOwnerAddress);
+    }
+
+    private void RegisterSession()
+    {
+        ChangeState(State.RegisteringSession);
+
+        // IMPORTANT Clear current session key if existent
+        var loadedSessionKey = _openfort.LoadSessionKey();
+        if (loadedSessionKey != null)
+        {
+            _openfort.RemoveSessionKey();
+        }
+
+        // To get public key use keyPair.PublicBase64 property
+        var sessionKey = _openfort.CreateSessionKey();
+        if (sessionKey == null)
+        {
+            Disconnect();
+            return;
+        }
+
+        // In case of the previous step success save the key
+        _openfort.SaveSessionKey();
+
+        // Register session
+        AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
+    }
+
+    public void Disconnect()
+    {
+        ChangeState(State.Disconnecting);
+
+        #if !UNITY_WEBGL
+        _wcController.Disconnect();
+        #else
+        Web3GL.Instance.Disconnect();
+        #endif
+    }
+    #endregion
+    
     #region AZURE_FUNCTION_CALLER_EVENT_HANDLERS
     private async void OnChallengeRequestSuccess(string requestResponse)
     {
@@ -286,81 +364,6 @@ public class TransferOwnershipService : MonoBehaviour
         // TODO Careful, almost all AzureFunctionCaller requests trigger this if failed.
         Debug.Log("Request failed.");
         Disconnect();
-    }
-    #endregion
-
-    #region PRIVATE_METHODS
-    private async void RequestMessage()
-    {
-        ChangeState(State.WalletConnected);
-
-        #if UNITY_WEBGL
-        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
-        _currentChainId = await Web3GL.Instance.GetChainIdAsync();
-        #else
-        _currentAddress = _wcController.GetConnectedAddress();
-        _currentChainId = _wcController.GetChainId();
-        #endif
-
-        Debug.Log("Address: " + _currentAddress);
-        Debug.Log("IntegerChainId: " + _currentChainId);
-
-        if (string.IsNullOrEmpty(_currentAddress) || _currentChainId == null)
-        {
-            Debug.Log("Wallet Address or ChainId null or empty.");
-            return;
-        }
-
-        AzureFunctionCaller.ChallengeRequest(_currentAddress, _currentChainId);
-        ChangeState(State.RequestingMessage);
-    }
-    
-    private void RequestTransferOwnership(string newOwnerAddress)
-    {
-        if (string.IsNullOrEmpty(OFStaticData.OFplayerValue))
-        {
-            Disconnect();
-            return;
-        }
-        ChangeState(State.RequestingOwnershipTransfer);
-        AzureFunctionCaller.RequestTransferOwnership(OFStaticData.OFplayerValue, newOwnerAddress);
-    }
-
-    private void RegisterSession()
-    {
-        ChangeState(State.RegisteringSession);
-
-        // IMPORTANT Clear current session key if existent
-        var loadedSessionKey = _openfort.LoadSessionKey();
-        if (loadedSessionKey != null)
-        {
-            _openfort.RemoveSessionKey();
-        }
-
-        // To get public key use keyPair.PublicBase64 property
-        var sessionKey = _openfort.CreateSessionKey();
-        if (sessionKey == null)
-        {
-            Disconnect();
-            return;
-        }
-
-        // In case of the previous step success save the key
-        _openfort.SaveSessionKey();
-
-        // Register session
-        AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
-    }
-
-    public void Disconnect()
-    {
-        ChangeState(State.Disconnecting);
-
-        #if !UNITY_WEBGL
-        _wcController.Disconnect();
-        #else
-        Web3GL.Instance.Disconnect();
-        #endif
     }
     #endregion
 
