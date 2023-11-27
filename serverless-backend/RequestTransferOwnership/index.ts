@@ -4,10 +4,6 @@ import Openfort from "@openfort/openfort-node";
 const OF_TX_SPONSOR = process.env.OF_TX_SPONSOR;
 const openfort = new Openfort(process.env.OPENFORT_API_KEY);
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 const httpTrigger: AzureFunction = async function (
   context: Context,
   req: HttpRequest

@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Events;
 using Openfort;
+using Openfort.Model;
 using PlayFab;
 using PlayFab.ClientModels;
+using PlayFab.CloudScriptModels;
 using UnityEngine.Serialization;
 using WalletConnect;
 using WalletConnectSharp.Sign.Models;
@@ -33,6 +36,7 @@ public class TransferOwnershipService : MonoBehaviour
         RequestingMessage,
         SigningMessage,
         RequestingOwnershipTransfer,
+        AcceptingOwnership,
         RegisteringSession,
         SigningSession,
         SessionSigned,
@@ -60,8 +64,9 @@ public class TransferOwnershipService : MonoBehaviour
     [Header("Events")]
     public UnityEvent<State> onStateChanged = new UnityEvent<State>();
 
-    private string _accountId;
-    private string _currentAddress;
+    private AccountResponse _currentAccount;
+    
+    private string _currentWalletAddress;
     private int? _currentChainId;
     
     private OpenfortClient _openfort;
@@ -210,20 +215,21 @@ public class TransferOwnershipService : MonoBehaviour
         _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
         _currentChainId = await Web3GL.Instance.GetChainIdAsync();
         #else
-        _currentAddress = _wcController.GetConnectedAddress();
+        _currentWalletAddress = _wcController.GetConnectedAddress();
         _currentChainId = _wcController.GetChainId();
         #endif
 
-        Debug.Log("Address: " + _currentAddress);
+        Debug.Log("Address: " + _currentWalletAddress);
         Debug.Log("IntegerChainId: " + _currentChainId);
 
-        if (string.IsNullOrEmpty(_currentAddress) || _currentChainId == null)
+        if (string.IsNullOrEmpty(_currentWalletAddress) || _currentChainId == null)
         {
             Debug.Log("Wallet Address or ChainId null or empty.");
+            Disconnect();
             return;
         }
 
-        AzureFunctionCaller.ChallengeRequest(_currentAddress, _currentChainId);
+        AzureFunctionCaller.ChallengeRequest(_currentWalletAddress, _currentChainId);
         ChangeState(State.RequestingMessage);
     }
     
@@ -239,6 +245,38 @@ public class TransferOwnershipService : MonoBehaviour
         }
         
         AzureFunctionCaller.RequestTransferOwnership(accountId, newOwnerAddress);
+    }
+    
+    private async void AcceptOwnership(string contractAddress, string newOwnerAddress)
+    {
+        ChangeState(State.AcceptingOwnership);
+        
+#if UNITY_WEBGL //TODO!
+        var address = await Web3GL.Instance.GetConnectedAddressAsync();
+        signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
+#else
+        //var address = _wcController.GetConnectedAddress();
+        var txHash = await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
+
+        if (string.IsNullOrEmpty(txHash))
+        {
+            Debug.LogError("txHash is null or empty.");
+            Disconnect();
+            return;
+        }
+
+        var signature = await _wcController.Sign(txHash, newOwnerAddress);
+        
+        if (string.IsNullOrEmpty(signature))
+        {
+            Debug.LogError("signature is null or empty.");
+            Disconnect();
+            return;
+        }
+        
+        Debug.Log(signature);
+        RegisterSession();
+#endif
     }
 
     private void RegisterSession()
@@ -280,10 +318,19 @@ public class TransferOwnershipService : MonoBehaviour
     #endregion
     
     #region AZURE_FUNCTION_CALLER_EVENT_HANDLERS
-    private void OnDeployAccountSuccess(string accountId)
+    private void OnDeployAccountSuccess(ExecuteFunctionResult result)
     {
-        _accountId = accountId;
-        RequestMessage();
+        try
+        {
+            _currentAccount = JsonConvert.DeserializeObject<AccountResponse>(result.FunctionResult.ToString());
+            
+            RequestMessage();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            throw;
+        }
     }
     
     private async void OnChallengeRequestSuccess(string requestResponse)
@@ -306,10 +353,10 @@ public class TransferOwnershipService : MonoBehaviour
             return;
         }
         
-        RequestTransferOwnership(_accountId, response.address);
+        RequestTransferOwnership(_currentAccount.Id, response.address);
     }
     
-    private async void OnTransferOwnershipSuccess(string requestResponse)
+    private void OnTransferOwnershipSuccess(string requestResponse)
     {
         Debug.Log("Received transfer ownership response.");
         
@@ -323,29 +370,27 @@ public class TransferOwnershipService : MonoBehaviour
             return;
         }
         
-#if UNITY_WEBGL
-        var address = await Web3GL.Instance.GetConnectedAddressAsync();
-        signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
-#else
-        //var address = _wcController.GetConnectedAddress();
-        var txHash = await _wcController.AcceptAccountOwnership(response.contractAddress, response.newOwnerAddress);
-
-        Debug.Log(txHash);
-
-        var signature = await _wcController.Sign(txHash, response.newOwnerAddress);
-        
-        Debug.Log(signature);
-#endif
+        AcceptOwnership(response.contractAddress, response.newOwnerAddress);
     }
     
     private void OnTransferOwnershipFailure(PlayFabError error)
     {
         var errorReport = error.GenerateErrorReport();
+        Debug.Log(errorReport);
         
         // If function timeout
         if (errorReport.ToLower().Contains("10000ms"))
         {
-            //TODO 
+            //TODO delay
+            // TODO POOLING! Now we assume requestTransferOwnership was successful.
+            if (string.IsNullOrEmpty(_currentWalletAddress) || _currentAccount == null)
+            {
+                Debug.LogError("Some required field is null or empty.");
+                Disconnect();
+                return;
+            }
+            
+            AcceptOwnership(_currentAccount.Address, _currentWalletAddress);
         }
         else
         {

@@ -59,7 +59,7 @@ const httpTrigger: AzureFunction = async function (
 
       context.res = {
         status: 200,
-        body: accountId
+        body: JSON.stringify(account)
       };
 
     } else {

@@ -61,6 +61,9 @@ public class Configuration : MonoBehaviour
             case TransferOwnershipService.State.RequestingOwnershipTransfer:
                 statusTextLabel.text = "Requesting ownership transfer...";
                 break;
+            case TransferOwnershipService.State.AcceptingOwnership:
+                statusTextLabel.text = "Accepting ownership transfer...";
+                break;
             case TransferOwnershipService.State.RegisteringSession:
                 statusTextLabel.text = "Registering openfort session...";
                 break;
