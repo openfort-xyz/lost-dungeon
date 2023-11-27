@@ -29,6 +29,7 @@ public class TransferOwnershipService : MonoBehaviour
         WalletConnecting,
         WalletConnectionCancelled,
         WalletConnected,
+        DeployingAccount,
         RequestingMessage,
         SigningMessage,
         RequestingOwnershipTransfer,
@@ -58,7 +59,8 @@ public class TransferOwnershipService : MonoBehaviour
     
     [Header("Events")]
     public UnityEvent<State> onStateChanged = new UnityEvent<State>();
-    
+
+    private string _accountId;
     private string _currentAddress;
     private int? _currentChainId;
     
@@ -90,11 +92,13 @@ public class TransferOwnershipService : MonoBehaviour
 
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess += OnChallengeRequestSuccess;
+        AzureFunctionCaller.onDeployAccountSuccess += OnDeployAccountSuccess;
         AzureFunctionCaller.onRequestTransferOwnershipSuccess += OnTransferOwnershipSuccess;
         AzureFunctionCaller.onRegisterSessionSuccess += OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess += OnCompleteWeb3AuthSuccess;
         
         AzureFunctionCaller.onRegisterSessionFailure += OnRegisterSessionFailure;
+        AzureFunctionCaller.onRequestTransferOwnershipFailure += OnTransferOwnershipFailure;
         AzureFunctionCaller.onRequestFailure += OnAnyRequestFailure;
     }
 
@@ -112,11 +116,13 @@ public class TransferOwnershipService : MonoBehaviour
 
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess -= OnChallengeRequestSuccess;
+        AzureFunctionCaller.onDeployAccountSuccess -= OnDeployAccountSuccess;
         AzureFunctionCaller.onRequestTransferOwnershipSuccess -= OnTransferOwnershipSuccess;
         AzureFunctionCaller.onRegisterSessionSuccess -= OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess -= OnCompleteWeb3AuthSuccess;
         
         AzureFunctionCaller.onRegisterSessionFailure -= OnRegisterSessionFailure;
+        AzureFunctionCaller.onRequestTransferOwnershipFailure -= OnTransferOwnershipFailure;
         AzureFunctionCaller.onRequestFailure -= OnAnyRequestFailure;
     }
 
@@ -149,7 +155,7 @@ public class TransferOwnershipService : MonoBehaviour
     private async void WcController_OnConnected_Handler(SessionStruct session)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
-        RequestMessage();
+        DeployAccount();
     }
     
     private void WcController_OnDisconnected_Handler()
@@ -162,7 +168,8 @@ public class TransferOwnershipService : MonoBehaviour
     #region WEB3GL_WALLET_EVENTS
     private async void OnWeb3GLConnected(string obj)
     {
-        RequestMessage();
+        Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
+        DeployAccount();
     }
 
     private void OnWeb3GLConnectionFailure(string obj)
@@ -179,6 +186,21 @@ public class TransferOwnershipService : MonoBehaviour
     #endregion
 
     #region PRIVATE_METHODS
+    private void DeployAccount()
+    {
+        // We need to make sure the account is deployed
+        ChangeState(State.DeployingAccount);
+        
+        if (string.IsNullOrEmpty(OFStaticData.OFplayerValue))
+        {
+            Debug.LogError("OFplayerValue is null or empty. At this point, an Openfort Player should have been created.");
+            Disconnect();
+            return;
+        }
+        
+        AzureFunctionCaller.DeployAccount(OFStaticData.OFplayerValue);
+    }
+    
     private async void RequestMessage()
     {
         ChangeState(State.WalletConnected);
@@ -204,18 +226,18 @@ public class TransferOwnershipService : MonoBehaviour
         ChangeState(State.RequestingMessage);
     }
     
-    private void RequestTransferOwnership(string newOwnerAddress)
+    private void RequestTransferOwnership(string accountId, string newOwnerAddress)
     {
         ChangeState(State.RequestingOwnershipTransfer);
         
-        if (string.IsNullOrEmpty(OFStaticData.OFplayerValue))
+        if (string.IsNullOrEmpty(accountId))
         {
-            Debug.LogError("No OFplayerValue found in OFStaticData.");
+            Debug.LogError("Account ID is null or empty.");
             Disconnect();
             return;
         }
         
-        AzureFunctionCaller.RequestTransferOwnership(OFStaticData.OFplayerValue, newOwnerAddress);
+        AzureFunctionCaller.RequestTransferOwnership(accountId, newOwnerAddress);
     }
 
     private void RegisterSession()
@@ -257,6 +279,12 @@ public class TransferOwnershipService : MonoBehaviour
     #endregion
     
     #region AZURE_FUNCTION_CALLER_EVENT_HANDLERS
+    private void OnDeployAccountSuccess(string accountId)
+    {
+        _accountId = accountId;
+        RequestMessage();
+    }
+    
     private async void OnChallengeRequestSuccess(string requestResponse)
     {
         ChangeState(State.SigningMessage);
@@ -276,8 +304,8 @@ public class TransferOwnershipService : MonoBehaviour
             Disconnect();
             return;
         }
-
-        RequestTransferOwnership(response.address);
+        
+        RequestTransferOwnership(_accountId, response.address);
     }
     
     private async void OnTransferOwnershipSuccess(string requestResponse)
@@ -307,6 +335,22 @@ public class TransferOwnershipService : MonoBehaviour
         
         Debug.Log(signature);
 #endif
+    }
+    
+    private void OnTransferOwnershipFailure(PlayFabError error)
+    {
+        var errorReport = error.GenerateErrorReport();
+        
+        // If function timeout
+        if (errorReport.ToLower().Contains("10000ms"))
+        {
+            //TODO 
+        }
+        else
+        {
+            Debug.LogError("Requesting transfer ownership failed.");
+            Disconnect();
+        }
     }
 
     private async void OnRegisterSessionSuccess(string txString)
