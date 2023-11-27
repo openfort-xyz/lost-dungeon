@@ -111,7 +111,8 @@ public class TransferOwnershipService : MonoBehaviour
 #if UNITY_WEBGL
         // Web3GL Events
         Web3GL.OnWeb3ConnectedEvent -= OnWeb3GLConnected;
-        Web3GL.OnWeb3ConnectErrorEvent -= OnWeb3GLConnectionFailure;  
+        Web3GL.OnWeb3ConnectErrorEvent -= OnWeb3GLConnectionFailure;
+        Web3GL.OnWeb3DisconnectedEvent -= OnWeb3GLDisconnected;
 #endif
 
         // AzureFunctionCaller Events
