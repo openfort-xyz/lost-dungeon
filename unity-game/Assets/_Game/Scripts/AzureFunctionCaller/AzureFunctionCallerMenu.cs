@@ -9,7 +9,7 @@ using UnityEngine;
 
 public static partial class AzureFunctionCaller
 {
-    public static Action<string> onDeployAccountSuccess;
+    public static Action<ExecuteFunctionResult> onDeployAccountSuccess;
     public static Action<string> onRequestTransferOwnershipSuccess;
     public static Action<PlayFabError> onRequestTransferOwnershipFailure;
 
@@ -63,7 +63,7 @@ public static partial class AzureFunctionCaller
     {
         if (!IsFunctionResultValid(result)) return;
 
-        onDeployAccountSuccess?.Invoke(result.FunctionResult.ToString());
+        onDeployAccountSuccess?.Invoke(result);
     }
     
     private static void OnRequestTransferOwnershipSuccess(ExecuteFunctionResult result)

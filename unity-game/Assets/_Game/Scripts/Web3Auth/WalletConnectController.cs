@@ -4,7 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nethereum.Hex.HexTypes;
+using Nethereum.RPC.Eth.DTOs;
+using Nethereum.RPC.Eth.Transactions;
 using Nethereum.Web3;
+using Newtonsoft.Json;
 using UnityBinder;
 using UnityEngine;
 using UnityEngine.Events;
@@ -18,6 +21,37 @@ using WalletConnectUnity.Utils;
 
 public class WalletConnectController : BindableMonoBehavior
 {
+    public class WCTransaction
+    {
+        [JsonProperty("from")] public string From { get; set; }
+
+        [JsonProperty("to")] public string To { get; set; }
+
+        [JsonProperty("gas", NullValueHandling = NullValueHandling.Ignore)]
+        public string Gas { get; set; }
+
+        [JsonProperty("gasPrice", NullValueHandling = NullValueHandling.Ignore)]
+        public string GasPrice { get; set; }
+
+        [JsonProperty("value")] public string Value { get; set; }
+
+        [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
+        public string Data { get; set; } = "0x";
+    }
+    
+    [RpcMethod("eth_sendTransaction")]
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99997)]
+    public class WCEthSendTransaction : List<WCTransaction>
+    {
+        public WCEthSendTransaction()
+        {
+        }
+
+        public WCEthSendTransaction(params WCTransaction[] transactions) : base(transactions)
+        {
+        }
+    }
+    
     [RpcMethod("personal_sign")]
     [RpcRequestOptions(Clock.ONE_MINUTE, 99998)]
     private class PersonalSign : List<string>
@@ -238,26 +272,34 @@ public class WalletConnectController : BindableMonoBehavior
             // Contract details
             string contractABI = "[{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
 
-            // Initialize WalletConnect and Nethereum
-            var web3 = new Web3("https://subnets.avax.network/beam/mainnet/rpc"); // This gets the provider from WalletConnectUnity
+            // Initialize Nethereum
+            var web3 = new Web3();
             var contract = web3.Eth.GetContract(contractABI, contractAddress);
 
             // Get the function from the contract
             var acceptOwnershipFunction = contract.GetFunction("acceptOwnership");
+            var encodedData = acceptOwnershipFunction.GetData();
+            
+            var txParams = new WCTransaction()
+            {
+                From = newOwnerAddress,
+                To = contractAddress,
+                Data = encodedData,
+                Value = "0x0",
+                Gas = new HexBigInteger(65000).ToString(), // "0x249F0" for 150,000 gas limit
+            };
 
-            // Prepare the transaction input (if the function requires parameters, include them here)
-            var transactionInput = acceptOwnershipFunction.CreateTransactionInput(
-                from: newOwnerAddress,
-                gas: new HexBigInteger(300000), // Set an appropriate gas limit
-                value: new HexBigInteger(0) // Set value if needed, in wei
-            );
+            var ethSendTransaction = new WCEthSendTransaction(txParams);
+
+            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
 
             // Send the transaction
-            var transactionHash = await web3.Eth.Transactions.SendTransaction.SendRequestAsync(transactionInput);
+            var txHash =
+                await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
 
             // Handle the transaction hash (e.g., display it, log it, etc.)
-            Debug.Log("Transaction Hash: " + transactionHash);
-            return transactionHash;
+            Debug.Log("Transaction Hash: " + txHash);
+            return txHash;
         }
         catch (Exception e)
         {
