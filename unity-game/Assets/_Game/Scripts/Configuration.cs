@@ -6,15 +6,18 @@ using UnityEngine.UI;
 using PlayFab;
 using PlayFab.ClientModels;
 using PlayFab.Internal;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 public class Configuration : MonoBehaviour
 {
+    public UnityEvent closed;
+    
     public TransferOwnershipService transferOwnershipService;
     
     [Header("UI")]
-    public Button LogoutButton;
-    public Button ConnectWalletButton;
+    public Button logoutButton;
+    public Button selfCustodyButton;
     public Text statusTextLabel;
 
     private PlayFabAuthService _AuthService = PlayFabAuthService.Instance;
@@ -82,7 +85,7 @@ public class Configuration : MonoBehaviour
                 }
                 PlayerPrefs.SetString(PPStaticData.LastPlayerKey, OFStaticData.OFplayerValue);
                 statusTextLabel.text = "Self-custody ENABLED!";
-                Invoke(nameof(CloseOnSelfCustodyEnabled), 1f);
+                Invoke(nameof(ClosePanel), 1f);
                 break;
             case TransferOwnershipService.State.Disconnecting:
                 statusTextLabel.text = "Disconnecting...";
@@ -125,16 +128,16 @@ public class Configuration : MonoBehaviour
         SceneManager.LoadScene("Login");
     }
 
-    private void CloseOnSelfCustodyEnabled()
+    private void ClosePanel()
     {
         //TODO maybe show eoa address
         EnableButtons(true);
-        gameObject.SetActive(false);
+        closed?.Invoke();
     }
     
     private void EnableButtons(bool status)
     {
-        ConnectWalletButton.gameObject.SetActive(status);
-        LogoutButton.gameObject.SetActive(status);
+        selfCustodyButton.gameObject.SetActive(status);
+        logoutButton.gameObject.SetActive(status);
     }
 }

@@ -314,7 +314,7 @@ public class Web3AuthService : MonoBehaviour
             throw;
         }
         
-        AzureFunctionCaller.CompleteWeb3Auth(session.Id);
+        AzureFunctionCaller.CompleteWeb3Auth();
     }
 
     private void OnRegisterSessionFailure(PlayFabError error)

@@ -92,7 +92,7 @@ public static partial class AzureFunctionCaller
         PlayFabCloudScriptAPI.ExecuteFunction(request, OnRegisterSessionSuccess, OnRegisterSessionFailure);
     }
 
-    public static void CompleteWeb3Auth(string sessionId)
+    public static void CompleteWeb3Auth()
     {
         var request = new ExecuteFunctionRequest()
         {
@@ -102,11 +102,6 @@ public static partial class AzureFunctionCaller
                 Type = PlayFabSettings.staticPlayer.EntityType,
             },
             FunctionName = "CompleteWeb3Auth",
-            FunctionParameter =
-                new Dictionary<string, object>()
-                {
-                    {"sessionId", sessionId}
-                },
             GeneratePlayStreamEvent = true
         };
         
