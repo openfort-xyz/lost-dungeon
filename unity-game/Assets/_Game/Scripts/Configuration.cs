@@ -18,6 +18,8 @@ public class Configuration : MonoBehaviour
     [Header("UI")]
     public Button logoutButton;
     public Button selfCustodyButton;
+    public Button backButton;
+    
     public Text statusTextLabel;
 
     private PlayFabAuthService _AuthService = PlayFabAuthService.Instance;
@@ -139,5 +141,6 @@ public class Configuration : MonoBehaviour
     {
         selfCustodyButton.gameObject.SetActive(status);
         logoutButton.gameObject.SetActive(status);
+        backButton.gameObject.SetActive(status);
     }
 }

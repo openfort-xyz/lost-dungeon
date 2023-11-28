@@ -483,6 +483,7 @@ MonoBehaviour:
   transferOwnershipService: {fileID: 1369211552}
   logoutButton: {fileID: 1674701456}
   selfCustodyButton: {fileID: 1114277725}
+  backButton: {fileID: 1224920401}
   statusTextLabel: {fileID: 1255968716}
 --- !u!1 &119689435
 GameObject:
