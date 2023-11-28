@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Events;
 using Openfort;
+using Openfort.Model;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine.Serialization;
@@ -38,12 +40,6 @@ public class Web3AuthService : MonoBehaviour
     }
     
     public State currentState = State.None;
-    
-    public class Transaction
-    {
-        public string id;
-        public string userOpHash;
-    }
     
     [Serializable]
     public class ChallengeRequestResponse
@@ -279,25 +275,27 @@ public class Web3AuthService : MonoBehaviour
         );
     }
 
-    private async void OnRegisterSessionSuccess(string txString)
+    private async void OnRegisterSessionSuccess(string response)
     {
         Debug.Log("RegisterSessionSuccess");
         ChangeState(State.SigningSession);
 
-        var tx = JsonUtility.FromJson<Transaction>(txString);
-
-        Debug.Log("USEROPHASH: " + tx.userOpHash);
+        var session = JsonConvert.DeserializeObject<SessionResponse>(response);
+        var userOpHash = session.NextAction.Payload.UserOpHash;
+        Debug.Log("USEROPHASH: " + userOpHash);
 
         string signature = null;
 
         #if UNITY_WEBGL
         var address = await Web3GL.Instance.GetConnectedAddressAsync();
-        signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
+        signature = await Web3GL.Instance.Sign(userOpHash, address);
         #else
         var address = _wcController.GetConnectedAddress();
-        signature = await _wcController.Sign(tx.userOpHash, address);
+        signature = await _wcController.Sign(userOpHash, address);
         #endif
 
+        ChangeState(State.SessionSigned);
+        
         if (string.IsNullOrEmpty(signature))
         {
             Debug.Log("Signature failed.");
@@ -305,11 +303,9 @@ public class Web3AuthService : MonoBehaviour
             return;
         }
 
-        ChangeState(State.SessionSigned);
-
         try
         {
-            await _openfort.SendSignatureSessionRequest(tx.id, signature);
+            await _openfort.SendSignatureSessionRequest(session.Id, signature);
         }
         catch (Exception e)
         {
@@ -317,8 +313,8 @@ public class Web3AuthService : MonoBehaviour
             Disconnect();
             throw;
         }
-
-        AzureFunctionCaller.CompleteWeb3Auth(tx.id);
+        
+        AzureFunctionCaller.CompleteWeb3Auth(session.Id);
     }
 
     private void OnRegisterSessionFailure(PlayFabError error)
