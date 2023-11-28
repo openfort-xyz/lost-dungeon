@@ -248,8 +248,8 @@ public class WalletConnectController : BindableMonoBehavior
         {
             var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
 
-            var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
-            var request = new PersonalSign(hexUtf8, address);                                
+            //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
+            var request = new PersonalSign(message, address);                                
         
             var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
                  
