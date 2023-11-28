@@ -115,9 +115,6 @@ public class Configuration : MonoBehaviour
         _AuthService.Email = string.Empty;
         _AuthService.Password = string.Empty;
         _AuthService.AuthTicket = string.Empty;
-
-        // Logout from Web3
-        transferOwnershipService.Disconnect();
         
         // Remove openfort session key
         var sessionKey = _openfortClient.LoadSessionKey();
@@ -125,9 +122,9 @@ public class Configuration : MonoBehaviour
         {
             _openfortClient.RemoveSessionKey();
         }
-
-        // Navigate back to the login scene
-        SceneManager.LoadScene("Login");
+        
+        // Logout from Web3
+        transferOwnershipService.Disconnect();
     }
 
     private void ClosePanel()
