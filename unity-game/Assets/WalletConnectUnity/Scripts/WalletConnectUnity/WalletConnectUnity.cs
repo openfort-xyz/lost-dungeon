@@ -69,16 +69,14 @@ namespace WalletConnect
         {
             base.Awake();
 
-            if (_instance == null || _instance == this)
+            if (_instance != null && _instance != this)
             {
-                _instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
-            {
-                Destroy(this);
+                Destroy(gameObject); // Destroy the entire GameObject, not just the script
                 return;
             }
+
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
 
             if (ConnectOnAwake)
             {

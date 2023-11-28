@@ -2004,17 +2004,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 795256096}
   m_CullTransparentMesh: 1
---- !u!114 &834726540 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2565653752300045186, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-  m_PrefabInstance: {fileID: 2113554323}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4852243708c24a4089f2ed6baf110a87, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &875304668
 GameObject:
   m_ObjectHideFlags: 0
@@ -3320,7 +3309,6 @@ GameObject:
   - component: {fileID: 1204259166}
   - component: {fileID: 1204259165}
   - component: {fileID: 1204259167}
-  - component: {fileID: 1204259168}
   m_Layer: 0
   m_Name: Web3AuthService
   m_TagString: Untagged
@@ -3340,7 +3328,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b77cd591d44ef4c73b6cca8692a21959, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wcController: {fileID: 1204259168}
   currentState: 0
   onStateChanged:
     m_PersistentCalls:
@@ -3385,20 +3372,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 831194c6bd9b0e2488d85126c87ebcbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1204259168
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1204259164}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be269e370f994eb4d8a9448d1803b7e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  wcSignClient: {fileID: 834726540}
-  wcQrCodeHandler: {fileID: 1562160048}
 --- !u!1 &1247163041
 GameObject:
   m_ObjectHideFlags: 0
@@ -4000,17 +3973,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 0
---- !u!114 &1562160048 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2565653752300045191, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-  m_PrefabInstance: {fileID: 2113554323}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e040b54e4aa614faebc51183e5bedb54, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1672366805
 GameObject:
   m_ObjectHideFlags: 0
@@ -5069,6 +5031,26 @@ PrefabInstance:
     - target: {fileID: 2565653752300045184, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
+      propertyPath: ProjectId
+      value: 51102387049a78285ee8540ff748b0a8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
+      propertyPath: ProjectName
+      value: openfort-lost-dungeon
+      objectReference: {fileID: 0}
+    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
+      propertyPath: ConnectOnAwake
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
+      propertyPath: ConnectOnStart
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
+      propertyPath: AutoDownloadWalletData
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2565653752300045187, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
       propertyPath: m_Name

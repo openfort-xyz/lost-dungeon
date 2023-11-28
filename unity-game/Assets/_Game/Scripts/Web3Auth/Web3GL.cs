@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 using Cysharp.Threading.Tasks;
 
-#if UNITY_WEBGL
+#if UNITY_EDITOR || UNITY_WEBGL
 public class Web3GL : MonoBehaviour
 {
     // Singleton instance
@@ -20,6 +20,9 @@ public class Web3GL : MonoBehaviour
     private static extern void PersonalSign(string message, string account);
     
     [DllImport("__Internal")]
+    private static extern void AcceptOwnership(string contractAddress, string newOwnerAddress);
+    
+    [DllImport("__Internal")]
     private static extern void GetConnectedAddress();
     
     [DllImport("__Internal")]
@@ -34,6 +37,7 @@ public class Web3GL : MonoBehaviour
 
     // UCS to handle async responses
     private UniTaskCompletionSource<string> personalSignUcs;
+    private UniTaskCompletionSource<string> acceptOwnershipUcs;
     private UniTaskCompletionSource<int> chainIdUcs;
     private UniTaskCompletionSource<string> addressUcs;
     
@@ -68,6 +72,13 @@ public class Web3GL : MonoBehaviour
         personalSignUcs = new UniTaskCompletionSource<string>();
         PersonalSign(message, account);
         return personalSignUcs.Task;
+    }
+    
+    public UniTask<string> AcceptAccountOwnership(string contractAddress, string newOwnerAddress)
+    {
+        acceptOwnershipUcs = new UniTaskCompletionSource<string>();
+        AcceptOwnership(contractAddress, newOwnerAddress);
+        return acceptOwnershipUcs.Task;
     }
 
     public UniTask<int> GetChainIdAsync()
@@ -135,6 +146,18 @@ public class Web3GL : MonoBehaviour
     public void OnPersonalSignError(string errorMessage)
     {
         personalSignUcs.TrySetException(new Exception(errorMessage));
+    }
+    
+    public void OnAcceptOwnershipSuccess(string transactionHash)
+    {
+        Debug.Log("Ownership transfer transaction successful: " + transactionHash);
+        acceptOwnershipUcs.TrySetResult(transactionHash);
+    }
+
+    public void OnAcceptOwnershipError(string errorMessage)
+    {
+        Debug.LogError("Error in ownership transfer transaction: " + errorMessage);
+        acceptOwnershipUcs.TrySetException(new Exception(errorMessage));
     }
 
     private void OnAddressRetrieved(string address)

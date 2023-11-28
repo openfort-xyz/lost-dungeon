@@ -3,6 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nethereum.Hex.HexTypes;
+using Nethereum.RPC.Eth.DTOs;
+using Nethereum.RPC.Eth.Transactions;
+using Nethereum.Web3;
+using Newtonsoft.Json;
+using UnityBinder;
 using UnityEngine;
 using UnityEngine.Events;
 using WalletConnect;
@@ -13,8 +19,39 @@ using WalletConnectSharp.Sign.Models.Engine;
 using WalletConnectSharp.Sign.Models.Engine.Events;
 using WalletConnectUnity.Utils;
 
-public class WalletConnectController : MonoBehaviour
+public class WalletConnectController : BindableMonoBehavior
 {
+    public class WCTransaction
+    {
+        [JsonProperty("from")] public string From { get; set; }
+
+        [JsonProperty("to")] public string To { get; set; }
+
+        [JsonProperty("gas", NullValueHandling = NullValueHandling.Ignore)]
+        public string Gas { get; set; }
+
+        [JsonProperty("gasPrice", NullValueHandling = NullValueHandling.Ignore)]
+        public string GasPrice { get; set; }
+
+        [JsonProperty("value")] public string Value { get; set; }
+
+        [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
+        public string Data { get; set; } = "0x";
+    }
+    
+    [RpcMethod("eth_sendTransaction")]
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99997)]
+    public class WCEthSendTransaction : List<WCTransaction>
+    {
+        public WCEthSendTransaction()
+        {
+        }
+
+        public WCEthSendTransaction(params WCTransaction[] transactions) : base(transactions)
+        {
+        }
+    }
+    
     [RpcMethod("personal_sign")]
     [RpcRequestOptions(Clock.ONE_MINUTE, 99998)]
     private class PersonalSign : List<string>
@@ -31,8 +68,8 @@ public class WalletConnectController : MonoBehaviour
     public event UnityAction<SessionStruct> OnConnected;
     public event UnityAction OnDisconnected;
     
-    [Header("WC Components")]
-    [SerializeField] private WCSignClient wcSignClient;
+    [Inject]
+    private WCSignClient _wcSignClient;
     [SerializeField] private WCQRCodeHandler wcQrCodeHandler;
     
     [HideInInspector] public SessionStruct CurrentSession;
@@ -40,25 +77,25 @@ public class WalletConnectController : MonoBehaviour
     #region UNITY_LIFECYCLE
     private void Start()
     {
-        wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
-        wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
+        _wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
+        _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
     }
 
     private void OnDisable()
     {
-        wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
-        wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
+        _wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
+        _wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
     
     public async void Connect()
     {
-        if (wcSignClient.SignClient == null)
-            await wcSignClient.InitSignClient();
+        if (_wcSignClient.SignClient == null)
+            await _wcSignClient.InitSignClient();
 
-        if (wcSignClient == null)
+        if (_wcSignClient == null)
         {
             Debug.LogError("No WCSignClient scripts found in scene!");
             return;
@@ -96,7 +133,7 @@ public class WalletConnectController : MonoBehaviour
             RequiredNamespaces = requiredNamespaces
         };
 
-        var connectData = await wcSignClient.Connect(dappConnectOptions);
+        var connectData = await _wcSignClient.Connect(dappConnectOptions);
         
         Debug.Log($"Connection successful, URI: {connectData.Uri}");
 
@@ -122,7 +159,7 @@ public class WalletConnectController : MonoBehaviour
     
     public void Disconnect()
     {
-        wcSignClient.Disconnect(CurrentSession.Topic); 
+        _wcSignClient.Disconnect(CurrentSession.Topic); 
     }
     
     public async Task<string> Sign(string message, string address)
@@ -211,10 +248,10 @@ public class WalletConnectController : MonoBehaviour
         {
             var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
 
-            var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
-            var request = new PersonalSign(hexUtf8, address);                                
+            //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
+            var request = new PersonalSign(message, address);                                
         
-            var result = await wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
+            var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
                  
             Debug.Log("Got result from request: " + result);
         
@@ -226,6 +263,50 @@ public class WalletConnectController : MonoBehaviour
             // Optionally, you can handle the exception more specifically or rethrow it
             return null; // Or handle the failure case appropriately
         }                                                                                 
+    }
+
+    public async Task<string> AcceptAccountOwnership(string contractAddress, string newOwnerAddress)
+    {
+        try
+        {
+            // Contract details
+            string contractABI = "[{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
+
+            // Initialize Nethereum
+            var web3 = new Web3();
+            var contract = web3.Eth.GetContract(contractABI, contractAddress);
+
+            // Get the function from the contract
+            var acceptOwnershipFunction = contract.GetFunction("acceptOwnership");
+            var encodedData = acceptOwnershipFunction.GetData();
+            
+            var txParams = new WCTransaction()
+            {
+                From = newOwnerAddress,
+                To = contractAddress,
+                Data = encodedData,
+                Value = "0x0",
+                Gas = new HexBigInteger(65000).ToString(), // "0x249F0" for 150,000 gas limit
+            };
+
+            var ethSendTransaction = new WCEthSendTransaction(txParams);
+
+            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
+
+            // Send the transaction
+            var txHash =
+                await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
+
+            // Handle the transaction hash (e.g., display it, log it, etc.)
+            Debug.Log("Transaction Hash: " + txHash);
+            return txHash;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"An error occurred: {e.Message}");
+            // Optionally, you can handle the exception more specifically or rethrow it
+            return null; // Or handle the failure case appropriately
+        }
     }
     #endregion
 }
