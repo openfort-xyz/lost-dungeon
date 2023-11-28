@@ -453,9 +453,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9417d506028c84a9baf309b69bdef3cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  closed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 117095145}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 525171670}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
   transferOwnershipService: {fileID: 1369211552}
-  LogoutButton: {fileID: 1674701456}
-  ConnectWalletButton: {fileID: 1114277725}
+  logoutButton: {fileID: 1674701456}
+  selfCustodyButton: {fileID: 1114277725}
   statusTextLabel: {fileID: 1255968716}
 --- !u!1 &119689435
 GameObject:
@@ -1014,7 +1041,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Connect Wallet
+  m_Text: ENABLE self-custody
 --- !u!222 &157326379
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3753,7 +3780,7 @@ GameObject:
   - component: {fileID: 1114277726}
   - component: {fileID: 1114277725}
   m_Layer: 5
-  m_Name: ConnectWalletButton
+  m_Name: SelfCustodyButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3778,7 +3805,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 27}
-  m_SizeDelta: {x: 166.94, y: 49.63}
+  m_SizeDelta: {x: 210.09, y: 49.63}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1114277725
 MonoBehaviour:
@@ -3858,7 +3885,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: -7151958888795693489, guid: c71432e9eca2b7d478bc506414c92aad, type: 3}
   m_Type: 0
-  m_PreserveAspect: 1
+  m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
