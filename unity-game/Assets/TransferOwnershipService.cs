@@ -17,6 +17,8 @@ using WalletConnectSharp.Sign.Models.Engine;
 
 public class TransferOwnershipService : MonoBehaviour
 {
+    public static event UnityAction OnDisconnectedEvent;
+    
     [Serializable]
     public class TransferOwnershipResponse
     {
@@ -162,6 +164,7 @@ public class TransferOwnershipService : MonoBehaviour
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
         ChangeState(State.Disconnected);
+        OnDisconnectedEvent?.Invoke();
     }
     #endregion
 
@@ -182,6 +185,7 @@ public class TransferOwnershipService : MonoBehaviour
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
         ChangeState(State.Disconnected);
+        OnDisconnectedEvent?.Invoke();
     }
     #endregion
 

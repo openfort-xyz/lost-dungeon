@@ -18,10 +18,20 @@ public class MenuSceneManager : MonoBehaviour
 
     private string _currentPlayerAddress;
 
+    private void OnEnable()
+    {
+        TransferOwnershipService.OnDisconnectedEvent += TransferOwnershipService_OnDisconnectedEvent_Handler;
+    }
+
     private void Start()
     {
         getTitleData();
         GetUserData();
+    }
+
+    private void OnDisable()
+    {
+        TransferOwnershipService.OnDisconnectedEvent -= TransferOwnershipService_OnDisconnectedEvent_Handler;
     }
 
     private void Update()
@@ -86,6 +96,11 @@ public class MenuSceneManager : MonoBehaviour
         {
             username.text = "Click here to checkout out your account: " + result.Data[OFStaticData.OFaddressKey].Value;
         }
+    }
+    
+    private void TransferOwnershipService_OnDisconnectedEvent_Handler()
+    {
+        SceneManager.LoadScene("Login");
     }
 
     public void OnPlayClicked()
