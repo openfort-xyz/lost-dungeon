@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine;
@@ -352,8 +353,38 @@ public class LoginSceneManager : MonoBehaviour
     private void OnCreateOpenfortPlayerSuccess(OpenfortPlayerResponse ofPlayerResponse)
     {
         statusTextLabel.text = "Openfort Player created successfully!";
-        Invoke(nameof(LoadMenuScene), 1f);
+        
+        // Let's make sure we OFplayer key is set to PlayFab UserReadOnlyData and save it to OFStaticData
+        GetUserDataRequest request = new GetUserDataRequest
+        {
+            Keys = new List<string> {OFStaticData.OFplayerKey}
+        };
+
+        // Make the API call
+        PlayFabClientAPI.GetUserReadOnlyData(request,
+            result =>  // Inline success callback
+            {
+                if (result.Data == null || !result.Data.ContainsKey(OFStaticData.OFplayerKey))
+                {
+                    Debug.LogError("OFplayer or address not found");
+                    loginPanel.SetActive(true);
+                    return;
+                }
+
+                // Access the value of OFplayer
+                string ofPlayer = result.Data[OFStaticData.OFplayerKey].Value;
+                OFStaticData.OFplayerValue = ofPlayer;
+                
+                LoadMenuScene();
+            },
+            error =>  // Inline failure callback
+            {
+                Debug.LogError("Failed to get OFplayer or address data: " + error.GenerateErrorReport());
+                loginPanel.SetActive(true);
+            }
+        );
     }
+    
     private void OnCreateOpenfortPlayerFailure()
     {
         ClearStatusTextLabel();

@@ -64,11 +64,9 @@ const httpTrigger: AzureFunction = async function (
       return;
     }
 
-    let userOpHash = OFsession.nextAction?.payload?.userOpHash;
-
     context.res = {
       status: 200,
-      body: JSON.stringify({ id: OFsession.id, userOpHash }),
+      body: OFsession
     };
   } catch (error) {
     context.log(`Unexpected error: ${error}`);

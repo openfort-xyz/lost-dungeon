@@ -70,6 +70,7 @@ const httpTrigger: AzureFunction = async function (
       });
 
     if (!OFaccount) return;
+
     // Transfer one token to the player
     const provider = new ethers.providers.JsonRpcProvider(
       "https://subnets.avax.network/beam/mainnet/rpc"

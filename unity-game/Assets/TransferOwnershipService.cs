@@ -9,34 +9,42 @@ using Openfort;
 using Openfort.Model;
 using PlayFab;
 using PlayFab.ClientModels;
+using PlayFab.CloudScriptModels;
 using UnityEngine.Serialization;
 using WalletConnect;
 using WalletConnectSharp.Sign.Models;
 using WalletConnectSharp.Sign.Models.Engine;
 
-[DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
-public class Web3AuthService : MonoBehaviour
+public class TransferOwnershipService : MonoBehaviour
 {
+    public static event UnityAction OnDisconnectedEvent;
+    
+    [Serializable]
+    public class TransferOwnershipResponse
+    {
+        public string contractAddress;
+        public string newOwnerAddress;
+    }
+    
     private WalletConnectController _wcController;
     
     public enum State
     {
         None,
         WalletConnecting,
-        WalletConnecting_Web3AuthCompleted,
         WalletConnectionCancelled,
         WalletConnected,
+        DeployingAccount,
         RequestingMessage,
         SigningMessage,
-        VerifyingSignature,
+        RequestingOwnershipTransfer,
+        AcceptingOwnership,
         RegisteringSession,
         SigningSession,
         SessionSigned,
         Web3AuthSuccessful,
-        WrongOwnerAddress,
         Disconnecting,
         Disconnected,
-        Disconnected_Web3AuthCompleted
     }
     
     public State currentState = State.None;
@@ -51,14 +59,14 @@ public class Web3AuthService : MonoBehaviour
     
     [Header("Events")]
     public UnityEvent<State> onStateChanged = new UnityEvent<State>();
+
+    private AccountResponse _currentAccount;
     
-    private string _currentAddress;
+    private string _currentWalletAddress;
     private int? _currentChainId;
     
     private OpenfortClient _openfort;
-
-    [HideInInspector] public bool authCompletedOnce;
-
+    
     #region UNITY_LIFECYCLE
 
     private void Awake()
@@ -85,11 +93,13 @@ public class Web3AuthService : MonoBehaviour
 
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess += OnChallengeRequestSuccess;
-        AzureFunctionCaller.onChallengeVerifySuccess += OnChallengeVerifySuccess;
+        AzureFunctionCaller.onDeployAccountSuccess += OnDeployAccountSuccess;
+        AzureFunctionCaller.onRequestTransferOwnershipSuccess += OnTransferOwnershipSuccess;
         AzureFunctionCaller.onRegisterSessionSuccess += OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess += OnCompleteWeb3AuthSuccess;
         
         AzureFunctionCaller.onRegisterSessionFailure += OnRegisterSessionFailure;
+        AzureFunctionCaller.onRequestTransferOwnershipFailure += OnTransferOwnershipFailure;
         AzureFunctionCaller.onRequestFailure += OnAnyRequestFailure;
     }
 
@@ -108,11 +118,13 @@ public class Web3AuthService : MonoBehaviour
 
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess -= OnChallengeRequestSuccess;
-        AzureFunctionCaller.onChallengeVerifySuccess -= OnChallengeVerifySuccess;
+        AzureFunctionCaller.onDeployAccountSuccess -= OnDeployAccountSuccess;
+        AzureFunctionCaller.onRequestTransferOwnershipSuccess -= OnTransferOwnershipSuccess;
         AzureFunctionCaller.onRegisterSessionSuccess -= OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess -= OnCompleteWeb3AuthSuccess;
         
         AzureFunctionCaller.onRegisterSessionFailure -= OnRegisterSessionFailure;
+        AzureFunctionCaller.onRequestTransferOwnershipFailure -= OnTransferOwnershipFailure;
         AzureFunctionCaller.onRequestFailure -= OnAnyRequestFailure;
     }
 
@@ -131,7 +143,7 @@ public class Web3AuthService : MonoBehaviour
     #region PUBLIC_METHODS
     public void Connect()
     {
-        ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
+        ChangeState(State.WalletConnecting);
 
         #if UNITY_WEBGL
         Web3GL.Instance.Connect();
@@ -145,50 +157,22 @@ public class Web3AuthService : MonoBehaviour
     private async void WcController_OnConnected_Handler(SessionStruct session)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
-        if (authCompletedOnce)
-        {
-            bool correctAddress = await CheckIfCorrectAccount();
-            if (correctAddress)
-            {
-                RequestMessage();
-            }
-            else
-            {
-                Disconnect();
-            }
-        }
-        else
-        {
-            RequestMessage();
-        }
+        DeployAccount();
     }
     
     private void WcController_OnDisconnected_Handler()
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
-        ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
+        ChangeState(State.Disconnected);
+        OnDisconnectedEvent?.Invoke();
     }
     #endregion
 
     #region WEB3GL_WALLET_EVENTS
     private async void OnWeb3GLConnected(string obj)
     {
-        if (authCompletedOnce)
-        {
-            bool correctAddress = await CheckIfCorrectAccount();
-            if (correctAddress)
-            {
-                RequestMessage();
-            }
-            else
-            {
-                Disconnect();
-            }
-        }
-        else
-        {
-            RequestMessage();
-        }
+        Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
+        DeployAccount();
     }
 
     private void OnWeb3GLConnectionFailure(string obj)
@@ -200,11 +184,152 @@ public class Web3AuthService : MonoBehaviour
     private void OnWeb3GLDisconnected(string obj)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
-        ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
+        ChangeState(State.Disconnected);
+        OnDisconnectedEvent?.Invoke();
     }
     #endregion
 
+    #region PRIVATE_METHODS
+    private void DeployAccount()
+    {
+        // We need to make sure the account is deployed
+        ChangeState(State.DeployingAccount);
+        
+        if (string.IsNullOrEmpty(OFStaticData.OFplayerValue))
+        {
+            Debug.LogError("OFplayerValue is null or empty. At this point, an Openfort Player should have been created.");
+            Disconnect();
+            return;
+        }
+        
+        AzureFunctionCaller.DeployAccount(OFStaticData.OFplayerValue);
+    }
+    
+    private async void RequestMessage()
+    {
+        ChangeState(State.WalletConnected);
+
+        #if UNITY_WEBGL
+        _currentWalletAddress = await Web3GL.Instance.GetConnectedAddressAsync();
+        _currentChainId = await Web3GL.Instance.GetChainIdAsync();
+        #else
+        _currentWalletAddress = _wcController.GetConnectedAddress();
+        _currentChainId = _wcController.GetChainId();
+        #endif
+
+        Debug.Log("Address: " + _currentWalletAddress);
+        Debug.Log("IntegerChainId: " + _currentChainId);
+
+        if (string.IsNullOrEmpty(_currentWalletAddress) || _currentChainId == null)
+        {
+            Debug.Log("Wallet Address or ChainId null or empty.");
+            Disconnect();
+            return;
+        }
+
+        AzureFunctionCaller.ChallengeRequest(_currentWalletAddress, _currentChainId);
+        ChangeState(State.RequestingMessage);
+    }
+    
+    private void RequestTransferOwnership(string accountId, string newOwnerAddress)
+    {
+        ChangeState(State.RequestingOwnershipTransfer);
+        
+        if (string.IsNullOrEmpty(accountId))
+        {
+            Debug.LogError("Account ID is null or empty.");
+            Disconnect();
+            return;
+        }
+        
+        AzureFunctionCaller.RequestTransferOwnership(accountId, newOwnerAddress);
+    }
+    
+    private async void AcceptOwnership(string contractAddress, string newOwnerAddress)
+    {
+        ChangeState(State.AcceptingOwnership);
+        string txHash = null;
+
+        try
+        {
+#if UNITY_WEBGL
+            txHash = await Web3GL.Instance.AcceptAccountOwnership(contractAddress, newOwnerAddress);
+#else
+            txHash = await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
+#endif
+            if (string.IsNullOrEmpty(txHash))
+            {
+                Debug.LogError("txHash is null or empty.");
+                Disconnect();
+                return;
+            }
+        
+            Debug.Log("Ownership accepted.");
+            RegisterSession();
+            
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Disconnect();
+            throw;
+        }
+    }
+
+    private void RegisterSession()
+    {
+        ChangeState(State.RegisteringSession);
+
+        // IMPORTANT Clear current session key if existent
+        var loadedSessionKey = _openfort.LoadSessionKey();
+        if (loadedSessionKey != null)
+        {
+            _openfort.RemoveSessionKey();
+        }
+
+        // To get public key use keyPair.PublicBase64 property
+        var sessionKey = _openfort.CreateSessionKey();
+        if (sessionKey == null)
+        {
+            Disconnect();
+            return;
+        }
+
+        // In case of the previous step success save the key
+        _openfort.SaveSessionKey();
+
+        // Register session
+        AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
+    }
+
+    public void Disconnect()
+    {
+        ChangeState(State.Disconnecting);
+
+        #if !UNITY_WEBGL
+        _wcController.Disconnect();
+        #else
+        Web3GL.Instance.Disconnect();
+        #endif
+    }
+    #endregion
+    
     #region AZURE_FUNCTION_CALLER_EVENT_HANDLERS
+    private void OnDeployAccountSuccess(ExecuteFunctionResult result)
+    {
+        try
+        {
+            _currentAccount = JsonConvert.DeserializeObject<AccountResponse>(result.FunctionResult.ToString());
+            
+            RequestMessage();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            throw;
+        }
+    }
+    
     private async void OnChallengeRequestSuccess(string requestResponse)
     {
         ChangeState(State.SigningMessage);
@@ -224,55 +349,51 @@ public class Web3AuthService : MonoBehaviour
             Disconnect();
             return;
         }
+        
+        RequestTransferOwnership(_currentAccount.Id, response.address);
+    }
+    
+    private void OnTransferOwnershipSuccess(string requestResponse)
+    {
+        Debug.Log("Received transfer ownership response.");
+        
+        var response = JsonUtility.FromJson<TransferOwnershipResponse>(requestResponse);
 
-        if (authCompletedOnce)
+        // Check if deserialization was successful
+        if (response == null)
         {
-            RegisterSession();
+            Debug.Log("Failed to parse JSON");
+            Disconnect();
+            return;
+        }
+        
+        AcceptOwnership(response.contractAddress, response.newOwnerAddress);
+    }
+    
+    private void OnTransferOwnershipFailure(PlayFabError error)
+    {
+        var errorReport = error.GenerateErrorReport();
+        Debug.Log(errorReport);
+        
+        // If function timeout
+        if (errorReport.ToLower().Contains("10000ms"))
+        {
+            //TODO delay
+            // TODO POOLING! Now we assume requestTransferOwnership was successful.
+            if (string.IsNullOrEmpty(_currentWalletAddress) || _currentAccount == null)
+            {
+                Debug.LogError("Some required field is null or empty.");
+                Disconnect();
+                return;
+            }
+            
+            AcceptOwnership(_currentAccount.Address, _currentWalletAddress);
         }
         else
         {
-            AzureFunctionCaller.ChallengeVerify(response.message, signature);
-            ChangeState(State.VerifyingSignature);
+            Debug.LogError("Requesting transfer ownership failed.");
+            Disconnect();
         }
-    }
-
-    private void OnChallengeVerifySuccess()
-    {
-        Debug.Log("ChallengeVerify success.");
-
-        //////// Get OF Player ID
-        // Create the request object
-        GetUserDataRequest request = new GetUserDataRequest
-        {
-            Keys = new List<string> {OFStaticData.OFplayerKey, OFStaticData.OFownerAddressKey}
-        };
-
-        // Make the API call
-        PlayFabClientAPI.GetUserReadOnlyData(request,
-            result =>  // Inline success callback
-            {
-                if (result.Data == null || !result.Data.ContainsKey(OFStaticData.OFplayerKey) || !result.Data.ContainsKey(OFStaticData.OFownerAddressKey))
-                {
-                    Debug.LogError("OFplayer or address not found");
-                    Disconnect();
-                    return;
-                }
-
-                // Access the value of OFplayer
-                string ofPlayer = result.Data[OFStaticData.OFplayerKey].Value;
-                OFStaticData.OFplayerValue = ofPlayer;
-
-                string ownerAddress = result.Data[OFStaticData.OFownerAddressKey].Value;
-                OFStaticData.OFownerAddressValue = ownerAddress;
-
-                RegisterSession();
-            },
-            error =>  // Inline failure callback
-            {
-                Debug.LogError("Failed to get OFplayer or address data: " + error.GenerateErrorReport());
-                Disconnect();
-            }
-        );
     }
 
     private async void OnRegisterSessionSuccess(string response)
@@ -286,16 +407,16 @@ public class Web3AuthService : MonoBehaviour
 
         string signature = null;
 
-        #if UNITY_WEBGL
+#if UNITY_WEBGL
         var address = await Web3GL.Instance.GetConnectedAddressAsync();
         signature = await Web3GL.Instance.Sign(userOpHash, address);
-        #else
+#else
         var address = _wcController.GetConnectedAddress();
         signature = await _wcController.Sign(userOpHash, address);
-        #endif
+#endif
 
         ChangeState(State.SessionSigned);
-        
+
         if (string.IsNullOrEmpty(signature))
         {
             Debug.Log("Signature failed.");
@@ -313,7 +434,7 @@ public class Web3AuthService : MonoBehaviour
             Disconnect();
             throw;
         }
-        
+
         AzureFunctionCaller.CompleteWeb3Auth();
     }
 
@@ -361,101 +482,6 @@ public class Web3AuthService : MonoBehaviour
         // TODO Careful, almost all AzureFunctionCaller requests trigger this if failed.
         Debug.Log("Request failed.");
         Disconnect();
-    }
-    #endregion
-
-    #region PRIVATE_METHODS
-    //TODO UniTask void?
-    private async void RequestMessage()
-    {
-        ChangeState(State.WalletConnected);
-
-        #if UNITY_WEBGL
-        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
-        _currentChainId = await Web3GL.Instance.GetChainIdAsync();
-        #else
-        _currentAddress = _wcController.GetConnectedAddress();
-        _currentChainId = _wcController.GetChainId();
-        #endif
-
-        Debug.Log("Address: " + _currentAddress);
-        Debug.Log("IntegerChainId: " + _currentChainId);
-
-        if (string.IsNullOrEmpty(_currentAddress) || _currentChainId == null)
-        {
-            Debug.Log("Wallet Address or ChainId null or empty.");
-            return;
-        }
-
-        AzureFunctionCaller.ChallengeRequest(_currentAddress, _currentChainId);
-        ChangeState(State.RequestingMessage);
-    }
-
-    private void RegisterSession()
-    {
-        ChangeState(State.RegisteringSession);
-
-        // IMPORTANT Clear current session key if existent
-        var loadedSessionKey = _openfort.LoadSessionKey();
-        if (loadedSessionKey != null)
-        {
-            _openfort.RemoveSessionKey();
-        }
-
-        // To get public key use keyPair.PublicBase64 property
-        var sessionKey = _openfort.CreateSessionKey();
-        if (sessionKey == null)
-        {
-            Disconnect();
-            return;
-        }
-
-        // In case of the previous step success save the key
-        _openfort.SaveSessionKey();
-
-        // Register session
-        AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
-    }
-
-    private async UniTask<bool> CheckIfCorrectAccount()
-    {
-        //TODO??
-        #if UNITY_WEBGL
-        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
-        #else
-        _currentAddress = _wcController.GetConnectedAddress(); 
-        #endif
-
-        if (string.IsNullOrEmpty(_currentAddress))
-        {
-            Debug.LogError("current address is null or empty");
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(OFStaticData.OFownerAddressValue))
-        {
-            Debug.LogError("No OFplayerOwnerAddress in Static Data");
-            return false;
-        }
-
-        if (_currentAddress.ToLower() != OFStaticData.OFownerAddressValue.ToLower())
-        {
-            Debug.LogError("You've connected with a wallet address that is not OFplayerOwnerAddress");
-            return false;
-        }
-
-        return true;
-    }
-
-    public void Disconnect()
-    {
-        ChangeState(State.Disconnecting);
-
-        #if !UNITY_WEBGL
-        _wcController.Disconnect();
-        #else
-        Web3GL.Instance.Disconnect();
-        #endif
     }
     #endregion
 

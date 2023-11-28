@@ -8,6 +8,7 @@ using UnityEngine.UI;
 
 public class MenuSceneManager : MonoBehaviour
 {
+    [Header("UI Panels")]
     public GameObject MenuPanel;
     public GameObject LeaderboardPanel;
     public GameObject ConfigurationPanel;
@@ -16,16 +17,21 @@ public class MenuSceneManager : MonoBehaviour
     public Text username;
 
     private string _currentPlayerAddress;
-    
-    private OpenfortClient _openfortClient;
+
+    private void OnEnable()
+    {
+        TransferOwnershipService.OnDisconnectedEvent += TransferOwnershipService_OnDisconnectedEvent_Handler;
+    }
 
     private void Start()
     {
-        // Get Openfort client with publishable key.
-        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
-        
         getTitleData();
         GetUserData();
+    }
+
+    private void OnDisable()
+    {
+        TransferOwnershipService.OnDisconnectedEvent -= TransferOwnershipService_OnDisconnectedEvent_Handler;
     }
 
     private void Update()
@@ -80,6 +86,7 @@ public class MenuSceneManager : MonoBehaviour
 
     private void OnGetUserDataSuccess(GetUserDataResult result)
     {
+        //TODO check if custodial! --> enable button
         if (result.Data == null || !result.Data.ContainsKey(OFStaticData.OFaddressKey))
         {
             Debug.Log("PlayFab user has no wallet address linked");
@@ -89,6 +96,11 @@ public class MenuSceneManager : MonoBehaviour
         {
             username.text = "Click here to checkout out your account: " + result.Data[OFStaticData.OFaddressKey].Value;
         }
+    }
+    
+    private void TransferOwnershipService_OnDisconnectedEvent_Handler()
+    {
+        SceneManager.LoadScene("Login");
     }
 
     public void OnPlayClicked()
@@ -127,33 +139,5 @@ public class MenuSceneManager : MonoBehaviour
     public void OnQuitClicked()
     {
         Application.Quit();
-    }
-
-    public void OnLogoutClicked()
-    {
-        // Clear "RememberMe" stored PlayerPrefs (Ideally just the ones related to login, but here we clear all)
-        PlayerPrefs.DeleteKey(PPStaticData.RememberMeKey);
-        PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
-        PlayerPrefs.DeleteKey(PPStaticData.LastPlayerKey);
-
-        // Clear all locally saved data related to the PlayFab session
-        PlayFabClientAPI.ForgetAllCredentials();
-
-        // Logout from Web3
-#if !UNITY_WEBGL
-        //TODOMETAMASK MetaMaskUnity.Instance.Disconnect(true);
-#else
-        Web3GL.Instance.Disconnect();        
-#endif
-        
-        // Remove openfort session key
-        var sessionKey = _openfortClient.LoadSessionKey();
-        if (sessionKey == null)
-        {
-            _openfortClient.RemoveSessionKey();
-        }
-
-        // Navigate back to the login scene
-        SceneManager.LoadScene("Login");
     }
 }
