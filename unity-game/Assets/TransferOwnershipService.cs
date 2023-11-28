@@ -212,7 +212,7 @@ public class TransferOwnershipService : MonoBehaviour
         ChangeState(State.WalletConnected);
 
         #if UNITY_WEBGL
-        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
+        _currentWalletAddress = await Web3GL.Instance.GetConnectedAddressAsync();
         _currentChainId = await Web3GL.Instance.GetChainIdAsync();
         #else
         _currentWalletAddress = _wcController.GetConnectedAddress();
@@ -250,33 +250,32 @@ public class TransferOwnershipService : MonoBehaviour
     private async void AcceptOwnership(string contractAddress, string newOwnerAddress)
     {
         ChangeState(State.AcceptingOwnership);
-        
-#if UNITY_WEBGL //TODO!
-        var address = await Web3GL.Instance.GetConnectedAddressAsync();
-        signature = await Web3GL.Instance.Sign(tx.userOpHash, address);
+        string txHash = null;
+
+        try
+        {
+#if UNITY_WEBGL
+            txHash = await Web3GL.Instance.AcceptAccountOwnership(contractAddress, newOwnerAddress);
 #else
-        //var address = _wcController.GetConnectedAddress();
-        var txHash = await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
-
-        if (string.IsNullOrEmpty(txHash))
-        {
-            Debug.LogError("txHash is null or empty.");
-            Disconnect();
-            return;
-        }
-
-        var signature = await _wcController.Sign(txHash, newOwnerAddress);
-        
-        if (string.IsNullOrEmpty(signature))
-        {
-            Debug.LogError("signature is null or empty.");
-            Disconnect();
-            return;
-        }
-        
-        Debug.Log(signature);
-        RegisterSession();
+            txHash = await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
 #endif
+            if (string.IsNullOrEmpty(txHash))
+            {
+                Debug.LogError("txHash is null or empty.");
+                Disconnect();
+                return;
+            }
+        
+            Debug.Log("Ownership accepted.");
+            RegisterSession();
+            
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Disconnect();
+            throw;
+        }
     }
 
     private void RegisterSession()

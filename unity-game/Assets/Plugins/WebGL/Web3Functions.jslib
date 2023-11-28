@@ -32,6 +32,37 @@ mergeInto(LibraryManager.library, {
     }
   },
 
+  AcceptOwnership: function(contractAddressPtr, newOwnerAddressPtr) {
+    var contractAddress = UTF8ToString(contractAddressPtr);
+    var newOwnerAddress = UTF8ToString(newOwnerAddressPtr);
+
+    if (window.ethereum) {
+      // Method ID for 'acceptOwnership()'
+      var methodId = '0x79ba5097';
+
+      // Constructing the transaction data
+      var txData = {
+        from: newOwnerAddress,
+        to: contractAddress,
+        data: methodId,
+        gas: '0xFDE8', // Hex value for 65,000 gas limit
+      };
+
+      window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [txData]
+      })
+      .then(function(txHash) {
+        SendMessage('Web3AuthService', 'OnAcceptOwnershipSuccess', txHash);
+      })
+      .catch(function(error) {
+        SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message);
+      });
+    } else {
+      SendMessage('Web3AuthService', 'OnAcceptOwnershipError', 'Ethereum not found');
+    }
+  },
+
   GetConnectedAddress: function () {
     if (window.ethereum) {
       window.ethereum.request({ method: 'eth_accounts' })
