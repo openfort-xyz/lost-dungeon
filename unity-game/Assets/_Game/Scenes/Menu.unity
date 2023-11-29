@@ -3525,7 +3525,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MenuPanel: {fileID: 525171670}
   LeaderboardPanel: {fileID: 1796096427}
-  ConfigurationPanel: {fileID: 117095145}
+  ConfigurationPanel: {fileID: 117095147}
   notifyText: {fileID: 132315183}
   username: {fileID: 1964909971}
 --- !u!1 &933444238

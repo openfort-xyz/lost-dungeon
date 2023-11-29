@@ -11,7 +11,7 @@ public class MenuSceneManager : MonoBehaviour
     [Header("UI Panels")]
     public GameObject MenuPanel;
     public GameObject LeaderboardPanel;
-    public GameObject ConfigurationPanel;
+    public Configuration ConfigurationPanel;
 
     public Text notifyText;
     public Text username;
@@ -20,7 +20,7 @@ public class MenuSceneManager : MonoBehaviour
 
     private void OnEnable()
     {
-        TransferOwnershipService.OnDisconnectedEvent += TransferOwnershipService_OnDisconnectedEvent_Handler;
+        ConfigurationPanel.OnLoggedOut += Configuration_OnLogout_Handler;
     }
 
     private void Start()
@@ -31,7 +31,7 @@ public class MenuSceneManager : MonoBehaviour
 
     private void OnDisable()
     {
-        TransferOwnershipService.OnDisconnectedEvent -= TransferOwnershipService_OnDisconnectedEvent_Handler;
+        ConfigurationPanel.OnLoggedOut -= Configuration_OnLogout_Handler;
     }
 
     private void Update()
@@ -97,11 +97,6 @@ public class MenuSceneManager : MonoBehaviour
             username.text = "Click here to checkout out your account: " + result.Data[OFStaticData.OFaddressKey].Value;
         }
     }
-    
-    private void TransferOwnershipService_OnDisconnectedEvent_Handler()
-    {
-        SceneManager.LoadScene("Login");
-    }
 
     public void OnPlayClicked()
     {
@@ -113,18 +108,18 @@ public class MenuSceneManager : MonoBehaviour
     {
         LeaderboardPanel.SetActive(true);
         MenuPanel.SetActive(false);
-        ConfigurationPanel.SetActive(false);
+        ConfigurationPanel.gameObject.SetActive(false);
     }
     public void OnCloseLeaderboard()
     {
         LeaderboardPanel.SetActive(false);
-        ConfigurationPanel.SetActive(false);
+        ConfigurationPanel.gameObject.SetActive(false);
         MenuPanel.SetActive(true);
     }
 
     public void OnCloseConfiguration()
     {
-        ConfigurationPanel.SetActive(false);
+        ConfigurationPanel.gameObject.SetActive(false);
         LeaderboardPanel.SetActive(false);
         MenuPanel.SetActive(true);
     }
@@ -133,7 +128,12 @@ public class MenuSceneManager : MonoBehaviour
     {
         MenuPanel.SetActive(false);
         LeaderboardPanel.SetActive(false);
-        ConfigurationPanel.SetActive(true);
+        ConfigurationPanel.gameObject.SetActive(true);
+    }
+    
+    private void Configuration_OnLogout_Handler()
+    {
+        SceneManager.LoadScene("Login");
     }
     
     public void OnQuitClicked()
