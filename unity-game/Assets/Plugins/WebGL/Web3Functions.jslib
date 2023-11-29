@@ -37,29 +37,83 @@ mergeInto(LibraryManager.library, {
     var newOwnerAddress = UTF8ToString(newOwnerAddressPtr);
 
     if (window.ethereum) {
-      // Method ID for 'acceptOwnership()'
-      var methodId = '0x79ba5097';
+        // Define the desired chain ID --> BEAM!
+        var desiredChainId = '0x10F1'; // Hexadecimal representation of 4337
 
-      // Constructing the transaction data
-      var txData = {
-        from: newOwnerAddress,
-        to: contractAddress,
-        data: methodId,
-        gas: '0xFDE8', // Hex value for 65,000 gas limit
-      };
+        // Chain data for chain 4337
+        var chainData = {
+            chainId: desiredChainId,
+            chainName: 'Beam Mainnet',
+            nativeCurrency: {
+                name: 'Beam',
+                symbol: 'BEAM', // Typically 2-4 characters
+                decimals: 18
+            },
+            rpcUrls: ['https://subnets.avax.network/beam/mainnet/rpc'],
+            blockExplorerUrls: ['https://subnets.avax.network/beam']
+        };
 
-      window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [txData]
-      })
-      .then(function(txHash) {
-        SendMessage('Web3AuthService', 'OnAcceptOwnershipSuccess', txHash);
-      })
-      .catch(function(error) {
-        SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message);
-      });
+        // Function to add the desired chain
+        function addDesiredChain() {
+            return window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [chainData]
+            });
+        }
+
+        // Function to switch to the desired chain
+        function switchToDesiredChain() {
+            return window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: desiredChainId }],
+            });
+        }
+
+        // Function to send the transaction
+        function sendTransaction() {
+            // Method ID for 'acceptOwnership()'
+            var methodId = '0x79ba5097';
+
+            // Constructing the transaction data
+            var txData = {
+                from: newOwnerAddress,
+                to: contractAddress,
+                data: methodId,
+                gas: '0xFDE8', // Hex value for 65,000 gas limit
+            };
+
+            window.ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [txData]
+            })
+            .then(function(txHash) {
+                SendMessage('Web3AuthService', 'OnAcceptOwnershipSuccess', txHash);
+            })
+            .catch(function(error) {
+                SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message);
+            });
+        }
+
+        // Check the current chain and switch or add if necessary
+        window.ethereum.request({ method: 'eth_chainId' })
+            .then(currentChainId => {
+                if (currentChainId !== desiredChainId) {
+                    switchToDesiredChain()
+                        .then(() => sendTransaction())
+                        .catch(() => {
+                            // Attempt to add the chain if switch fails
+                            addDesiredChain()
+                                .then(() => switchToDesiredChain())
+                                .then(() => sendTransaction())
+                                .catch(error => SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message));
+                        });
+                } else {
+                    sendTransaction();
+                }
+            })
+            .catch(error => SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message));
     } else {
-      SendMessage('Web3AuthService', 'OnAcceptOwnershipError', 'Ethereum not found');
+        SendMessage('Web3AuthService', 'OnAcceptOwnershipError', 'Ethereum not found');
     }
   },
 
