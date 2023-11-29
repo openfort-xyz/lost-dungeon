@@ -213,18 +213,27 @@ public class Web3AuthService : MonoBehaviour
 
         string signature = null;
 
-        #if UNITY_WEBGL
-        signature = await Web3GL.Instance.Sign(response.message, response.address);
-        #else
-        signature = await _wcController.Sign(response.message, response.address);
-        #endif
-
-        if (string.IsNullOrEmpty(signature))
+        try
         {
-            Disconnect();
-            return;
-        }
+#if UNITY_WEBGL
+            signature = await Web3GL.Instance.Sign(response.message, response.address);
+#else
+            signature = await _wcController.Sign(response.message, response.address);
+#endif
 
+            if (string.IsNullOrEmpty(signature))
+            {
+                Disconnect();
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Disconnect();
+            throw;
+        }
+        
         if (authCompletedOnce)
         {
             RegisterSession();
@@ -286,21 +295,30 @@ public class Web3AuthService : MonoBehaviour
 
         string signature = null;
 
-        #if UNITY_WEBGL
-        var address = await Web3GL.Instance.GetConnectedAddressAsync();
-        signature = await Web3GL.Instance.Sign(userOpHash, address);
-        #else
-        var address = _wcController.GetConnectedAddress();
-        signature = await _wcController.Sign(userOpHash, address);
-        #endif
-
-        ChangeState(State.SessionSigned);
-        
-        if (string.IsNullOrEmpty(signature))
+        try
         {
-            Debug.Log("Signature failed.");
+#if UNITY_WEBGL
+            var address = await Web3GL.Instance.GetConnectedAddressAsync();
+            signature = await Web3GL.Instance.Sign(userOpHash, address);
+#else
+            var address = _wcController.GetConnectedAddress();
+            signature = await _wcController.Sign(userOpHash, address);
+#endif
+        
+            if (string.IsNullOrEmpty(signature))
+            {
+                Debug.Log("Signature failed.");
+                Disconnect();
+                return;
+            }
+            
+            ChangeState(State.SessionSigned);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
             Disconnect();
-            return;
+            throw;
         }
 
         try

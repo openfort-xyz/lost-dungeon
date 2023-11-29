@@ -17,8 +17,6 @@ using WalletConnectSharp.Sign.Models.Engine;
 
 public class TransferOwnershipService : MonoBehaviour
 {
-    public static event UnityAction OnDisconnectedEvent;
-    
     [Serializable]
     public class TransferOwnershipResponse
     {
@@ -164,7 +162,6 @@ public class TransferOwnershipService : MonoBehaviour
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
         ChangeState(State.Disconnected);
-        OnDisconnectedEvent?.Invoke();
     }
     #endregion
 
@@ -185,7 +182,6 @@ public class TransferOwnershipService : MonoBehaviour
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
         ChangeState(State.Disconnected);
-        OnDisconnectedEvent?.Invoke();
     }
     #endregion
 
@@ -338,19 +334,28 @@ public class TransferOwnershipService : MonoBehaviour
 
         string signature = null;
 
-        #if UNITY_WEBGL
-        signature = await Web3GL.Instance.Sign(response.message, response.address);
-        #else
-        signature = await _wcController.Sign(response.message, response.address);
-        #endif
-
-        if (string.IsNullOrEmpty(signature))
+        try
         {
-            Disconnect();
-            return;
-        }
+#if UNITY_WEBGL
+            signature = await Web3GL.Instance.Sign(response.message, response.address);
+#else
+            signature = await _wcController.Sign(response.message, response.address);
+#endif
+
+            if (string.IsNullOrEmpty(signature))
+            {
+                Disconnect();
+                return;
+            }
         
-        RequestTransferOwnership(_currentAccount.Id, response.address);
+            RequestTransferOwnership(_currentAccount.Id, response.address);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Disconnect();
+            throw;
+        }
     }
     
     private void OnTransferOwnershipSuccess(string requestResponse)
@@ -407,21 +412,30 @@ public class TransferOwnershipService : MonoBehaviour
 
         string signature = null;
 
+        try
+        {
 #if UNITY_WEBGL
-        var address = await Web3GL.Instance.GetConnectedAddressAsync();
-        signature = await Web3GL.Instance.Sign(userOpHash, address);
+            var address = await Web3GL.Instance.GetConnectedAddressAsync();
+            signature = await Web3GL.Instance.Sign(userOpHash, address);
 #else
-        var address = _wcController.GetConnectedAddress();
-        signature = await _wcController.Sign(userOpHash, address);
+            var address = _wcController.GetConnectedAddress();
+            signature = await _wcController.Sign(userOpHash, address);
 #endif
 
-        ChangeState(State.SessionSigned);
+            ChangeState(State.SessionSigned);
 
-        if (string.IsNullOrEmpty(signature))
+            if (string.IsNullOrEmpty(signature))
+            {
+                Debug.Log("Signature failed.");
+                Disconnect();
+                return;
+            }
+        }
+        catch (Exception e)
         {
-            Debug.Log("Signature failed.");
+            Console.WriteLine(e);
             Disconnect();
-            return;
+            throw;
         }
 
         try

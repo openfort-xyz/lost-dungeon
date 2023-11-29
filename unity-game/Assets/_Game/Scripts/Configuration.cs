@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 
 public class Configuration : MonoBehaviour
 {
+    public event UnityAction OnLoggedOut;
     public UnityEvent closed;
     
     public TransferOwnershipService transferOwnershipService;
@@ -25,6 +26,7 @@ public class Configuration : MonoBehaviour
     private PlayFabAuthService _AuthService = PlayFabAuthService.Instance;
     
     private OpenfortClient _openfortClient;
+    private bool _loggingOut = false;
 
     public void Start()
     {
@@ -90,11 +92,18 @@ public class Configuration : MonoBehaviour
                 Invoke(nameof(ClosePanel), 1f);
                 break;
             case TransferOwnershipService.State.Disconnecting:
+                EnableButtons(false);
                 statusTextLabel.text = "Disconnecting...";
                 break;
             case TransferOwnershipService.State.Disconnected:
                 EnableButtons(true);
                 statusTextLabel.text = "Wallet disconnected. Please try again.";
+                
+                if (_loggingOut)
+                {
+                    _loggingOut = false;
+                    OnLoggedOut?.Invoke();
+                }
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(currentState), currentState, null);
@@ -103,6 +112,8 @@ public class Configuration : MonoBehaviour
     
     public void OnLogoutClicked()
     {
+        _loggingOut = true;
+        
         // Clear "RememberMe" stored PlayerPrefs (Ideally just the ones related to login, but here we clear all)
         PlayerPrefs.DeleteKey(PPStaticData.RememberMeKey);
         PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
