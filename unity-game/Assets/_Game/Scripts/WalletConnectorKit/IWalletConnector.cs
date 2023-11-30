@@ -13,5 +13,6 @@ public interface IWalletConnector
     event Action OnConnected;
     event Action<string> OnConnectionError;
     event Action<string> OnDisconnected;
+    event Action OnEthereumNotFound; //Only used in WebGL
 }
 
