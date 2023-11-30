@@ -1,4 +1,15 @@
 mergeInto(LibraryManager.library, {
+  
+  InitializeWeb3: function () {
+    if (typeof window.ethereum !== 'undefined') {
+      // MetaMask is installed
+      SendMessage('Web3AuthService', 'OnInitializationSuccess');
+    } else {
+      // MetaMask is not installed
+      SendMessage('Web3AuthService', 'OnInitializationError', 'MetaMask not installed');
+    }
+  },
+  
   ConnectToWeb3: function () {
     if (window.ethereum) {
       window.ethereum.request({ method: 'eth_requestAccounts' })
