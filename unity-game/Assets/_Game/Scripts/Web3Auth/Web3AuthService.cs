@@ -153,7 +153,9 @@ public class Web3AuthService : MonoBehaviour
     {
         Debug.Log("WEB3AUTHSERVICE: CONNECTION ERROR");
         Debug.LogError(error);
-        Disconnect();
+        
+        //TODO Disconnect????
+        ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
     #endregion
 

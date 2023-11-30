@@ -10,9 +10,6 @@ using Object = UnityEngine.Object;
 public class WalletConnectWalletConnector : IWalletConnector {
     private WalletConnectController _wcController;
     
-    public event Action OnInitialized;
-    public event Action OnInitializationError;
-    
     public event Action OnConnected;
     public event Action<string> OnConnectionError;
     public event Action<string> OnDisconnected;

@@ -11,35 +11,22 @@ public class WalletConnectorKit : MonoBehaviour
     
     private IWalletConnector _currentConnector;
 
-    void Awake() {
-        InitializeWeb3GLConnector();
+    void Start() {
+        Initialize();
     }
 
-    private void InitializeWeb3GLConnector() {
+    private void Initialize() {
 #if UNITY_WEBGL
-        var web3GLConnector = new Web3GLWalletConnector();
-        web3GLConnector.OnInitialized += HandleWeb3GLInitializationSuccess;
-        web3GLConnector.OnInitializationError += HandleWeb3GLInitializationFailure;
-
-        web3GLConnector.Initialize(); // Assuming Web3GLWalletConnector has an Initialize method
+        _currentConnector = new Web3GLWalletConnector();
 #else
-        InitializeWalletConnectConnector();
+        _currentConnector = new WalletConnectWalletConnector();
 #endif
-    }
-    
-    private void SubscribeToConnectorEvents() {
         
-        _currentConnector.OnInitialized += WalletConnector_OnInitialized_Handler;
-        _currentConnector.OnInitializationError += WalletConnector_OnInitializationError_Handler;
         _currentConnector.OnConnected += WalletConnector_OnConnected_Handler;
         _currentConnector.OnDisconnected += WalletConnector_OnDisconnected_Handler;
         _currentConnector.OnConnectionError += WalletConnector_ConnectionError_Handler;
     }
-
-    public void Initialize()
-    {
-        //_currentConnector.Initialize();
-    }
+    
 
     public void Connect() {
         _currentConnector.Connect();
@@ -64,34 +51,8 @@ public class WalletConnectorKit : MonoBehaviour
     public async UniTask<int?> GetChainId() {
         return await _currentConnector.GetChainId();
     }
-
-    private void HandleWeb3GLInitializationSuccess() {
-        _currentConnector = new Web3GLWalletConnector();
-        // Subscribe to connector events
-        SubscribeToConnectorEvents();
-    }
-    
-    private void InitializeWalletConnectConnector() {
-        _currentConnector = new WalletConnectWalletConnector();
-        // Subscribe to connector events
-        SubscribeToConnectorEvents();
-    }
-
-    private void HandleWeb3GLInitializationFailure() {
-        InitializeWalletConnectConnector();
-    }
     
     // Event handlers
-    private void WalletConnector_OnInitialized_Handler()
-    {
-        throw new System.NotImplementedException();
-    }
-    
-    private void WalletConnector_OnInitializationError_Handler()
-    {
-        throw new System.NotImplementedException();
-    }
-    
     private void WalletConnector_OnConnected_Handler() {
         OnConnected?.Invoke();
     }
@@ -106,8 +67,7 @@ public class WalletConnectorKit : MonoBehaviour
 
     private void OnDestroy()
     {
-        _currentConnector.OnInitialized -= WalletConnector_OnInitialized_Handler;
-        _currentConnector.OnInitializationError -= WalletConnector_OnInitializationError_Handler;
+        if (_currentConnector == null) return;
         _currentConnector.OnConnected -= WalletConnector_OnConnected_Handler;
         _currentConnector.OnDisconnected -= WalletConnector_OnDisconnected_Handler;
         _currentConnector.OnConnectionError -= WalletConnector_ConnectionError_Handler;

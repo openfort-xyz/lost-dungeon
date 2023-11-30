@@ -9,10 +9,6 @@ public class Web3GL : MonoBehaviour
     // Singleton instance
     public static Web3GL Instance { get; private set; }
     
-    
-    [DllImport("__Internal")]
-    private static extern void InitializeWeb3();
-    
     // Import methods from our .jslib file
     [DllImport("__Internal")]
     private static extern void ConnectToWeb3();
@@ -34,12 +30,11 @@ public class Web3GL : MonoBehaviour
     
 
     // Declare events using Action
-    public event Action OnWeb3InitializedEvent;
-    public event Action<string> OnWeb3InitializeErrorEvent;
     public event Action<string> OnWeb3ConnectedEvent;
     public event Action<string> OnWeb3ConnectErrorEvent;
     public event Action<string> OnWeb3DisconnectedEvent;
     public event Action<string> OnWeb3DisconnectErrorEvent;
+    public event Action OnEthereumNotFoundEvent;
 
     // UCS to handle async responses
     private UniTaskCompletionSource<string> personalSignUcs;
@@ -63,11 +58,6 @@ public class Web3GL : MonoBehaviour
     }
     
     #region PUBLIC_METHODS
-    public void Initialize()
-    {
-        InitializeWeb3();
-    }
-    
     public void Connect()
     {
         ConnectToWeb3();
@@ -108,18 +98,10 @@ public class Web3GL : MonoBehaviour
     #endregion
 
     #region CALLED_FROM_JAVASCRIPT
-    // Method called when initialization is successful
-    void OnWeb3Initialized()
+    void OnEthereumNotFound()
     {
-        Debug.Log("Initialization successful.");
-        OnWeb3InitializedEvent?.Invoke();
-    }
-
-    // Method called when there's an error during initialization
-    void OnWeb3InitializeError(string error)
-    {
-        Debug.LogError("Initialization error: " + error);
-        OnWeb3InitializeErrorEvent?.Invoke(error);
+        Debug.Log("Ethereum not found.");
+        OnEthereumNotFoundEvent?.Invoke();
     }
     
     void OnWeb3Connected(string account)

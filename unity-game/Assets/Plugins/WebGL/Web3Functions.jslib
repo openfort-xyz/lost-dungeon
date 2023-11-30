@@ -1,5 +1,6 @@
 mergeInto(LibraryManager.library, {
   
+  /*
   InitializeWeb3: function () {
     if (typeof window.ethereum !== 'undefined') {
       // MetaMask is installed
@@ -9,6 +10,7 @@ mergeInto(LibraryManager.library, {
       SendMessage('WalletConnectorKit', 'OnWeb3InitializeError', 'Injected wallet not installed');
     }
   },
+  */
   
   ConnectToWeb3: function () {
     if (window.ethereum) {
@@ -20,7 +22,7 @@ mergeInto(LibraryManager.library, {
         SendMessage('WalletConnectorKit', 'OnWeb3ConnectError', error.message);
       });
     } else {
-      SendMessage('WalletConnectorKit', 'OnWeb3ConnectError', 'Ethereum not found');
+      SendMessage('WalletConnectorKit', 'OnEthereumNotFound');
     }
   },
 
