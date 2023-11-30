@@ -9,6 +9,10 @@ public class Web3GL : MonoBehaviour
     // Singleton instance
     public static Web3GL Instance { get; private set; }
     
+    
+    [DllImport("__Internal")]
+    private static extern void InitializeWeb3();
+    
     // Import methods from our .jslib file
     [DllImport("__Internal")]
     private static extern void ConnectToWeb3();
@@ -30,6 +34,8 @@ public class Web3GL : MonoBehaviour
     
 
     // Declare events using Action
+    public static event Action OnInitializationSuccessEvent;
+    public static event Action<string> OnInitializationErrorEvent;
     public static event Action<string> OnWeb3ConnectedEvent;
     public static event Action<string> OnWeb3ConnectErrorEvent;
     public static event Action<string> OnWeb3DisconnectedEvent;
@@ -57,6 +63,11 @@ public class Web3GL : MonoBehaviour
     }
     
     #region PUBLIC_METHODS
+    public void Initialize()
+    {
+        InitializeWeb3();
+    }
+    
     public void Connect()
     {
         ConnectToWeb3();
@@ -97,6 +108,20 @@ public class Web3GL : MonoBehaviour
     #endregion
 
     #region CALLED_FROM_JAVASCRIPT
+    // Method called when initialization is successful
+    void OnInitializationSuccess()
+    {
+        Debug.Log("Initialization successful.");
+        OnInitializationSuccessEvent?.Invoke();
+    }
+
+    // Method called when there's an error during initialization
+    void OnInitializationError(string error)
+    {
+        Debug.LogError("Initialization error: " + error);
+        OnInitializationErrorEvent?.Invoke(error);
+    }
+    
     void OnWeb3Connected(string account)
     {
         Debug.Log("Connected to Web3. Account: " + account);
