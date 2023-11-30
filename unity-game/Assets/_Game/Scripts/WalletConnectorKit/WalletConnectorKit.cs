@@ -71,10 +71,13 @@ public class WalletConnectorKit : MonoBehaviour
     private void WalletConnector_OnEthereumNotFound_Handler()
     {
         // We haven't found any injected wallet in the browser.
-        Debug.Log("We haven't found any injected wallet installed in the browser.");
+        Debug.Log("No injected wallet installed in browser.");
+        
         // Let's switch to StandardWalletConnector
         _currentConnector = new StandardWalletConnector();
         
+        OnConnectionError?.Invoke("No injected wallet installed in browser.");
+        /*
         _currentConnector.OnConnected += WalletConnector_OnConnected_Handler;
         _currentConnector.OnDisconnected += WalletConnector_OnDisconnected_Handler;
         _currentConnector.OnConnectionError += WalletConnector_ConnectionError_Handler;
@@ -82,6 +85,7 @@ public class WalletConnectorKit : MonoBehaviour
         
         // Try to connect again with StandardWalletConnector
         _currentConnector.Connect();
+        */
     }
 
     private void OnDestroy()

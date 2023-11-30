@@ -26,11 +26,6 @@ public class StandardWalletConnector : IWalletConnector {
         _wcController.OnDisconnected += HandleDisconnected;
     }
 
-    public void Initialize()
-    {
-        throw new NotImplementedException();
-    }
-
     public void Connect() {
         _wcController.Connect();
     }
