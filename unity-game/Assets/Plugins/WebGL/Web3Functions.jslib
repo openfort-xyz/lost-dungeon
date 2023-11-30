@@ -3,10 +3,10 @@ mergeInto(LibraryManager.library, {
   InitializeWeb3: function () {
     if (typeof window.ethereum !== 'undefined') {
       // MetaMask is installed
-      SendMessage('Web3AuthService', 'OnWeb3Initialized');
+      SendMessage('WalletConnectorKit', 'OnWeb3Initialized');
     } else {
       // MetaMask is not installed
-      SendMessage('Web3AuthService', 'OnWeb3InitializeError', 'Injected wallet not installed');
+      SendMessage('WalletConnectorKit', 'OnWeb3InitializeError', 'Injected wallet not installed');
     }
   },
   
@@ -14,13 +14,13 @@ mergeInto(LibraryManager.library, {
     if (window.ethereum) {
       window.ethereum.request({ method: 'eth_requestAccounts' })
       .then(function(accounts) {
-        SendMessage('Web3AuthService', 'OnWeb3Connected', accounts[0]);
+        SendMessage('WalletConnectorKit', 'OnWeb3Connected', accounts[0]);
       })
       .catch(function(error) {
-        SendMessage('Web3AuthService', 'OnWeb3ConnectError', error.message);
+        SendMessage('WalletConnectorKit', 'OnWeb3ConnectError', error.message);
       });
     } else {
-      SendMessage('Web3AuthService', 'OnWeb3ConnectError', 'Ethereum not found');
+      SendMessage('WalletConnectorKit', 'OnWeb3ConnectError', 'Ethereum not found');
     }
   },
 
@@ -33,13 +33,13 @@ mergeInto(LibraryManager.library, {
         params: [message, account]
       })
       .then(function(signature) {
-        SendMessage('Web3AuthService', 'OnPersonalSign', signature);
+        SendMessage('WalletConnectorKit', 'OnPersonalSign', signature);
       })
       .catch(function(error) {
-        SendMessage('Web3AuthService', 'OnPersonalSignError', error.message);
+        SendMessage('WalletConnectorKit', 'OnPersonalSignError', error.message);
       });
     } else {
-      SendMessage('Web3AuthService', 'OnPersonalSignError', 'Ethereum not found');
+      SendMessage('WalletConnectorKit', 'OnPersonalSignError', 'Ethereum not found');
     }
   },
 
@@ -98,10 +98,10 @@ mergeInto(LibraryManager.library, {
                 params: [txData]
             })
             .then(function(txHash) {
-                SendMessage('Web3AuthService', 'OnAcceptOwnershipSuccess', txHash);
+                SendMessage('WalletConnectorKit', 'OnAcceptOwnershipSuccess', txHash);
             })
             .catch(function(error) {
-                SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message);
+                SendMessage('WalletConnectorKit', 'OnAcceptOwnershipError', error.message);
             });
         }
 
@@ -116,15 +116,15 @@ mergeInto(LibraryManager.library, {
                             addDesiredChain()
                                 .then(() => switchToDesiredChain())
                                 .then(() => sendTransaction())
-                                .catch(error => SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message));
+                                .catch(error => SendMessage('WalletConnectorKit', 'OnAcceptOwnershipError', error.message));
                         });
                 } else {
                     sendTransaction();
                 }
             })
-            .catch(error => SendMessage('Web3AuthService', 'OnAcceptOwnershipError', error.message));
+            .catch(error => SendMessage('WalletConnectorKit', 'OnAcceptOwnershipError', error.message));
     } else {
-        SendMessage('Web3AuthService', 'OnAcceptOwnershipError', 'Ethereum not found');
+        SendMessage('WalletConnectorKit', 'OnAcceptOwnershipError', 'Ethereum not found');
     }
   },
 
@@ -134,16 +134,16 @@ mergeInto(LibraryManager.library, {
       .then(function(accounts) {
         if (accounts.length > 0) {
           const address = accounts[0];
-          SendMessage('Web3AuthService', 'OnAddressRetrieved', address);
+          SendMessage('WalletConnectorKit', 'OnAddressRetrieved', address);
         } else {
-          SendMessage('Web3AuthService', 'OnAddressError', 'No accounts connected');
+          SendMessage('WalletConnectorKit', 'OnAddressError', 'No accounts connected');
         }
       })
       .catch(function(error) {
-        SendMessage('Web3AuthService', 'OnAddressError', error.message);
+        SendMessage('WalletConnectorKit', 'OnAddressError', error.message);
       });
     } else {
-      SendMessage('Web3AuthService', 'OnAddressError', 'Ethereum not found');
+      SendMessage('WalletConnectorKit', 'OnAddressError', 'Ethereum not found');
     }
   },
 
@@ -155,13 +155,13 @@ mergeInto(LibraryManager.library, {
         if (chainId.startsWith('0x')) {
           chainId = parseInt(chainId, 16).toString();
         }
-        SendMessage('Web3AuthService', 'OnChainIdRetrieved', chainId);
+        SendMessage('WalletConnectorKit', 'OnChainIdRetrieved', chainId);
       })
       .catch(function(error) {
-        SendMessage('Web3AuthService', 'OnChainIdError', error.message);
+        SendMessage('WalletConnectorKit', 'OnChainIdError', error.message);
       });
     } else {
-      SendMessage('Web3AuthService', 'OnChainIdError', 'Ethereum not found');
+      SendMessage('WalletConnectorKit', 'OnChainIdError', 'Ethereum not found');
     }
   },
 
@@ -170,9 +170,9 @@ mergeInto(LibraryManager.library, {
     if (window.ethereum) {
       // Simply notify Unity that the disconnect is successful,
       // since there is no direct method to log out or disconnect.
-      SendMessage('Web3AuthService', 'OnWeb3Disconnected', 'Successfully disconnected');
+      SendMessage('WalletConnectorKit', 'OnWeb3Disconnected', 'Successfully disconnected');
     } else {
-      SendMessage('Web3AuthService', 'OnWeb3DisconnectError', 'Ethereum not found');
+      SendMessage('WalletConnectorKit', 'OnWeb3DisconnectError', 'Ethereum not found');
     }
   }
 });

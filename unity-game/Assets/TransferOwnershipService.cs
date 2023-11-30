@@ -17,14 +17,14 @@ using WalletConnectSharp.Sign.Models.Engine;
 
 public class TransferOwnershipService : MonoBehaviour
 {
+    private WalletConnectorKit _walletConnectorKit;
+    
     [Serializable]
     public class TransferOwnershipResponse
     {
         public string contractAddress;
         public string newOwnerAddress;
     }
-    
-    private WalletConnectController _wcController;
     
     public enum State
     {
@@ -67,35 +67,27 @@ public class TransferOwnershipService : MonoBehaviour
     
     #region UNITY_LIFECYCLE
 
-    private void Awake()
-    {
-        _wcController = FindObjectOfType<WalletConnectController>();
-        if (_wcController == null)
-        {
-            Debug.LogError("WalletConnectController not found. Web3AuthService needs it to function.");
+    private void Awake() {
+        _walletConnectorKit = FindObjectOfType<WalletConnectorKit>();
+        if (_walletConnectorKit == null) {
+            Debug.LogError("WalletConnectorKit not found. Web3AuthService needs it to function.");
+            return;
         }
+
+        // Subscribe to events
+        _walletConnectorKit.OnConnected += WalletConnectorKit_OnConnected_Handler;
+        _walletConnectorKit.OnDisconnected += WalletConnectorKit_OnDisconnected_Handler;
+        _walletConnectorKit.OnConnectionError += WalletConnectorKit_OnConnectionError_Handler;
     }
 
     private void OnEnable()
     {
-        // WC Events
-        _wcController.OnConnected += WcController_OnConnected_Handler;
-        _wcController.OnDisconnected += WcController_OnDisconnected_Handler;
-
-#if UNITY_WEBGL
-        // Web3GL Events
-        Web3GL.OnWeb3ConnectedEvent += OnWeb3GLConnected;
-        Web3GL.OnWeb3ConnectErrorEvent += OnWeb3GLConnectionFailure;  
-        Web3GL.OnWeb3DisconnectedEvent += OnWeb3GLDisconnected;
-#endif
-
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess += OnChallengeRequestSuccess;
         AzureFunctionCaller.onDeployAccountSuccess += OnDeployAccountSuccess;
         AzureFunctionCaller.onRequestTransferOwnershipSuccess += OnTransferOwnershipSuccess;
         AzureFunctionCaller.onRegisterSessionSuccess += OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess += OnCompleteWeb3AuthSuccess;
-        
         AzureFunctionCaller.onRegisterSessionFailure += OnRegisterSessionFailure;
         AzureFunctionCaller.onRequestTransferOwnershipFailure += OnTransferOwnershipFailure;
         AzureFunctionCaller.onRequestFailure += OnAnyRequestFailure;
@@ -103,24 +95,16 @@ public class TransferOwnershipService : MonoBehaviour
 
     private void OnDisable()
     {
-        // WC Events
-        _wcController.OnConnected -= WcController_OnConnected_Handler;
-        _wcController.OnDisconnected -= WcController_OnDisconnected_Handler;
+        _walletConnectorKit.OnConnected -= WalletConnectorKit_OnConnected_Handler;
+        _walletConnectorKit.OnDisconnected -= WalletConnectorKit_OnDisconnected_Handler;
+        _walletConnectorKit.OnConnectionError -= WalletConnectorKit_OnConnectionError_Handler;
         
-#if UNITY_WEBGL
-        // Web3GL Events
-        Web3GL.OnWeb3ConnectedEvent -= OnWeb3GLConnected;
-        Web3GL.OnWeb3ConnectErrorEvent -= OnWeb3GLConnectionFailure;
-        Web3GL.OnWeb3DisconnectedEvent -= OnWeb3GLDisconnected;
-#endif
-
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess -= OnChallengeRequestSuccess;
         AzureFunctionCaller.onDeployAccountSuccess -= OnDeployAccountSuccess;
         AzureFunctionCaller.onRequestTransferOwnershipSuccess -= OnTransferOwnershipSuccess;
         AzureFunctionCaller.onRegisterSessionSuccess -= OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess -= OnCompleteWeb3AuthSuccess;
-        
         AzureFunctionCaller.onRegisterSessionFailure -= OnRegisterSessionFailure;
         AzureFunctionCaller.onRequestTransferOwnershipFailure -= OnTransferOwnershipFailure;
         AzureFunctionCaller.onRequestFailure -= OnAnyRequestFailure;
@@ -143,45 +127,29 @@ public class TransferOwnershipService : MonoBehaviour
     {
         ChangeState(State.WalletConnecting);
 
-        #if UNITY_WEBGL
-        Web3GL.Instance.Connect();
-        #else
-        _wcController.Connect();
-        #endif
+        _walletConnectorKit.Connect();
     }
     #endregion
 
     #region WC_EVENT_HANDLERS
-    private async void WcController_OnConnected_Handler(SessionStruct session)
+    private void WalletConnectorKit_OnConnected_Handler()
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
         DeployAccount();
     }
     
-    private void WcController_OnDisconnected_Handler()
+    private void WalletConnectorKit_OnDisconnected_Handler(string disconnectionReason)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
+        Debug.LogWarning(disconnectionReason);
         ChangeState(State.Disconnected);
     }
-    #endregion
-
-    #region WEB3GL_WALLET_EVENTS
-    private async void OnWeb3GLConnected(string obj)
+    
+    private void WalletConnectorKit_OnConnectionError_Handler(string error)
     {
-        Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
-        DeployAccount();
-    }
-
-    private void OnWeb3GLConnectionFailure(string obj)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
+        Debug.Log("WEB3AUTHSERVICE: CONNECTION ERROR");
+        Debug.LogError(error);
         Disconnect();
-    }
-
-    private void OnWeb3GLDisconnected(string obj)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
-        ChangeState(State.Disconnected);
     }
     #endregion
 
@@ -204,14 +172,9 @@ public class TransferOwnershipService : MonoBehaviour
     private async void RequestMessage()
     {
         ChangeState(State.WalletConnected);
-
-        #if UNITY_WEBGL
-        _currentWalletAddress = await Web3GL.Instance.GetConnectedAddressAsync();
-        _currentChainId = await Web3GL.Instance.GetChainIdAsync();
-        #else
-        _currentWalletAddress = _wcController.GetConnectedAddress();
-        _currentChainId = _wcController.GetChainId();
-        #endif
+        
+        _currentWalletAddress = await _walletConnectorKit.GetConnectedAddress();
+        _currentChainId = await _walletConnectorKit.GetChainId();
 
         Debug.Log("Address: " + _currentWalletAddress);
         Debug.Log("IntegerChainId: " + _currentChainId);
@@ -244,15 +207,11 @@ public class TransferOwnershipService : MonoBehaviour
     private async void AcceptOwnership(string contractAddress, string newOwnerAddress)
     {
         ChangeState(State.AcceptingOwnership);
-        string txHash = null;
 
         try
         {
-#if UNITY_WEBGL
-            txHash = await Web3GL.Instance.AcceptAccountOwnership(contractAddress, newOwnerAddress);
-#else
-            txHash = await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
-#endif
+            var txHash = await _walletConnectorKit.AcceptOwnership(contractAddress, newOwnerAddress);
+
             if (string.IsNullOrEmpty(txHash))
             {
                 Debug.LogError("txHash is null or empty.");
@@ -301,12 +260,7 @@ public class TransferOwnershipService : MonoBehaviour
     public void Disconnect()
     {
         ChangeState(State.Disconnecting);
-
-        #if !UNITY_WEBGL
-        _wcController.Disconnect();
-        #else
-        Web3GL.Instance.Disconnect();
-        #endif
+        _walletConnectorKit.Disconnect();
     }
     #endregion
     
@@ -332,15 +286,9 @@ public class TransferOwnershipService : MonoBehaviour
         Debug.Log("ChallengeRequest success.");
         var response = JsonUtility.FromJson<ChallengeRequestResponse>(requestResponse);
 
-        string signature = null;
-
         try
         {
-#if UNITY_WEBGL
-            signature = await Web3GL.Instance.Sign(response.message, response.address);
-#else
-            signature = await _wcController.Sign(response.message, response.address);
-#endif
+            var signature = await _walletConnectorKit.Sign(response.message, response.address);
 
             if (string.IsNullOrEmpty(signature))
             {
@@ -410,17 +358,12 @@ public class TransferOwnershipService : MonoBehaviour
         var userOpHash = session.NextAction.Payload.UserOpHash;
         Debug.Log("USEROPHASH: " + userOpHash);
 
-        string signature = null;
+        string signature;
 
         try
         {
-#if UNITY_WEBGL
-            var address = await Web3GL.Instance.GetConnectedAddressAsync();
-            signature = await Web3GL.Instance.Sign(userOpHash, address);
-#else
-            var address = _wcController.GetConnectedAddress();
-            signature = await _wcController.Sign(userOpHash, address);
-#endif
+            var address = await _walletConnectorKit.GetConnectedAddress();
+            signature = await _walletConnectorKit.Sign(userOpHash, address);
 
             ChangeState(State.SessionSigned);
 

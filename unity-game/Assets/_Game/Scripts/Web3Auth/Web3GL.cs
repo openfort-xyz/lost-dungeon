@@ -34,12 +34,12 @@ public class Web3GL : MonoBehaviour
     
 
     // Declare events using Action
-    public static event Action OnWeb3InitializedEvent;
-    public static event Action<string> OnWeb3InitializeErrorEvent;
-    public static event Action<string> OnWeb3ConnectedEvent;
-    public static event Action<string> OnWeb3ConnectErrorEvent;
-    public static event Action<string> OnWeb3DisconnectedEvent;
-    public static event Action<string> OnWeb3DisconnectErrorEvent;
+    public event Action OnWeb3InitializedEvent;
+    public event Action<string> OnWeb3InitializeErrorEvent;
+    public event Action<string> OnWeb3ConnectedEvent;
+    public event Action<string> OnWeb3ConnectErrorEvent;
+    public event Action<string> OnWeb3DisconnectedEvent;
+    public event Action<string> OnWeb3DisconnectErrorEvent;
 
     // UCS to handle async responses
     private UniTaskCompletionSource<string> personalSignUcs;

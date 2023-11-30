@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.RPC.Eth.Transactions;
@@ -66,6 +67,7 @@ public class WalletConnectController : BindableMonoBehavior
     }
     
     public event UnityAction<SessionStruct> OnConnected;
+    public event UnityAction<string> OnConnectionError;
     public event UnityAction OnDisconnected;
     
     [Inject]
@@ -89,6 +91,11 @@ public class WalletConnectController : BindableMonoBehavior
         wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
+
+    public async void Initialize()
+    {
+        
+    }
     
     public async void Connect()
     {
@@ -162,110 +169,13 @@ public class WalletConnectController : BindableMonoBehavior
         _wcSignClient.Disconnect(CurrentSession.Topic); 
     }
     
-    public async Task<string> Sign(string message, string address)
+    public async UniTask<string> Sign(string message, string address)
     {
         var result = await PersonalSignAsync(message, address);
         return result;
     }
     
-    public string GetConnectedAddress()
-    {
-        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
-            
-        if (string.IsNullOrWhiteSpace(defaultChain))
-            return null;
-
-        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
-        
-        if (defaultNamespace.Accounts.Length == 0)
-            return null;
-            
-        var fullAddress = defaultNamespace.Accounts[0];
-        var addressParts = fullAddress.Split(":");
-            
-        var address = addressParts[2];
-
-        return address;
-    }
-    
-    public int? GetChainId()
-    {
-        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
-    
-        if (string.IsNullOrWhiteSpace(defaultChain))
-            return null;
-
-        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
-    
-        if (defaultNamespace.Chains.Length == 0)
-            return null;
-
-        // Assuming we need the last chain if there are multiple chains
-        var fullChain = defaultNamespace.Chains.LastOrDefault();
-
-        if (string.IsNullOrWhiteSpace(fullChain))
-            return null;
-
-        var chainParts = fullChain.Split(':');
-
-        // Check if the split operation gives at least 2 parts
-        if (chainParts.Length < 2)
-            return null;
-
-        if (int.TryParse(chainParts[1], out int chainId))
-        {
-            return chainId;
-        }
-
-        return null;
-    }
-
-    #region EVENT_HANDLERS
-    private void WcSignClientOnSessionConnectionErrored(object sender, Exception e)
-    {
-        Debug.LogWarning("WC SESSION CONNECTION ERROR");
-        // No need for real disconnection as we're not connected yet.
-        OnDisconnected?.Invoke();
-    }
-    
-    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
-    {
-        Debug.LogWarning("WC SESSION DELETED");
-        OnDisconnected?.Invoke();
-    });
-    
-    private void WcQrCodeHandlerOnOnCancelButtonClicked()
-    {
-        Debug.LogWarning("WC CANCEL BUTTON CLICKED");
-        OnDisconnected?.Invoke();
-    }
-    #endregion
-
-    #region PRIVATE_METHODS
-    private async Task<string> PersonalSignAsync(string message, string address)
-    {
-        try
-        {
-            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
-
-            //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
-            var request = new PersonalSign(message, address);                                
-        
-            var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
-                 
-            Debug.Log("Got result from request: " + result);
-        
-            return result; 
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"An error occurred: {ex.Message}");
-            // Optionally, you can handle the exception more specifically or rethrow it
-            return null; // Or handle the failure case appropriately
-        }                                                                                 
-    }
-
-    public async Task<string> AcceptAccountOwnership(string contractAddress, string newOwnerAddress)
+    public async UniTask<string> AcceptAccountOwnership(string contractAddress, string newOwnerAddress)
     {
         try
         {
@@ -307,6 +217,113 @@ public class WalletConnectController : BindableMonoBehavior
             // Optionally, you can handle the exception more specifically or rethrow it
             return null; // Or handle the failure case appropriately
         }
+    }
+    
+    public UniTask<string> GetConnectedAddressAsync()
+    {
+        return UniTask.Run(GetConnectedAddress);
+    }
+    
+    public UniTask<int?> GetChainIdAsync()
+    {
+        return UniTask.Run(GetChainId);
+    }
+
+    #region EVENT_HANDLERS
+    private void WcSignClientOnSessionConnectionErrored(object sender, Exception e)
+    {
+        Debug.LogWarning("WC SESSION CONNECTION ERROR");
+        // No need for real disconnection as we're not connected yet.
+        OnConnectionError?.Invoke(e.Message);
+    }
+    
+    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
+    {
+        Debug.LogWarning("WC SESSION DELETED");
+        OnDisconnected?.Invoke();
+    });
+    
+    private void WcQrCodeHandlerOnOnCancelButtonClicked()
+    {
+        Debug.LogWarning("WC CANCEL BUTTON CLICKED");
+        OnConnectionError?.Invoke("Connection error reason: cancel button pressed.");
+    }
+    #endregion
+
+    #region PRIVATE_METHODS
+    private async UniTask<string> PersonalSignAsync(string message, string address)
+    {
+        try
+        {
+            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
+
+            //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
+            var request = new PersonalSign(message, address);                                
+        
+            var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
+                 
+            Debug.Log("Got result from request: " + result);
+        
+            return result; 
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"An error occurred: {ex.Message}");
+            // Optionally, you can handle the exception more specifically or rethrow it
+            return null; // Or handle the failure case appropriately
+        }                                                                                 
+    }
+    
+    private string GetConnectedAddress()
+    {
+        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
+            
+        if (string.IsNullOrWhiteSpace(defaultChain))
+            return null;
+
+        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
+        
+        if (defaultNamespace.Accounts.Length == 0)
+            return null;
+            
+        var fullAddress = defaultNamespace.Accounts[0];
+        var addressParts = fullAddress.Split(":");
+            
+        var address = addressParts[2];
+
+        return address;
+    }
+    
+    private int? GetChainId()
+    {
+        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
+    
+        if (string.IsNullOrWhiteSpace(defaultChain))
+            return null;
+
+        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
+    
+        if (defaultNamespace.Chains.Length == 0)
+            return null;
+
+        // Assuming we need the last chain if there are multiple chains
+        var fullChain = defaultNamespace.Chains.LastOrDefault();
+
+        if (string.IsNullOrWhiteSpace(fullChain))
+            return null;
+
+        var chainParts = fullChain.Split(':');
+
+        // Check if the split operation gives at least 2 parts
+        if (chainParts.Length < 2)
+            return null;
+
+        if (int.TryParse(chainParts[1], out int chainId))
+        {
+            return chainId;
+        }
+
+        return null;
     }
     #endregion
 }
