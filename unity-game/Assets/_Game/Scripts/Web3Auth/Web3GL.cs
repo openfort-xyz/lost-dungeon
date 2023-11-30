@@ -34,8 +34,8 @@ public class Web3GL : MonoBehaviour
     
 
     // Declare events using Action
-    public static event Action OnInitializationSuccessEvent;
-    public static event Action<string> OnInitializationErrorEvent;
+    public static event Action OnWeb3InitializedEvent;
+    public static event Action<string> OnWeb3InitializeErrorEvent;
     public static event Action<string> OnWeb3ConnectedEvent;
     public static event Action<string> OnWeb3ConnectErrorEvent;
     public static event Action<string> OnWeb3DisconnectedEvent;
@@ -109,17 +109,17 @@ public class Web3GL : MonoBehaviour
 
     #region CALLED_FROM_JAVASCRIPT
     // Method called when initialization is successful
-    void OnInitializationSuccess()
+    void OnWeb3Initialized()
     {
         Debug.Log("Initialization successful.");
-        OnInitializationSuccessEvent?.Invoke();
+        OnWeb3InitializedEvent?.Invoke();
     }
 
     // Method called when there's an error during initialization
-    void OnInitializationError(string error)
+    void OnWeb3InitializeError(string error)
     {
         Debug.LogError("Initialization error: " + error);
-        OnInitializationErrorEvent?.Invoke(error);
+        OnWeb3InitializeErrorEvent?.Invoke(error);
     }
     
     void OnWeb3Connected(string account)
