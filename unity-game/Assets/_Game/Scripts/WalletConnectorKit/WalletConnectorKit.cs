@@ -16,18 +16,20 @@ public class WalletConnectorKit : MonoBehaviour
     }
 
     private void Initialize() {
-#if UNITY_WEBGL
-        _currentConnector = new Web3GLWalletConnector();
+#if UNITY_EDITOR
+        _currentConnector = new StandardWalletConnector();
+#elif UNITY_WEBGL
+    _currentConnector = new Web3GLWalletConnector();
 #else
-        _currentConnector = new WalletConnectWalletConnector();
+    _currentConnector = new StandardWalletConnector();
 #endif
-        
+    
         _currentConnector.OnConnected += WalletConnector_OnConnected_Handler;
         _currentConnector.OnDisconnected += WalletConnector_OnDisconnected_Handler;
         _currentConnector.OnConnectionError += WalletConnector_ConnectionError_Handler;
+        _currentConnector.OnEthereumNotFound += WalletConnector_OnEthereumNotFound_Handler;
     }
     
-
     public void Connect() {
         _currentConnector.Connect();
     }
@@ -63,6 +65,23 @@ public class WalletConnectorKit : MonoBehaviour
 
     private void WalletConnector_ConnectionError_Handler(string errorMessage) {
         OnConnectionError?.Invoke(errorMessage);
+    }
+    
+    // Only in WebGL
+    private void WalletConnector_OnEthereumNotFound_Handler()
+    {
+        // We haven't found any injected wallet in the browser.
+        Debug.Log("We haven't found any injected wallet installed in the browser.");
+        // Let's switch to StandardWalletConnector
+        _currentConnector = new StandardWalletConnector();
+        
+        _currentConnector.OnConnected += WalletConnector_OnConnected_Handler;
+        _currentConnector.OnDisconnected += WalletConnector_OnDisconnected_Handler;
+        _currentConnector.OnConnectionError += WalletConnector_ConnectionError_Handler;
+        _currentConnector.OnEthereumNotFound += WalletConnector_OnEthereumNotFound_Handler;
+        
+        // Try to connect again with StandardWalletConnector
+        _currentConnector.Connect();
     }
 
     private void OnDestroy()

@@ -1,20 +1,18 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using WalletConnectSharp.Sign.Models;
 using Object = UnityEngine.Object;
 
-public class WalletConnectWalletConnector : IWalletConnector {
+public class StandardWalletConnector : IWalletConnector {
     private WalletConnectController _wcController;
     
     public event Action OnConnected;
     public event Action<string> OnConnectionError;
     public event Action<string> OnDisconnected;
+    public event Action OnEthereumNotFound;
 
-    public WalletConnectWalletConnector() {
+    public StandardWalletConnector() {
         _wcController = Object.FindObjectOfType<WalletConnectController>();
         if (_wcController == null) {
             Debug.LogError("WalletConnectController not found in the scene.");
