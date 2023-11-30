@@ -59,6 +59,8 @@ public class Web3AuthService : MonoBehaviour
 
     [HideInInspector] public bool authCompletedOnce;
 
+    private bool _web3GLInitialized;
+
     #region UNITY_LIFECYCLE
 
     private void Awake()
@@ -77,7 +79,9 @@ public class Web3AuthService : MonoBehaviour
         _wcController.OnDisconnected += WcController_OnDisconnected_Handler;
 
 #if UNITY_WEBGL
-        // Web3GL Events
+        // Web3GL 
+        Web3GL.OnWeb3InitializedEvent += OnWeb3GLInitialized;
+        Web3GL.OnWeb3InitializeErrorEvent += OnWeb3GLInitializationFailure;
         Web3GL.OnWeb3ConnectedEvent += OnWeb3GLConnected;
         Web3GL.OnWeb3ConnectErrorEvent += OnWeb3GLConnectionFailure;  
         Web3GL.OnWeb3DisconnectedEvent += OnWeb3GLDisconnected;
@@ -101,6 +105,8 @@ public class Web3AuthService : MonoBehaviour
         
 #if UNITY_WEBGL
         // Web3GL Events
+        Web3GL.OnWeb3InitializedEvent -= OnWeb3GLInitialized;
+        Web3GL.OnWeb3InitializeErrorEvent -= OnWeb3GLInitializationFailure;
         Web3GL.OnWeb3ConnectedEvent -= OnWeb3GLConnected;
         Web3GL.OnWeb3ConnectErrorEvent -= OnWeb3GLConnectionFailure;
         Web3GL.OnWeb3DisconnectedEvent -= OnWeb3GLDisconnected;
@@ -119,6 +125,10 @@ public class Web3AuthService : MonoBehaviour
     private void Start()
     {
         _openfort = new OpenfortClient(OFStaticData.PublishableKey);
+        
+        #if UNITY_WEBGL
+        Web3GL.Instance.Initialize();
+        #endif
     }
 
     private void OnApplicationQuit()
@@ -134,7 +144,14 @@ public class Web3AuthService : MonoBehaviour
         ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
 
         #if UNITY_WEBGL
-        Web3GL.Instance.Connect();
+        if (_web3GLInitialized)
+        {
+            Web3GL.Instance.Connect();   
+        }
+        else
+        {
+            _wcController.Connect();
+        }
         #else
         _wcController.Connect();
         #endif
@@ -171,6 +188,20 @@ public class Web3AuthService : MonoBehaviour
     #endregion
 
     #region WEB3GL_WALLET_EVENTS
+    private void OnWeb3GLInitialized()
+    {
+        // This means MetaMask or other injected ethereum wallets are installed on the browser.
+        Debug.Log("Web3GL initialized.");
+        _web3GLInitialized = true;
+    }
+    
+    private void OnWeb3GLInitializationFailure(string error)
+    {
+        Debug.LogError(error);
+        _web3GLInitialized = false;
+        //TODO switch to WC connection!
+    }
+    
     private async void OnWeb3GLConnected(string obj)
     {
         if (authCompletedOnce)

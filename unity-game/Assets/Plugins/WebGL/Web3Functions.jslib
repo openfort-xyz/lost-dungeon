@@ -3,10 +3,10 @@ mergeInto(LibraryManager.library, {
   InitializeWeb3: function () {
     if (typeof window.ethereum !== 'undefined') {
       // MetaMask is installed
-      SendMessage('Web3AuthService', 'OnInitializationSuccess');
+      SendMessage('Web3AuthService', 'OnWeb3Initialized');
     } else {
       // MetaMask is not installed
-      SendMessage('Web3AuthService', 'OnInitializationError', 'MetaMask not installed');
+      SendMessage('Web3AuthService', 'OnWeb3InitializeError', 'Injected wallet not installed');
     }
   },
   
