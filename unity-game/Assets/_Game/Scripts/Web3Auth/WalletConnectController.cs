@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.RPC.Eth.Transactions;
@@ -65,7 +66,21 @@ public class WalletConnectController : BindableMonoBehavior
         }     
     }
     
+    [RpcMethod("wallet_switchEthereumChain")]
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99998)] // Adjust the clock and priority as needed
+    public class WCSwitchEthereumChain : List<object>
+    {
+        public WCSwitchEthereumChain(object chainIdData) : base(new[] { chainIdData })
+        {
+        }
+        
+        public WCSwitchEthereumChain()
+        {
+        }
+    }
+    
     public event UnityAction<SessionStruct> OnConnected;
+    public event UnityAction<string> OnConnectionError;
     public event UnityAction OnDisconnected;
     
     [Inject]
@@ -81,7 +96,7 @@ public class WalletConnectController : BindableMonoBehavior
         _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
     }
-
+    
     private void OnDisable()
     {
         _wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
@@ -114,6 +129,7 @@ public class WalletConnectController : BindableMonoBehavior
             "eth_sign",
             "personal_sign",
             "eth_signTypedData",
+            "wallet_switchEthereumChain"
         };
 
         var events = new string[]
@@ -162,13 +178,131 @@ public class WalletConnectController : BindableMonoBehavior
         _wcSignClient.Disconnect(CurrentSession.Topic); 
     }
     
-    public async Task<string> Sign(string message, string address)
+    public async UniTask<string> Sign(string message, string address)
     {
         var result = await PersonalSignAsync(message, address);
         return result;
     }
     
-    public string GetConnectedAddress()
+    public async UniTask<string> AcceptAccountOwnership(string contractAddress, string newOwnerAddress)
+    {
+        try
+        {
+            // Contract details
+            string contractABI = "[{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
+
+            // Initialize Nethereum
+            var web3 = new Web3();
+            var contract = web3.Eth.GetContract(contractABI, contractAddress);
+
+            // Get the function from the contract
+            var acceptOwnershipFunction = contract.GetFunction("acceptOwnership");
+            var encodedData = acceptOwnershipFunction.GetData();
+            
+            var currentChainId = GetChainId(); // Implement this method to get the current chain ID
+            var currentFullChainId = Chain.EvmNamespace + ":" + currentChainId;
+            var desiredChainId = 4337; // BEAM network chain ID
+
+            if (currentChainId != desiredChainId)
+            {
+                Debug.LogWarning($"Wrong network. Please switch your wallet to the correct network. Chain ID should be {desiredChainId}");
+                var success = await SwitchToBeamNetwork(currentFullChainId); // Implement this method for network switching
+
+                if (!success)
+                {
+                    Debug.LogError("Failed switching to BEAM network.");
+                    return null;
+                }
+            }
+
+            // Prepare the transaction
+            var txParams = new WCTransaction()
+            {
+                From = newOwnerAddress,
+                To = contractAddress,
+                Data = encodedData,
+                Value = "0x0",
+                Gas = "0xFDE8", // Hex value for 65,000 gas limit
+            };
+
+            var ethSendTransaction = new WCEthSendTransaction(txParams);
+
+            // The fullChainId might need to be adjusted based on the network specifics
+            var fullChainId = Chain.EvmNamespace + ":" + desiredChainId; // BEAM!
+
+            // TODO!! We should be getting new CurrentSession
+            await UniTask.Delay(2500);
+            
+            // Send the transaction
+            var txHash = await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
+
+            // Handle the transaction hash (e.g., display it, log it, etc.)
+            Debug.Log("Transaction Hash: " + txHash);
+            return txHash;   
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"An error occurred: {e.Message}");
+            return null; // Or handle the failure case appropriately
+        }
+    }
+    
+    public UniTask<string> GetConnectedAddressAsync()
+    {
+        return UniTask.Run(GetConnectedAddress);
+    }
+    
+    public UniTask<int?> GetChainIdAsync()
+    {
+        return UniTask.Run(GetChainId);
+    }
+
+    #region EVENT_HANDLERS
+    private void WcSignClientOnSessionConnectionErrored(object sender, Exception e)
+    {
+        Debug.LogWarning("WC SESSION CONNECTION ERROR");
+        // No need for real disconnection as we're not connected yet.
+        OnConnectionError?.Invoke(e.Message);
+    }
+    
+    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
+    {
+        Debug.LogWarning("WC SESSION DELETED");
+        OnDisconnected?.Invoke();
+    });
+    
+    private void WcQrCodeHandlerOnOnCancelButtonClicked()
+    {
+        Debug.LogWarning("WC CANCEL BUTTON CLICKED");
+        OnConnectionError?.Invoke("Connection error reason: cancel button pressed.");
+    }
+    #endregion
+
+    #region PRIVATE_METHODS
+    private async UniTask<string> PersonalSignAsync(string message, string address)
+    {
+        try
+        {
+            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
+
+            //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
+            var request = new PersonalSign(message, address);                                
+        
+            var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
+                 
+            Debug.Log("Got result from request: " + result);
+        
+            return result; 
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"An error occurred: {ex.Message}");
+            // Optionally, you can handle the exception more specifically or rethrow it
+            return null; // Or handle the failure case appropriately
+        }                                                                                 
+    }
+    
+    private string GetConnectedAddress()
     {
         var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
             
@@ -188,7 +322,7 @@ public class WalletConnectController : BindableMonoBehavior
         return address;
     }
     
-    public int? GetChainId()
+    private int? GetChainId()
     {
         var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
     
@@ -219,93 +353,28 @@ public class WalletConnectController : BindableMonoBehavior
 
         return null;
     }
-
-    #region EVENT_HANDLERS
-    private void WcSignClientOnSessionConnectionErrored(object sender, Exception e)
-    {
-        Debug.LogWarning("WC SESSION CONNECTION ERROR");
-        // No need for real disconnection as we're not connected yet.
-        OnDisconnected?.Invoke();
-    }
     
-    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
-    {
-        Debug.LogWarning("WC SESSION DELETED");
-        OnDisconnected?.Invoke();
-    });
-    
-    private void WcQrCodeHandlerOnOnCancelButtonClicked()
-    {
-        Debug.LogWarning("WC CANCEL BUTTON CLICKED");
-        OnDisconnected?.Invoke();
-    }
-    #endregion
-
-    #region PRIVATE_METHODS
-    private async Task<string> PersonalSignAsync(string message, string address)
+    private async UniTask<bool> SwitchToBeamNetwork(string currentChain)
     {
         try
         {
-            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
+            var chainIdData = new { chainId = "0x10F1" }; // Desired chain ID in hexadecimal
 
-            //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
-            var request = new PersonalSign(message, address);                                
+            var switchChainRequest = new WCSwitchEthereumChain(chainIdData);
         
-            var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
-                 
-            Debug.Log("Got result from request: " + result);
+            Debug.Log(CurrentSession.Topic);
         
-            return result; 
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"An error occurred: {ex.Message}");
-            // Optionally, you can handle the exception more specifically or rethrow it
-            return null; // Or handle the failure case appropriately
-        }                                                                                 
-    }
+            // Request to switch the Ethereum chain
+            var result = await _wcSignClient.Request<WCSwitchEthereumChain, object>(CurrentSession.Topic, switchChainRequest, currentChain);
 
-    public async Task<string> AcceptAccountOwnership(string contractAddress, string newOwnerAddress)
-    {
-        try
-        {
-            // Contract details
-            string contractABI = "[{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
-
-            // Initialize Nethereum
-            var web3 = new Web3();
-            var contract = web3.Eth.GetContract(contractABI, contractAddress);
-
-            // Get the function from the contract
-            var acceptOwnershipFunction = contract.GetFunction("acceptOwnership");
-            var encodedData = acceptOwnershipFunction.GetData();
-            
-            var txParams = new WCTransaction()
-            {
-                From = newOwnerAddress,
-                To = contractAddress,
-                Data = encodedData,
-                Value = "0x0",
-                Gas = new HexBigInteger(65000).ToString(), // "0x249F0" for 150,000 gas limit
-            };
-
-            var ethSendTransaction = new WCEthSendTransaction(txParams);
-
-            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
-
-            // Send the transaction
-            var txHash =
-                await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
-
-            // Handle the transaction hash (e.g., display it, log it, etc.)
-            Debug.Log("Transaction Hash: " + txHash);
-            return txHash;
+            // Interpret a null response as successful operation
+            // https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/
+            return result == null;
         }
         catch (Exception e)
         {
-            Debug.LogError($"An error occurred: {e.Message}");
-            // Optionally, you can handle the exception more specifically or rethrow it
-            return null; // Or handle the failure case appropriately
+            Debug.LogError($"Error switching Ethereum chain: {e.Message}");
+            return false;
         }
     }
     #endregion

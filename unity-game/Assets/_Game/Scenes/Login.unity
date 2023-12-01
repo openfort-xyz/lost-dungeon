@@ -733,6 +733,7 @@ GameObject:
   - component: {fileID: 363659370}
   - component: {fileID: 363659369}
   - component: {fileID: 363659368}
+  - component: {fileID: 363659371}
   m_Layer: 5
   m_Name: GoogleLoginButton
   m_TagString: Untagged
@@ -855,6 +856,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 363659366}
   m_CullTransparentMesh: 1
+--- !u!114 &363659371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 363659366}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ad152cdd743c924987a03cb6b6b1c5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visiblePlatform: 17
 --- !u!1 &369736471
 GameObject:
   m_ObjectHideFlags: 0
@@ -3308,7 +3322,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1204259166}
   - component: {fileID: 1204259165}
-  - component: {fileID: 1204259167}
   m_Layer: 0
   m_Name: Web3AuthService
   m_TagString: Untagged
@@ -3360,18 +3373,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1204259167
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1204259164}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 831194c6bd9b0e2488d85126c87ebcbe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1247163041
 GameObject:
   m_ObjectHideFlags: 0
@@ -3731,7 +3732,7 @@ MonoBehaviour:
     TitleDataKeys: []
     UserDataKeys: []
     UserReadOnlyDataKeys: []
-  googleClientId: 
+  googleClientId: 529781359305-b5mgknudvan98n8bqhinj2u6pt07k5s9.apps.googleusercontent.com
 --- !u!1 &1433892760
 GameObject:
   m_ObjectHideFlags: 0
@@ -4990,7 +4991,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2565653752300045184, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
       propertyPath: m_RootOrder
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2565653752300045184, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
       propertyPath: m_LocalPosition.x
@@ -5031,26 +5032,6 @@ PrefabInstance:
     - target: {fileID: 2565653752300045184, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ProjectId
-      value: 51102387049a78285ee8540ff748b0a8
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ProjectName
-      value: openfort-lost-dungeon
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ConnectOnAwake
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ConnectOnStart
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: AutoDownloadWalletData
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2565653752300045187, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
       propertyPath: m_Name
@@ -5138,3 +5119,60 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2120360419}
   m_CullTransparentMesh: 1
+--- !u!1001 &7308540968058164176
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7308540968675068361, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_Name
+      value: WalletConnectorKit
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7308540968675068362, guid: 287604df2c933804db861ef70e64aa08, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 287604df2c933804db861ef70e64aa08, type: 3}

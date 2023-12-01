@@ -30,10 +30,11 @@ public class Web3GL : MonoBehaviour
     
 
     // Declare events using Action
-    public static event Action<string> OnWeb3ConnectedEvent;
-    public static event Action<string> OnWeb3ConnectErrorEvent;
-    public static event Action<string> OnWeb3DisconnectedEvent;
-    public static event Action<string> OnWeb3DisconnectErrorEvent;
+    public event Action<string> OnWeb3ConnectedEvent;
+    public event Action<string> OnWeb3ConnectErrorEvent;
+    public event Action<string> OnWeb3DisconnectedEvent;
+    public event Action<string> OnWeb3DisconnectErrorEvent;
+    public event Action OnEthereumNotFoundEvent;
 
     // UCS to handle async responses
     private UniTaskCompletionSource<string> personalSignUcs;
@@ -97,6 +98,12 @@ public class Web3GL : MonoBehaviour
     #endregion
 
     #region CALLED_FROM_JAVASCRIPT
+    void OnEthereumNotFound()
+    {
+        Debug.Log("Ethereum not found.");
+        OnEthereumNotFoundEvent?.Invoke();
+    }
+    
     void OnWeb3Connected(string account)
     {
         Debug.Log("Connected to Web3. Account: " + account);
