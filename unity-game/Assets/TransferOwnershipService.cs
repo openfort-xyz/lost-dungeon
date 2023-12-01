@@ -204,7 +204,7 @@ public class TransferOwnershipService : MonoBehaviour
         AzureFunctionCaller.RequestTransferOwnership(accountId, newOwnerAddress);
     }
     
-    private async void AcceptOwnership(string contractAddress, string newOwnerAddress)
+    private async UniTaskVoid AcceptOwnership(string contractAddress, string newOwnerAddress)
     {
         ChangeState(State.AcceptingOwnership);
 
@@ -218,10 +218,14 @@ public class TransferOwnershipService : MonoBehaviour
                 Disconnect();
                 return;
             }
-        
+    
             Debug.Log("Ownership accepted.");
+
+            // Wait for 5 seconds using UniTask
+            await UniTask.Delay(5000);
+
             RegisterSession();
-            
+        
         }
         catch (Exception e)
         {
