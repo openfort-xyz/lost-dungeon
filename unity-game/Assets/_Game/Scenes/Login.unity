@@ -5033,34 +5033,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ProjectId
-      value: 51102387049a78285ee8540ff748b0a8
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ProjectName
-      value: openfort-lost-dungeon
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ConnectOnAwake
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: ConnectOnStart
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045185, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: AutoDownloadWalletData
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045186, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: OpenWalletMethods.Array.size
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 2565653752300045186, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
-      propertyPath: OpenWalletMethods.Array.data[3]
-      value: wallet_switchEthereumChain
-      objectReference: {fileID: 0}
     - target: {fileID: 2565653752300045187, guid: 1f81be4fce0c8fc4bb6e03cae3d2b375, type: 3}
       propertyPath: m_Name
       value: WalletConnectUnity

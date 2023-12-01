@@ -67,10 +67,10 @@ public class WalletConnectController : BindableMonoBehavior
     }
     
     [RpcMethod("wallet_switchEthereumChain")]
-    [RpcRequestOptions(Clock.ONE_MINUTE, 99999)] // Adjust the clock and priority as needed
-    public class WCSwitchEthereumChain : List<string>
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99998)] // Adjust the clock and priority as needed
+    public class WCSwitchEthereumChain : List<object>
     {
-        public WCSwitchEthereumChain(string chainId) : base(new[] { chainId })
+        public WCSwitchEthereumChain(object chainIdData) : base(new[] { chainIdData })
         {
         }
         
@@ -78,7 +78,6 @@ public class WalletConnectController : BindableMonoBehavior
         {
         }
     }
-
     
     public event UnityAction<SessionStruct> OnConnected;
     public event UnityAction<string> OnConnectionError;
@@ -97,7 +96,7 @@ public class WalletConnectController : BindableMonoBehavior
         _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
         wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
     }
-
+    
     private void OnDisable()
     {
         _wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
@@ -105,11 +104,6 @@ public class WalletConnectController : BindableMonoBehavior
         wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
-
-    public async void Initialize()
-    {
-        
-    }
     
     public async void Connect()
     {
@@ -206,12 +200,13 @@ public class WalletConnectController : BindableMonoBehavior
             var encodedData = acceptOwnershipFunction.GetData();
             
             var currentChainId = GetChainId(); // Implement this method to get the current chain ID
+            var currentFullChainId = Chain.EvmNamespace + ":" + currentChainId;
             var desiredChainId = 4337; // BEAM network chain ID
 
             if (currentChainId != desiredChainId)
             {
                 Debug.LogWarning($"Wrong network. Please switch your wallet to the correct network. Chain ID should be {desiredChainId}");
-                var success = await SwitchToBeamNetwork(); // Implement this method for network switching
+                var success = await SwitchToBeamNetwork(currentFullChainId); // Implement this method for network switching
 
                 if (!success)
                 {
@@ -233,8 +228,11 @@ public class WalletConnectController : BindableMonoBehavior
             var ethSendTransaction = new WCEthSendTransaction(txParams);
 
             // The fullChainId might need to be adjusted based on the network specifics
-            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
+            var fullChainId = Chain.EvmNamespace + ":" + desiredChainId; // BEAM!
 
+            // TODO!! We should be getting new CurrentSession
+            await UniTask.Delay(2500);
+            
             // Send the transaction
             var txHash = await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
 
@@ -356,17 +354,22 @@ public class WalletConnectController : BindableMonoBehavior
         return null;
     }
     
-    private async UniTask<bool> SwitchToBeamNetwork()
+    private async UniTask<bool> SwitchToBeamNetwork(string currentChain)
     {
         try
         {
-            const string beamChainId = "0x10F1"; // Beam mainnet chain id in hex
+            var chainIdData = new { chainId = "0x10F1" }; // Desired chain ID in hexadecimal
 
-            var switchChainRequest = new WCSwitchEthereumChain(beamChainId);
-            var result = await _wcSignClient.Request<WCSwitchEthereumChain, string>(CurrentSession.Topic, switchChainRequest);
+            var switchChainRequest = new WCSwitchEthereumChain(chainIdData);
+        
+            Debug.Log(CurrentSession.Topic);
+        
+            // Request to switch the Ethereum chain
+            var result = await _wcSignClient.Request<WCSwitchEthereumChain, object>(CurrentSession.Topic, switchChainRequest, currentChain);
 
-            // Handle result or success confirmation
-            return result != null;
+            // Interpret a null response as successful operation
+            // https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/
+            return result == null;
         }
         catch (Exception e)
         {
