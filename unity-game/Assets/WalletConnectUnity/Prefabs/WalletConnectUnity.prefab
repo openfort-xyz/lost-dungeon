@@ -376,9 +376,9 @@ MonoBehaviour:
   ProjectName: openfort-lost-dungeon
   ProjectId: 51102387049a78285ee8540ff748b0a8
   ClientMetadata:
-    Name: WalletConnectSharpv2 Dapp Example
-    Description: An example dapp to showcase WalletConnectSharpv2
-    Url: https://walletconnect.com
+    Name: Lost Dungeon game
+    Description: A game to demonstrate Openfort's functionalities
+    Url: https://openfort.xyz
     Icons:
     - https://walletconnect.com/meta/favicon.ico
     Redirect:

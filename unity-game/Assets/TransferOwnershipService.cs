@@ -222,7 +222,7 @@ public class TransferOwnershipService : MonoBehaviour
             Debug.Log("Ownership accepted.");
 
             // Wait for 5 seconds using UniTask
-            await UniTask.Delay(5000);
+            await UniTask.Delay(4000);
 
             RegisterSession();
         
