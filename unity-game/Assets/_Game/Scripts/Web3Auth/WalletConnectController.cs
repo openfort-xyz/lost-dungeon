@@ -66,6 +66,20 @@ public class WalletConnectController : BindableMonoBehavior
         }     
     }
     
+    [RpcMethod("wallet_switchEthereumChain")]
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99999)] // Adjust the clock and priority as needed
+    public class WCSwitchEthereumChain : List<string>
+    {
+        public WCSwitchEthereumChain(string chainId) : base(new[] { chainId })
+        {
+        }
+        
+        public WCSwitchEthereumChain()
+        {
+        }
+    }
+
+    
     public event UnityAction<SessionStruct> OnConnected;
     public event UnityAction<string> OnConnectionError;
     public event UnityAction OnDisconnected;
@@ -121,6 +135,7 @@ public class WalletConnectController : BindableMonoBehavior
             "eth_sign",
             "personal_sign",
             "eth_signTypedData",
+            "wallet_switchEthereumChain"
         };
 
         var events = new string[]
@@ -190,6 +205,22 @@ public class WalletConnectController : BindableMonoBehavior
             var acceptOwnershipFunction = contract.GetFunction("acceptOwnership");
             var encodedData = acceptOwnershipFunction.GetData();
             
+            var currentChainId = GetChainId(); // Implement this method to get the current chain ID
+            var desiredChainId = 4337; // BEAM network chain ID
+
+            if (currentChainId != desiredChainId)
+            {
+                Debug.LogWarning($"Wrong network. Please switch your wallet to the correct network. Chain ID should be {desiredChainId}");
+                var success = await SwitchToBeamNetwork(); // Implement this method for network switching
+
+                if (!success)
+                {
+                    Debug.LogError("Failed switching to BEAM network.");
+                    return null;
+                }
+            }
+
+            // Prepare the transaction
             var txParams = new WCTransaction()
             {
                 From = newOwnerAddress,
@@ -201,20 +232,19 @@ public class WalletConnectController : BindableMonoBehavior
 
             var ethSendTransaction = new WCEthSendTransaction(txParams);
 
+            // The fullChainId might need to be adjusted based on the network specifics
             var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
 
             // Send the transaction
-            var txHash =
-                await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
+            var txHash = await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
 
             // Handle the transaction hash (e.g., display it, log it, etc.)
             Debug.Log("Transaction Hash: " + txHash);
-            return txHash;
+            return txHash;   
         }
         catch (Exception e)
         {
             Debug.LogError($"An error occurred: {e.Message}");
-            // Optionally, you can handle the exception more specifically or rethrow it
             return null; // Or handle the failure case appropriately
         }
     }
@@ -324,6 +354,25 @@ public class WalletConnectController : BindableMonoBehavior
         }
 
         return null;
+    }
+    
+    private async UniTask<bool> SwitchToBeamNetwork()
+    {
+        try
+        {
+            const string beamChainId = "0x10F1"; // Beam mainnet chain id in hex
+
+            var switchChainRequest = new WCSwitchEthereumChain(beamChainId);
+            var result = await _wcSignClient.Request<WCSwitchEthereumChain, string>(CurrentSession.Topic, switchChainRequest);
+
+            // Handle result or success confirmation
+            return result != null;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error switching Ethereum chain: {e.Message}");
+            return false;
+        }
     }
     #endregion
 }

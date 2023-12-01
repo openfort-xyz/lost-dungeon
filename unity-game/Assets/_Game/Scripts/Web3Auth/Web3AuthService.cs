@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -9,7 +8,6 @@ using Openfort;
 using Openfort.Model;
 using PlayFab;
 using PlayFab.ClientModels;
-using WalletConnectSharp.Sign.Models;
 
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
 public class Web3AuthService : MonoBehaviour
