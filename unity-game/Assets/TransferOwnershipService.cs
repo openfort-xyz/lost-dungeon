@@ -149,7 +149,7 @@ public class TransferOwnershipService : MonoBehaviour
     {
         Debug.Log("WEB3AUTHSERVICE: CONNECTION ERROR");
         Debug.LogError(error);
-        Disconnect();
+        ChangeState(State.Disconnected);
     }
     #endregion
 
