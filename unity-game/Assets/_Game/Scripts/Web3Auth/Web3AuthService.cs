@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -9,15 +8,11 @@ using Openfort;
 using Openfort.Model;
 using PlayFab;
 using PlayFab.ClientModels;
-using UnityEngine.Serialization;
-using WalletConnect;
-using WalletConnectSharp.Sign.Models;
-using WalletConnectSharp.Sign.Models.Engine;
 
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
 public class Web3AuthService : MonoBehaviour
 {
-    private WalletConnectController _wcController;
+    private WalletConnectorKit _walletConnectorKit;
     
     public enum State
     {
@@ -59,59 +54,45 @@ public class Web3AuthService : MonoBehaviour
 
     [HideInInspector] public bool authCompletedOnce;
 
+    private bool _web3GLInitialized;
+
     #region UNITY_LIFECYCLE
 
-    private void Awake()
-    {
-        _wcController = FindObjectOfType<WalletConnectController>();
-        if (_wcController == null)
-        {
-            Debug.LogError("WalletConnectController not found. Web3AuthService needs it to function.");
+    private void Awake() {
+        _walletConnectorKit = FindObjectOfType<WalletConnectorKit>();
+        if (_walletConnectorKit == null) {
+            Debug.LogError("WalletConnectorKit not found. Web3AuthService needs it to function.");
+            return;
         }
+
+        // Subscribe to events
+        _walletConnectorKit.OnConnected += WalletConnectorKit_OnConnected_Handler;
+        _walletConnectorKit.OnDisconnected += WalletConnectorKit_OnDisconnected_Handler;
+        _walletConnectorKit.OnConnectionError += WalletConnectorKit_OnConnectionError_Handler;
     }
 
     private void OnEnable()
     {
-        // WC Events
-        _wcController.OnConnected += WcController_OnConnected_Handler;
-        _wcController.OnDisconnected += WcController_OnDisconnected_Handler;
-
-#if UNITY_WEBGL
-        // Web3GL Events
-        Web3GL.OnWeb3ConnectedEvent += OnWeb3GLConnected;
-        Web3GL.OnWeb3ConnectErrorEvent += OnWeb3GLConnectionFailure;  
-        Web3GL.OnWeb3DisconnectedEvent += OnWeb3GLDisconnected;
-#endif
-
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess += OnChallengeRequestSuccess;
         AzureFunctionCaller.onChallengeVerifySuccess += OnChallengeVerifySuccess;
         AzureFunctionCaller.onRegisterSessionSuccess += OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess += OnCompleteWeb3AuthSuccess;
-        
         AzureFunctionCaller.onRegisterSessionFailure += OnRegisterSessionFailure;
         AzureFunctionCaller.onRequestFailure += OnAnyRequestFailure;
     }
 
     private void OnDisable()
     {
-        // WC Events
-        _wcController.OnConnected -= WcController_OnConnected_Handler;
-        _wcController.OnDisconnected -= WcController_OnDisconnected_Handler;
+        _walletConnectorKit.OnConnected -= WalletConnectorKit_OnConnected_Handler;
+        _walletConnectorKit.OnDisconnected -= WalletConnectorKit_OnDisconnected_Handler;
+        _walletConnectorKit.OnConnectionError -= WalletConnectorKit_OnConnectionError_Handler;
         
-#if UNITY_WEBGL
-        // Web3GL Events
-        Web3GL.OnWeb3ConnectedEvent -= OnWeb3GLConnected;
-        Web3GL.OnWeb3ConnectErrorEvent -= OnWeb3GLConnectionFailure;
-        Web3GL.OnWeb3DisconnectedEvent -= OnWeb3GLDisconnected;
-#endif
-
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess -= OnChallengeRequestSuccess;
         AzureFunctionCaller.onChallengeVerifySuccess -= OnChallengeVerifySuccess;
         AzureFunctionCaller.onRegisterSessionSuccess -= OnRegisterSessionSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess -= OnCompleteWeb3AuthSuccess;
-        
         AzureFunctionCaller.onRegisterSessionFailure -= OnRegisterSessionFailure;
         AzureFunctionCaller.onRequestFailure -= OnAnyRequestFailure;
     }
@@ -132,17 +113,13 @@ public class Web3AuthService : MonoBehaviour
     public void Connect()
     {
         ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
-
-        #if UNITY_WEBGL
-        Web3GL.Instance.Connect();
-        #else
-        _wcController.Connect();
-        #endif
+        
+        _walletConnectorKit.Connect();
     }
     #endregion
 
-    #region WC_EVENT_HANDLERS
-    private async void WcController_OnConnected_Handler(SessionStruct session)
+    #region WCK_EVENT_HANDLERS
+    private async void WalletConnectorKit_OnConnected_Handler()
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET CONNECTED");
         if (authCompletedOnce)
@@ -163,43 +140,19 @@ public class Web3AuthService : MonoBehaviour
         }
     }
     
-    private void WcController_OnDisconnected_Handler()
+    private void WalletConnectorKit_OnDisconnected_Handler(string disconnectionReason)
     {
         Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
+        Debug.Log(disconnectionReason);
         ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
-    #endregion
-
-    #region WEB3GL_WALLET_EVENTS
-    private async void OnWeb3GLConnected(string obj)
+    
+    private void WalletConnectorKit_OnConnectionError_Handler(string error)
     {
-        if (authCompletedOnce)
-        {
-            bool correctAddress = await CheckIfCorrectAccount();
-            if (correctAddress)
-            {
-                RequestMessage();
-            }
-            else
-            {
-                Disconnect();
-            }
-        }
-        else
-        {
-            RequestMessage();
-        }
-    }
-
-    private void OnWeb3GLConnectionFailure(string obj)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET UNAUTHORIZED");
-        Disconnect();
-    }
-
-    private void OnWeb3GLDisconnected(string obj)
-    {
-        Debug.Log("WEB3AUTHSERVICE: WALLET DISCONNECTED");
+        Debug.Log("WEB3AUTHSERVICE: CONNECTION ERROR");
+        Debug.LogError(error);
+        
+        //TODO Disconnect????
         ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
     }
     #endregion
@@ -211,15 +164,11 @@ public class Web3AuthService : MonoBehaviour
         Debug.Log("ChallengeRequest success.");
         var response = JsonUtility.FromJson<ChallengeRequestResponse>(requestResponse);
 
-        string signature = null;
+        string signature;
 
         try
         {
-#if UNITY_WEBGL
-            signature = await Web3GL.Instance.Sign(response.message, response.address);
-#else
-            signature = await _wcController.Sign(response.message, response.address);
-#endif
+            signature = await _walletConnectorKit.Sign(response.message, response.address);
 
             if (string.IsNullOrEmpty(signature))
             {
@@ -293,17 +242,12 @@ public class Web3AuthService : MonoBehaviour
         var userOpHash = session.NextAction.Payload.UserOpHash;
         Debug.Log("USEROPHASH: " + userOpHash);
 
-        string signature = null;
+        string signature;
 
         try
         {
-#if UNITY_WEBGL
-            var address = await Web3GL.Instance.GetConnectedAddressAsync();
-            signature = await Web3GL.Instance.Sign(userOpHash, address);
-#else
-            var address = _wcController.GetConnectedAddress();
-            signature = await _wcController.Sign(userOpHash, address);
-#endif
+            var address = await _walletConnectorKit.GetConnectedAddress();
+            signature = await _walletConnectorKit.Sign(userOpHash, address);
         
             if (string.IsNullOrEmpty(signature))
             {
@@ -383,18 +327,12 @@ public class Web3AuthService : MonoBehaviour
     #endregion
 
     #region PRIVATE_METHODS
-    //TODO UniTask void?
     private async void RequestMessage()
     {
         ChangeState(State.WalletConnected);
-
-        #if UNITY_WEBGL
-        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
-        _currentChainId = await Web3GL.Instance.GetChainIdAsync();
-        #else
-        _currentAddress = _wcController.GetConnectedAddress();
-        _currentChainId = _wcController.GetChainId();
-        #endif
+        
+        _currentAddress = await _walletConnectorKit.GetConnectedAddress();
+        _currentChainId = await _walletConnectorKit.GetChainId();
 
         Debug.Log("Address: " + _currentAddress);
         Debug.Log("IntegerChainId: " + _currentChainId);
@@ -437,13 +375,8 @@ public class Web3AuthService : MonoBehaviour
 
     private async UniTask<bool> CheckIfCorrectAccount()
     {
-        //TODO??
-        #if UNITY_WEBGL
-        _currentAddress = await Web3GL.Instance.GetConnectedAddressAsync();
-        #else
-        _currentAddress = _wcController.GetConnectedAddress(); 
-        #endif
-
+        _currentAddress = await _walletConnectorKit.GetConnectedAddress();
+        
         if (string.IsNullOrEmpty(_currentAddress))
         {
             Debug.LogError("current address is null or empty");
@@ -468,12 +401,7 @@ public class Web3AuthService : MonoBehaviour
     public void Disconnect()
     {
         ChangeState(State.Disconnecting);
-
-        #if !UNITY_WEBGL
-        _wcController.Disconnect();
-        #else
-        Web3GL.Instance.Disconnect();
-        #endif
+        _walletConnectorKit.Disconnect();
     }
     #endregion
 
