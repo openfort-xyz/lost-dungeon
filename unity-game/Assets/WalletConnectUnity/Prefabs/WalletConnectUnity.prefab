@@ -373,8 +373,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13d0c40e82fdb41b086626cca383a72e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ProjectName: Simple Unity Demo
-  ProjectId: 39f3dc0a2c604ec9885799f9fc5feb7c
+  ProjectName: openfort-lost-dungeon
+  ProjectId: 51102387049a78285ee8540ff748b0a8
   ClientMetadata:
     Name: WalletConnectSharpv2 Dapp Example
     Description: An example dapp to showcase WalletConnectSharpv2
@@ -424,6 +424,7 @@ MonoBehaviour:
   - eth_sendTransaction
   - eth_personalSign
   - personal_sign
+  - wallet_switchEthereumChain
 --- !u!114 &2565653752300045191
 MonoBehaviour:
   m_ObjectHideFlags: 0
