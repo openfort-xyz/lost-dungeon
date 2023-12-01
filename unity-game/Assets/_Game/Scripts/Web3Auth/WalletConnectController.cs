@@ -196,7 +196,7 @@ public class WalletConnectController : BindableMonoBehavior
                 To = contractAddress,
                 Data = encodedData,
                 Value = "0x0",
-                Gas = new HexBigInteger(65000).ToString(), // "0x249F0" for 150,000 gas limit
+                Gas = "0xFDE8", // Hex value for 65,000 gas limit
             };
 
             var ethSendTransaction = new WCEthSendTransaction(txParams);

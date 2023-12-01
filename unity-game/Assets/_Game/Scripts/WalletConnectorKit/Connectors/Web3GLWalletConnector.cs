@@ -1,6 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 
+#if UNITY_WEBGL || UNITY_EDITOR
 public class Web3GLWalletConnector : IWalletConnector {
     private Web3GL _web3GL;
     
@@ -67,4 +68,4 @@ public class Web3GLWalletConnector : IWalletConnector {
         _web3GL.OnEthereumNotFoundEvent -= HandleEthereumNotFound;
     }
 }
-
+#endif
