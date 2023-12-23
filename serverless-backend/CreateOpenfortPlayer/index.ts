@@ -1,12 +1,10 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
-import Openfort from "@openfort/openfort-node";
+import Openfort, { CreateTransactionIntentRequest, Interaction } from "@openfort/openfort-node";
 import { PlayFabServer } from "playfab-sdk";
-import { ethers } from "ethers";
 
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
-const GasWalletPK = process.env.GAS_WALLET_SECRET_KEY;
-
+const DeveloperAccount = "dac_a421f3ec-b640-4869-8a69-dc6ee0fad956"
 
 const openfort = new Openfort(process.env.OPENFORT_API_KEY);
 
@@ -58,31 +56,22 @@ const httpTrigger: AzureFunction = async function (
 
     if (!OFaccount) return;
 
-    // Transfer one token to the player
-    const provider = new ethers.providers.JsonRpcProvider(
-      "https://subnets.avax.network/beam/mainnet/rpc"
+    const interaction: Interaction = {
+      contract: process.env.OF_GOLD_CONTRACT,
+      functionName: "transfer",
+      functionArgs: [OFaccount.id, "1000000000000000000"],
+    };
+    const transactionIntentRequest: CreateTransactionIntentRequest = {
+      account: DeveloperAccount,
+      chainId: 4337,
+      optimistic: true,
+      interactions: [interaction],
+      policy: process.env.OF_TX_SPONSOR,
+    };
+    
+    await openfort.transactionIntents.create(
+      transactionIntentRequest
     );
-    const tankSigner = new ethers.Wallet(GasWalletPK, provider);
-    // transfer 1 token to the player
-    const goldAddress = process.env.GOLD_CONTRACT_ADDRESS;
-    const goldContract = new ethers.Contract(
-      goldAddress,
-      ["function transfer(address to, uint256 amount) public returns (bool)"],
-      tankSigner
-    );
-    const tx = await goldContract
-      .transfer(OFaccount.address, ethers.utils.parseEther("1"))
-      .catch((error) => {
-        context.log(error);
-        context.res = {
-          status: 500,
-          body: JSON.stringify(error),
-        };
-        return;
-      });
-    setImmediate(() => {
-      tx.wait();
-    });
 
     //TODO Set PlayFab player data with some of the verified data!
     PlayFabServer.settings.titleId = PlayFabTitleId;

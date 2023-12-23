@@ -1,10 +1,13 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { PlayFabServer } from "playfab-sdk";
-import { ethers } from "ethers";
+import Openfort, { CreateTransactionIntentRequest, Interaction } from "@openfort/openfort-node";
 
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
-const GasWalletPK = process.env.GAS_WALLET_SECRET_KEY;
+const DeveloperAccount = "dac_a421f3ec-b640-4869-8a69-dc6ee0fad956"
+
+const openfort = new Openfort(process.env.OPENFORT_API_KEY);
+
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
@@ -56,33 +59,28 @@ const httpTrigger: AzureFunction = async function (
     const resultData = result.data.Data;
     const _receiver = resultData["address"].Value;
 
-    // Transfer one token to the player
-    const provider = new ethers.providers.JsonRpcProvider(
-      "https://subnets.avax.network/beam/mainnet/rpc"
+    const interaction: Interaction = {
+      contract: process.env.OF_GOLD_CONTRACT,
+      functionName: "transfer",
+      functionArgs: [_receiver, coins],
+    };
+    const transactionIntentRequest: CreateTransactionIntentRequest = {
+      account: DeveloperAccount,
+      chainId: 4337,
+      optimistic: false,
+      interactions: [interaction],
+      policy: process.env.OF_TX_SPONSOR,
+    };
+    
+    const transactionIntent = await openfort.transactionIntents.create(
+      transactionIntentRequest
     );
-    const tankSigner = new ethers.Wallet(GasWalletPK, provider);
-    // transfer 1 token to the player
-    const goldContract = new ethers.Contract(
-      process.env.GOLD_CONTRACT_ADDRESS,
-      ["function transfer(address to, uint256 amount) public returns (bool)"],
-      tankSigner
-    );
-    const tx = await goldContract
-      .transfer(_receiver, ethers.utils.parseEther(coins))
-      .catch((error) => {
-        context.log(error);
-        context.res = {
-          status: 500,
-          body: JSON.stringify(error),
-        };
-        return;
-      });
-    const tx_res = await tx.wait();
+
 
     context.log("API call was successful.");
     context.res = {
       status: 200,
-      body: tx_res,
+      body: transactionIntent.response.transactionHash,
     };
   } catch (error) {
     context.log(error);
