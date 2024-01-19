@@ -1,13 +1,10 @@
 using System;
-using Cysharp.Threading.Tasks.Triggers;
 using Openfort;
 using UnityEngine;
 using UnityEngine.UI;
 using PlayFab;
 using PlayFab.ClientModels;
-using PlayFab.Internal;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 
 public class Configuration : MonoBehaviour
 {
@@ -18,6 +15,7 @@ public class Configuration : MonoBehaviour
     
     [Header("UI")]
     public Button logoutButton;
+    public Button registerButton;
     public Button selfCustodyButton;
     public Button backButton;
     
@@ -28,6 +26,8 @@ public class Configuration : MonoBehaviour
     private OpenfortClient _openfortClient;
     private bool _loggingOut = false;
 
+    [HideInInspector] public string guestCustomId;
+
     public void Start()
     {
         // Get Openfort client with publishable key.
@@ -36,7 +36,7 @@ public class Configuration : MonoBehaviour
 
     private void OnEnable()
     {
-        //TODO Check if custodial or not --> appear connect button
+        GetPlayFabAccountInfo();
     }
 
     public void TransferOwnershipService_OnStateChanged_Handler(TransferOwnershipService.State currentState)
@@ -150,5 +150,47 @@ public class Configuration : MonoBehaviour
         selfCustodyButton.gameObject.SetActive(status);
         logoutButton.gameObject.SetActive(status);
         backButton.gameObject.SetActive(status);
+    }
+    
+    public void GetPlayFabAccountInfo()
+    {
+        registerButton.gameObject.SetActive(false);
+        selfCustodyButton.gameObject.SetActive(false);
+        
+        var request = new GetAccountInfoRequest();
+        
+        PlayFabClientAPI.GetAccountInfo(request, result =>
+            {
+                if (result.AccountInfo == null)
+                {
+                    Debug.Log("AccountInfo not found.");   
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(result.AccountInfo.PrivateInfo.Email))
+                {
+                    Debug.Log("Guest?");
+                    var customId = result.AccountInfo.CustomIdInfo.CustomId;
+                    
+                    if (string.IsNullOrEmpty(customId))
+                    {
+                        Debug.Log("No CustomID found.");
+                        return;
+                    }
+
+                    Debug.Log("Player is guest.");
+                    guestCustomId = customId;
+                    registerButton.gameObject.SetActive(true);
+                }
+                else
+                {
+                    Debug.Log("Player is registered.");
+                    selfCustodyButton.gameObject.SetActive(true);
+                }
+            },
+            error => 
+            {
+                Debug.LogError("Error getting account info: " + error.ErrorMessage);
+            });
     }
 }
