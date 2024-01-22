@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine;
@@ -16,10 +18,59 @@ public class GuestToRegisteredController : MonoBehaviour
     public InputField passwordInput;
     public Text statusText;
 
+    private Dictionary<string, object> _guestUserData = new Dictionary<string, object>();
+
+    private void OnEnable()
+    {
+        AzureFunctionCaller.onTransferUserDataSuccess += OnTransferUserDataSuccess;
+        AzureFunctionCaller.onTransferUserDataFailure += OnTransferUserDataFailure;
+    }
+
+    private void OnDisable()
+    {
+        AzureFunctionCaller.onTransferUserDataSuccess -= OnTransferUserDataSuccess;
+        AzureFunctionCaller.onTransferUserDataFailure -= OnTransferUserDataFailure;
+    }
+
     public void Activate(bool status)
     {
-        view.SetActive(status);    
+        view.SetActive(status);
+
+        if (status)
+        {
+            // Create the request object
+            GetUserDataRequest getUserDataRequest = new GetUserDataRequest();
+
+            // Make the API call
+            PlayFabClientAPI.GetUserReadOnlyData(getUserDataRequest,
+                result =>  // Inline success callback
+                {
+                    if (result.Data == null)
+                    {
+                        string message = "No guest user data.";
+                        Debug.LogError(message);
+                        statusText.text = message;
+                        return;
+                    }
+                
+                    Debug.Log("Guest user data retrieved.");
+                    foreach (var data in result.Data)
+                    {
+                        _guestUserData.Add(data.Key, data.Value.Value);
+                    }
+                },
+                error =>  // Inline failure callback
+                {
+                    string errorMessage = error.GenerateErrorReport();
+                    Debug.LogError(errorMessage);
+                    statusText.text = errorMessage;
+                    // Show the content
+                    content.SetActive(true);
+                }
+            );
+        }
     }
+    
     
     public void ConvertToRegisteredUser()
     {
@@ -33,6 +84,7 @@ public class GuestToRegisteredController : MonoBehaviour
         
         // Hide the content
         content.SetActive(false);
+        
         statusText.text = "Registering user...";
 
         // Assuming you have the Custom ID for the guest user
@@ -51,7 +103,7 @@ public class GuestToRegisteredController : MonoBehaviour
         {
             Email = emailInput.text,
             Password = passwordInput.text,
-            RequireBothUsernameAndEmail = false
+            RequireBothUsernameAndEmail = false, 
         };
 
         PlayFabClientAPI.RegisterPlayFabUser(request, result =>
@@ -97,9 +149,15 @@ public class GuestToRegisteredController : MonoBehaviour
                     message = "User logged in successfully.";
                     Debug.Log(message);
                     statusText.text = message;
-                    onGuestRegistered?.Invoke();
-                    // Show the content
-                    content.SetActive(true);
+
+                    if (_guestUserData == null)
+                    {
+                        Debug.LogError("GuestUserData is null.");
+                        return;
+                    }
+
+                    statusText.text = "Transferring guest user data...";
+                    AzureFunctionCaller.TransferUserData(_guestUserData);
                 },
                 error =>
                 {
@@ -118,6 +176,23 @@ public class GuestToRegisteredController : MonoBehaviour
             // Show the content
             content.SetActive(true);
         });
+    }
+    
+    private void OnTransferUserDataSuccess(string result)
+    {
+        Debug.Log(result);
+        content.SetActive(true);
+        onGuestRegistered?.Invoke();
+        Activate(false);
+    }
+    
+    private void OnTransferUserDataFailure(PlayFabError error)
+    {
+        var message = error.GenerateErrorReport();
+        Debug.LogError(message);
+        statusText.text = message;
+        // Show the content
+        content.SetActive(true);
     }
 
     private string GetGuestCustomId()
