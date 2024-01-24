@@ -23,8 +23,9 @@ const httpTrigger: AzureFunction = async function (
 
     // Check for request body and its nested properties
     const masterPlayerAccountId = req?.body?.CallerEntityProfile?.Lineage?.MasterPlayerAccountId;
+    const ownerAddress = req.body?.FunctionArgument?.ownerAddress;
 
-    if (typeof masterPlayerAccountId !== 'string') {
+    if (typeof masterPlayerAccountId !== 'string' || typeof ownerAddress !== 'string') {
       context.log('Invalid request body');
       context.res = {
         status: 400,
@@ -37,7 +38,9 @@ const httpTrigger: AzureFunction = async function (
     const updateUserDataRequest = {
       PlayFabId: masterPlayerAccountId,
       Data: {
-        Web3AuthCompletedOnce: "true"
+        Web3AuthCompletedOnce: "true",
+        ownerAddress: ownerAddress,
+        custodial: null
       },
     };
 

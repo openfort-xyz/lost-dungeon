@@ -184,6 +184,7 @@ public class Configuration : MonoBehaviour
                 }
                 else
                 {
+                    //TODO check if it's custodial or not!
                     Debug.Log("Player is registered.");
                     selfCustodyButton.gameObject.SetActive(true);
                 }
