@@ -18,6 +18,7 @@ public class Configuration : MonoBehaviour
     public Button logoutButton;
     public Button registerButton;
     public Button selfCustodyButton;
+    public Button recoveryButton;
     public Button backButton;
     
     public Text statusTextLabel;
@@ -203,7 +204,7 @@ public class Configuration : MonoBehaviour
                         else
                         {
                             Debug.Log("Player is self-custodial.");
-                            //TODO
+                            recoveryButton.gameObject.SetActive(true);
                         }
                     },
                     error => 
