@@ -1,7 +1,15 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
+import { PlayFabServer } from "playfab-sdk";
 import Openfort, { CompleteRecoveryRequest } from "@openfort/openfort-node";
 
+// Initialize Openfort
 const openfort = new Openfort(process.env.OPENFORT_API_KEY);
+
+// Initialize PlayFab settings
+const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID || '';
+const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY || '';
+PlayFabServer.settings.titleId = PlayFabTitleId;
+PlayFabServer.settings.developerSecretKey = PlayFabDeveloperKey;
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
@@ -56,11 +64,52 @@ const httpTrigger: AzureFunction = async function (
       };
   
       const transactionIntent = await openfort.accounts.completeRecovery(recoveryRequest);
+
+      if (!transactionIntent) return;
+
+      // Check the status of the transactionIntent
+      if (transactionIntent.response.status !== 1) {
+        context.log("Lockup period still live. Try again later.");
+        context.res = {
+          status: 500,
+          body: "Lockup period still live. Try again later.",
+        };
+        return;
+      }
+
+      var updateUserDataRequest = {
+        PlayFabId: req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId,
+        Data: {
+          recoveryAddress: null,
+          //TODO?? ownerAddress: newOwnerAddress
+        }
+      };
   
-      context.log("API call was successful.");
+      const result = await new Promise((resolve, reject) => {
+        PlayFabServer.UpdateUserReadOnlyData(
+          updateUserDataRequest,
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          }
+        );
+      }).catch((error) => {
+        context.log("Something went wrong with the API call.");
+        context.res = {
+          status: 500,
+          body: JSON.stringify(error),
+        };
+      });
+
+      if (!result) return;
+      
+      context.log("Recovery process completed successfully.");
       context.res = {
         status: 200,
-        body: transactionIntent.response.transactionHash,
+        body: "Recovery process completed successfully.",
       };
 
     } else {
