@@ -11,6 +11,12 @@ public static partial class AzureFunctionCaller
     
     public static Action<string> onTransferUserDataSuccess;
     public static Action<PlayFabError> onTransferUserDataFailure;
+    
+    public static Action<string> onStartRecoverySuccess;
+    public static Action<PlayFabError> onStartRecoveryFailure;
+    
+    public static Action<string> onCompleteRecoverySuccess;
+    public static Action<PlayFabError> onCompleteRecoveryFailure;
 
     #region FUNCTIONS
     public static void DeployAccount(string playerId)
@@ -72,6 +78,48 @@ public static partial class AzureFunctionCaller
         
         PlayFabCloudScriptAPI.ExecuteFunction(request, OnTransferUserDataSuccess, OnTransferUserDataFailure);
     }
+    
+    public static void StartRecovery(string playerId, string newOwnerAddress)
+    {
+        var request = new ExecuteFunctionRequest()
+        {
+            Entity = new PlayFab.CloudScriptModels.EntityKey()
+            {
+                Id = PlayFabSettings.staticPlayer.EntityId,
+                Type = PlayFabSettings.staticPlayer.EntityType,
+            },
+            FunctionName = "StartRecovery",
+            FunctionParameter = new Dictionary<string, object>()
+            {
+                {"playerId", playerId},
+                {"newOwnerAddress", newOwnerAddress}
+            },
+            GeneratePlayStreamEvent = true,
+        };
+        
+        PlayFabCloudScriptAPI.ExecuteFunction(request, OnStartRecoverySuccess, OnStartRecoveryFailure);
+    }
+
+    public static void CompleteRecovery(string playerId, string newOwnerAddress)
+    {
+        var request = new ExecuteFunctionRequest()
+        {
+            Entity = new PlayFab.CloudScriptModels.EntityKey()
+            {
+                Id = PlayFabSettings.staticPlayer.EntityId,
+                Type = PlayFabSettings.staticPlayer.EntityType,
+            },
+            FunctionName = "CompleteRecovery",
+            FunctionParameter = new Dictionary<string, object>()
+            {
+                {"playerId", playerId},
+                {"newOwnerAddress", newOwnerAddress}
+            },
+            GeneratePlayStreamEvent = true,
+        };
+        
+        PlayFabCloudScriptAPI.ExecuteFunction(request, OnCompleteRecoverySuccess, OnCompleteRecoveryFailure);
+    }
     #endregion
     
     #region CALLBACK_HANDLERS
@@ -100,6 +148,26 @@ public static partial class AzureFunctionCaller
     private static void OnTransferUserDataFailure(PlayFabError error)
     {
         onTransferUserDataFailure?.Invoke(error);
+    }
+    
+    private static void OnStartRecoverySuccess(ExecuteFunctionResult result)
+    {
+        onStartRecoverySuccess?.Invoke(result.FunctionResult.ToString());
+    }
+    
+    private static void OnStartRecoveryFailure(PlayFabError error)
+    {
+        onStartRecoveryFailure?.Invoke(error);
+    }
+    
+    private static void OnCompleteRecoverySuccess(ExecuteFunctionResult result)
+    {
+        onCompleteRecoverySuccess?.Invoke(result.FunctionResult.ToString());
+    }
+
+    private static void OnCompleteRecoveryFailure(PlayFabError error)
+    {
+        onCompleteRecoveryFailure?.Invoke(error);
     }
     #endregion
 }
