@@ -71,6 +71,7 @@ public class SocialRecoveryController : MonoBehaviour
         {
             //TODO disable content?
             recoveryAddressInput.text = string.Empty;
+            Log(string.Empty);
         }
     }
 
