@@ -11,7 +11,7 @@ const httpTrigger: AzureFunction = async function (
     if (
       !req.body ||
       !req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId ||
-      !req.body.FunctionArgument.accountId ||
+      !req.body.FunctionArgument.playerId ||
       !req.body.FunctionArgument.newOwnerAddress
     ) {
       context.res = {
@@ -23,22 +23,52 @@ const httpTrigger: AzureFunction = async function (
 
     context.log("HTTP trigger function processed a request.");
 
-    const accountId = req.body.FunctionArgument.accountId;
+    const playerId = req.body.FunctionArgument.playerId;
     const newOwnerAddress = req.body.FunctionArgument.newOwnerAddress;
-    
-    const recoveryRequest: StartRecoveryRequest = {
-      accountId: accountId,
-      newOwnerAddress: newOwnerAddress,
-      policy: process.env.OF_TX_SPONSOR
-    };
 
-    const transactionIntent = await openfort.accounts.startRecovery(recoveryRequest);
+    // Get player account
+    const accounts = await openfort.accounts.list({ player: playerId })
+    .catch((error) => {
+      context.log(error);
+      context.res = {
+        status: 500,
+        body: JSON.stringify(error),
+      };
+      return;
+    });
 
-    context.log("API call was successful.");
-    context.res = {
-      status: 200,
-      body: transactionIntent.response.transactionHash,
-    };
+    if (!accounts) return;
+
+    // Check if there is only one account
+    if (accounts.data.length === 1) {
+
+      const account = accounts.data[0];
+
+      // Retrieve the ID of the account
+      const accountId = account.id;
+      context.log("Account ID: " + accountId);
+
+      const recoveryRequest: StartRecoveryRequest = {
+        accountId: accountId,
+        newOwnerAddress: newOwnerAddress,
+        policy: process.env.OF_TX_SPONSOR
+      };
+  
+      const transactionIntent = await openfort.accounts.startRecovery(recoveryRequest);
+  
+      context.log("API call was successful.");
+      context.res = {
+        status: 200,
+        body: transactionIntent.response.transactionHash,
+      };
+
+    } else {
+      context.res = {
+        status: 400,
+        body: "There should be exactly one account"
+      };
+      return;
+    }
   } catch (error) {
     context.log(error);
     context.res = {
