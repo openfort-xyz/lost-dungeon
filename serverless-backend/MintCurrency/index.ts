@@ -1,6 +1,7 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { PlayFabServer } from "playfab-sdk";
 import Openfort, { CreateTransactionIntentRequest, Interaction } from "@openfort/openfort-node";
+import { ethers } from "ethers";
 
 const PlayFabTitleId = process.env.PLAYFAB_TITLE_ID;
 const PlayFabDeveloperKey = process.env.PLAYFAB_DEV_SECRET_KEY;
@@ -31,6 +32,7 @@ const httpTrigger: AzureFunction = async function (
     PlayFabServer.settings.developerSecretKey = PlayFabDeveloperKey;
 
     const coins = req.body.FunctionArgument.coins;
+    const coinsWEI = ethers.utils.parseUnits(coins, 'ether')
 
     context.log("HTTP trigger function processed a request.");
 
@@ -62,7 +64,7 @@ const httpTrigger: AzureFunction = async function (
     const interaction: Interaction = {
       contract: process.env.OF_GOLD_CONTRACT,
       functionName: "transfer",
-      functionArgs: [_receiver, coins],
+      functionArgs: [_receiver, coinsWEI],
     };
     const transactionIntentRequest: CreateTransactionIntentRequest = {
       account: DeveloperAccount,

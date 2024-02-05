@@ -38,23 +38,8 @@ const httpTrigger: AzureFunction = async function (
       signature: signature,
     });
 
-    const OFplayer = await openfort.players
-      .create({
-        name: req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId,
-      })
-      .catch((error) => {
-        context.log(error);
-        context.res = {
-          status: 500,
-          body: JSON.stringify(error),
-        };
-        return;
-      });
-    if (!OFplayer) return;
-
     const OFaccount = await openfort.accounts
       .create({
-        player: OFplayer.id,
         externalOwnerAddress: address,
         chainId: 4337,
       })
@@ -95,13 +80,13 @@ const httpTrigger: AzureFunction = async function (
     var updateUserDataRequest = {
       PlayFabId: req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId,
       Data: {
-        OFplayer: OFplayer.id,
+        OFplayer: OFaccount.player.id,
         address: OFaccount.address,
         ownerAddress: OFaccount.ownerAddress,
       },
     };
 
-    const result = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       PlayFabServer.UpdateUserReadOnlyData(
         updateUserDataRequest,
         (error, result) => {
