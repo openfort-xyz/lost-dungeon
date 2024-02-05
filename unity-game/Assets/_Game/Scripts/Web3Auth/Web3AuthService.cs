@@ -246,8 +246,8 @@ public class Web3AuthService : MonoBehaviour
 
         try
         {
-            var address = await _walletConnectorKit.GetConnectedAddress();
-            signature = await _walletConnectorKit.Sign(userOpHash, address);
+            _currentAddress = await _walletConnectorKit.GetConnectedAddress();
+            signature = await _walletConnectorKit.Sign(userOpHash, _currentAddress);
         
             if (string.IsNullOrEmpty(signature))
             {
@@ -276,7 +276,7 @@ public class Web3AuthService : MonoBehaviour
             throw;
         }
         
-        AzureFunctionCaller.CompleteWeb3Auth();
+        AzureFunctionCaller.CompleteWeb3Auth(_currentAddress);
     }
 
     private void OnRegisterSessionFailure(PlayFabError error)
