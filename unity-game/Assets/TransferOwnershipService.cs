@@ -366,8 +366,8 @@ public class TransferOwnershipService : MonoBehaviour
 
         try
         {
-            var address = await _walletConnectorKit.GetConnectedAddress();
-            signature = await _walletConnectorKit.Sign(userOpHash, address);
+            _currentWalletAddress = await _walletConnectorKit.GetConnectedAddress();
+            signature = await _walletConnectorKit.Sign(userOpHash, _currentWalletAddress);
 
             ChangeState(State.SessionSigned);
 
@@ -396,7 +396,7 @@ public class TransferOwnershipService : MonoBehaviour
             throw;
         }
 
-        AzureFunctionCaller.CompleteWeb3Auth();
+        AzureFunctionCaller.CompleteWeb3Auth(_currentWalletAddress);
     }
 
     private void OnRegisterSessionFailure(PlayFabError error)
