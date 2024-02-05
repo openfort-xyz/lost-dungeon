@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Openfort;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +18,7 @@ public class Configuration : MonoBehaviour
     public Button logoutButton;
     public Button registerButton;
     public Button selfCustodyButton;
+    public Button recoveryButton;
     public Button backButton;
     
     public Text statusTextLabel;
@@ -185,7 +187,31 @@ public class Configuration : MonoBehaviour
                 else
                 {
                     Debug.Log("Player is registered.");
-                    selfCustodyButton.gameObject.SetActive(true);
+                    
+                    // IMPORTANT --> Check if player has a custodial account linked or it's self custodial.
+                    PlayFabClientAPI.GetUserReadOnlyData(new GetUserDataRequest()
+                    {
+                        Keys = new List<string>() { "custodial" }
+                    },
+                    userDataResult => 
+                    {
+                        Debug.Log("Get user data successful");
+                        if (userDataResult.Data.ContainsKey("custodial"))
+                        {
+                            Debug.Log("Player is custodial.");
+                            selfCustodyButton.gameObject.SetActive(true);
+                        }
+                        else
+                        {
+                            Debug.Log("Player is self-custodial.");
+                            recoveryButton.gameObject.SetActive(true);
+                        }
+                    },
+                    error => 
+                    {
+                        Debug.Log("Got error getting user data:");
+                        Debug.Log(error.GenerateErrorReport());
+                    });
                 }
             },
             error => 
