@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Openfort.Model;
 using PlayFab;
-using PlayFab.ClientModels;
 using PlayFab.CloudScriptModels;
-using UnityEngine;
 
 public static partial class AzureFunctionCaller
 {
     public static Action<ExecuteFunctionResult> onDeployAccountSuccess;
     public static Action<string> onRequestTransferOwnershipSuccess;
     public static Action<PlayFabError> onRequestTransferOwnershipFailure;
+    
+    public static Action<string> onTransferUserDataSuccess;
+    public static Action<PlayFabError> onTransferUserDataFailure;
 
     #region FUNCTIONS
     public static void DeployAccount(string playerId)
@@ -56,6 +55,23 @@ public static partial class AzureFunctionCaller
         
         PlayFabCloudScriptAPI.ExecuteFunction(request, OnRequestTransferOwnershipSuccess, OnRequestTransferOwnershipFailure);
     }
+    
+    public static void TransferUserData(Dictionary<string,object> guestUserData)
+    {
+        var request = new ExecuteFunctionRequest()
+        {
+            Entity = new PlayFab.CloudScriptModels.EntityKey()
+            {
+                Id = PlayFabSettings.staticPlayer.EntityId,
+                Type = PlayFabSettings.staticPlayer.EntityType,
+            },
+            FunctionName = "TransferUserData",
+            FunctionParameter = guestUserData,
+            GeneratePlayStreamEvent = true,
+        };
+        
+        PlayFabCloudScriptAPI.ExecuteFunction(request, OnTransferUserDataSuccess, OnTransferUserDataFailure);
+    }
     #endregion
     
     #region CALLBACK_HANDLERS
@@ -74,6 +90,16 @@ public static partial class AzureFunctionCaller
     private static void OnRequestTransferOwnershipFailure(PlayFabError error)
     {
         onRequestTransferOwnershipFailure?.Invoke(error);
+    }
+    
+    private static void OnTransferUserDataSuccess(ExecuteFunctionResult result)
+    {
+        onTransferUserDataSuccess?.Invoke(result.FunctionResult.ToString());
+    }
+    
+    private static void OnTransferUserDataFailure(PlayFabError error)
+    {
+        onTransferUserDataFailure?.Invoke(error);
     }
     #endregion
 }
