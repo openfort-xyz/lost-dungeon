@@ -26,23 +26,8 @@ const httpTrigger: AzureFunction = async function (
 
     context.log("HTTP trigger function processed a request.");
 
-    const OFplayer = await openfort.players
-      .create({
-        name: req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId,
-      })
-      .catch((error) => {
-        context.log(error);
-        context.res = {
-          status: 500,
-          body: JSON.stringify(error),
-        };
-        return;
-      });
-    if (!OFplayer) return;
-
     const OFaccount = await openfort.accounts
       .create({
-        player: OFplayer.id,
         chainId: 4337,
       })
       .catch((error) => {
@@ -53,13 +38,14 @@ const httpTrigger: AzureFunction = async function (
         };
         return;
       });
-
     if (!OFaccount) return;
 
+    const amountTokenGold = "1000000000000000000"; // 1 Gold Token
+  
     const interaction: Interaction = {
       contract: process.env.OF_GOLD_CONTRACT,
       functionName: "transfer",
-      functionArgs: [OFaccount.id, "1000000000000000000"],
+      functionArgs: [OFaccount.id, amountTokenGold],
     };
     const transactionIntentRequest: CreateTransactionIntentRequest = {
       account: DeveloperAccount,
@@ -68,45 +54,31 @@ const httpTrigger: AzureFunction = async function (
       interactions: [interaction],
       policy: process.env.OF_TX_SPONSOR,
     };
-    
-    await openfort.transactionIntents.create(
-      transactionIntentRequest
-    );
 
     //TODO Set PlayFab player data with some of the verified data!
     PlayFabServer.settings.titleId = PlayFabTitleId;
     PlayFabServer.settings.developerSecretKey = PlayFabDeveloperKey;
 
-    // Preparing request
+
+
+    await openfort.transactionIntents.create(transactionIntentRequest)
+
     var updateUserDataRequest = {
       PlayFabId: req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId,
       Data: {
-        OFplayer: OFplayer.id,
+        OFplayer: OFaccount.player.id,
         address: OFaccount.address,
         custodial: "true"
       },
     };
-
-    const result = await new Promise((resolve, reject) => {
-      PlayFabServer.UpdateUserReadOnlyData(
-        updateUserDataRequest,
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
-          }
+    await PlayFabServer.UpdateUserReadOnlyData(updateUserDataRequest, (error, result) => {
+        if (error) {
+          context.res = {
+            status: 500,
+            body: JSON.stringify(error),
+          };
         }
-      );
-    }).catch((error) => {
-      context.log("Something went wrong with the API call.");
-      context.res = {
-        status: 500,
-        body: JSON.stringify(error),
-      };
-    });
-
-    if (!result) return;
+    })
 
     context.log("API call was successful.");
     context.res = {
