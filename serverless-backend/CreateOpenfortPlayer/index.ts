@@ -40,6 +40,39 @@ const httpTrigger: AzureFunction = async function (
       });
     if (!OFaccount) return;
 
+    PlayFabServer.settings.titleId = PlayFabTitleId;
+    PlayFabServer.settings.developerSecretKey = PlayFabDeveloperKey;
+
+    var updateUserDataRequest = {
+      PlayFabId: req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId,
+      Data: {
+        OFplayer: OFaccount.player.id,
+        address: OFaccount.address,
+        custodial: "true"
+      },
+    };
+    
+    const result = await new Promise((resolve, reject) => {
+      PlayFabServer.UpdateUserReadOnlyData(
+        updateUserDataRequest,
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+    }).catch((error) => {
+      context.log("Something went wrong with the API call.");
+      context.res = {
+        status: 500,
+        body: JSON.stringify(error),
+      };
+    });
+
+    if (!result) return;
+
     const amountTokenGold = "1000000000000000000"; // 1 Gold Token
   
     const interaction: Interaction = {
@@ -55,32 +88,11 @@ const httpTrigger: AzureFunction = async function (
       policy: process.env.OF_TX_SPONSOR,
     };
 
-    //TODO Set PlayFab player data with some of the verified data!
-    PlayFabServer.settings.titleId = PlayFabTitleId;
-    PlayFabServer.settings.developerSecretKey = PlayFabDeveloperKey;
-
-
-
     await openfort.transactionIntents.create(transactionIntentRequest)
 
-    var updateUserDataRequest = {
-      PlayFabId: req.body.CallerEntityProfile.Lineage.MasterPlayerAccountId,
-      Data: {
-        OFplayer: OFaccount.player.id,
-        address: OFaccount.address,
-        custodial: "true"
-      },
-    };
-    await PlayFabServer.UpdateUserReadOnlyData(updateUserDataRequest, (error, result) => {
-        if (error) {
-          context.res = {
-            status: 500,
-            body: JSON.stringify(error),
-          };
-        }
-    })
 
-    context.log("API call was successful.");
+
+    context.log("API call to create Player was successful.");
     context.res = {
       status: 200,
       body: JSON.stringify({
