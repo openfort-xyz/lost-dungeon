@@ -126,7 +126,7 @@ public class LobbyManager : StateMachineSingleton<LobbyManager>
     {
         playerMovement.EnableMovement(true);
         
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
         joystick.SetActive(true);
 #endif
     }
@@ -144,7 +144,7 @@ public class LobbyManager : StateMachineSingleton<LobbyManager>
     {
         playerMovement.EnableMovement(true);
         
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
         joystick.SetActive(true);
 #endif
     }
@@ -179,7 +179,7 @@ public class LobbyManager : StateMachineSingleton<LobbyManager>
     {
         playerMovement.EnableMovement(false);
         
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
         joystick.SetActive(false);
 #endif
         

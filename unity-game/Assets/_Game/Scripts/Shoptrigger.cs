@@ -16,7 +16,7 @@ public class Shoptrigger : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
             ShopInteractionText.text = "Open";
 #endif
             ShopInteraction.SetActive(true);

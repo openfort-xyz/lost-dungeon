@@ -31,7 +31,7 @@ public class PistolGun : MonoBehaviour
         currentAmmo = MagazenSize;
         WeaponHUD.instance.SetAmmo(currentAmmo, MagazenSize);
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
         if (SceneManager.GetActiveScene().name != "Level") return; // Don't need in Lobby
         
         // Get the reference to the UI joystick's RectTransform
@@ -54,7 +54,7 @@ public class PistolGun : MonoBehaviour
         //TODO Create WeaponClass needs to be a base class where weapons need to inherit from (like PistolGun).
         if (SceneManager.GetActiveScene().name != "Level") return; // Don't shoot in Lobby!!
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
         // Iterate through all active touches
         for (int i = 0; i < Input.touchCount; i++)
         {
