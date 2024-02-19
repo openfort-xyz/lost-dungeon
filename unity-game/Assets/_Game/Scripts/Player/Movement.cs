@@ -38,7 +38,7 @@ public class Movement : MonoBehaviour
 
     void Update()
     {
-#if !UNITY_ANDROID
+#if !UNITY_ANDROID && !UNITY_IOS
         if (canMove)
         {
             moveDir.x = Input.GetAxisRaw("Horizontal");
