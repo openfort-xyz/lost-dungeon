@@ -8,7 +8,7 @@ public class AppleAuthController : PlayFabAuthControllerBase
 {
     public void LoginWithApple()
     {
-        LoginWithAppleRequest request = new LoginWithAppleRequest(
+        LoginWithAppleRequest request = new LoginWithAppleRequest
         {
             IdentityToken = "",
             CreateAccount = true
