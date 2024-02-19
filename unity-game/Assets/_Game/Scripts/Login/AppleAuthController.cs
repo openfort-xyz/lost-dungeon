@@ -8,10 +8,11 @@ public class AppleAuthController : PlayFabAuthControllerBase
 {
     public void LoginWithApple()
     {
-        LoginWithAppleRequest request = new LoginWithAppleRequest();
-        request.IdentityToken = /* Get identity token from Apple's authentication */
-            // Optional:
-            request.CreateAccount = true; // Automatically create PlayFab account if new
+        LoginWithAppleRequest request = new LoginWithAppleRequest(
+        {
+            IdentityToken = "",
+            CreateAccount = true
+        };
 
         PlayFabClientAPI.LoginWithApple(request, OnLoginSuccess, OnLoginError);
     }
