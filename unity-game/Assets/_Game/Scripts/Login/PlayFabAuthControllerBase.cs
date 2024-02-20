@@ -6,7 +6,7 @@ using UnityEngine;
 public abstract class PlayFabAuthControllerBase : MonoBehaviour
 {
     [SerializeField]
-    private GetPlayerCombinedInfoRequestParams playerCombinedInfoRequestParams;
+    protected GetPlayerCombinedInfoRequestParams playerCombinedInfoRequestParams;
     protected GetPlayerCombinedInfoRequestParams PlayerCombinedInfoRequestParams => playerCombinedInfoRequestParams;
 
     public static event Action OnLoginStarted;
