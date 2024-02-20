@@ -11,6 +11,8 @@ public class WalletConnectorKit : MonoBehaviour
     
     private IWalletConnector _currentConnector;
 
+    private bool _isConnected;
+
     void Start() {
         Initialize();
     }
@@ -37,6 +39,11 @@ public class WalletConnectorKit : MonoBehaviour
     public void Disconnect() {
         _currentConnector.Disconnect();
     }
+    
+    public bool IsConnected()
+    {
+        return _isConnected;
+    }
 
     public async UniTask<string> Sign(string message, string address) {
         return await _currentConnector.Sign(message, address);
@@ -57,14 +64,17 @@ public class WalletConnectorKit : MonoBehaviour
     // Event handlers
     private void WalletConnector_OnConnected_Handler() {
         OnConnected?.Invoke();
+        _isConnected = true;
     }
 
     private void WalletConnector_OnDisconnected_Handler(string reason) {
         OnDisconnected?.Invoke(reason);
+        _isConnected = false;
     }
 
     private void WalletConnector_ConnectionError_Handler(string errorMessage) {
         OnConnectionError?.Invoke(errorMessage);
+        _isConnected = false;
     }
     
     // Only in WebGL

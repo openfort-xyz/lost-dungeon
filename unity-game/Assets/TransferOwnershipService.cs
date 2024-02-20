@@ -263,8 +263,15 @@ public class TransferOwnershipService : MonoBehaviour
 
     public void Disconnect()
     {
-        ChangeState(State.Disconnecting);
-        _walletConnectorKit.Disconnect();
+        if (_walletConnectorKit.IsConnected())
+        {
+            ChangeState(State.Disconnecting);
+            _walletConnectorKit.Disconnect();
+        }
+        else
+        {
+            ChangeState(State.Disconnected);
+        }
     }
     #endregion
     

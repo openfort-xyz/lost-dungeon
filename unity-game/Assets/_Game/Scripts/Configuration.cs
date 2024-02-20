@@ -98,14 +98,15 @@ public class Configuration : MonoBehaviour
                 statusTextLabel.text = "Disconnecting...";
                 break;
             case TransferOwnershipService.State.Disconnected:
-                EnableButtons(true);
-                statusTextLabel.text = "Wallet disconnected. Please try again.";
-                
                 if (_loggingOut)
                 {
                     _loggingOut = false;
                     OnLoggedOut?.Invoke();
+                    return;
                 }
+                
+                EnableButtons(true);
+                statusTextLabel.text = "Wallet disconnected. Please try again.";
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(currentState), currentState, null);
@@ -131,7 +132,7 @@ public class Configuration : MonoBehaviour
         
         // Remove openfort session key
         var sessionKey = _openfortClient.LoadSessionKey();
-        if (sessionKey == null)
+        if (sessionKey != null)
         {
             _openfortClient.RemoveSessionKey();
         }
