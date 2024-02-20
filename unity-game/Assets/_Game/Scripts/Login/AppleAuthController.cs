@@ -14,8 +14,6 @@ public class AppleAuthController : PlayFabAuthControllerBase
 {
     public UnityEvent appleAuthError;
     
-    private const string AppleUserIdKey = "AppleUserId";
-    
     private IAppleAuthManager _appleAuthManager;
 
     private void Update()
@@ -52,13 +50,13 @@ public class AppleAuthController : PlayFabAuthControllerBase
         this._appleAuthManager.SetCredentialsRevokedCallback(result =>
         {
             Debug.Log("Received revoked callback " + result);
-            PlayerPrefs.DeleteKey(AppleUserIdKey);
+            PlayerPrefs.DeleteKey(GameConstants.AppleUserIdKey);
         });
 
         // If we have an Apple User Id available, get the credential status for it
-        if (PlayerPrefs.HasKey(AppleUserIdKey))
+        if (PlayerPrefs.HasKey(GameConstants.AppleUserIdKey))
         {
-            var storedAppleUserId = PlayerPrefs.GetString(AppleUserIdKey);
+            var storedAppleUserId = PlayerPrefs.GetString(GameConstants.AppleUserIdKey);
             this.CheckCredentialStatusForUserId(storedAppleUserId);
         }
         // If we do not have an stored Apple User Id, attempt a quick login
@@ -87,12 +85,12 @@ public class AppleAuthController : PlayFabAuthControllerBase
                     // Discard previous apple user id
                     case CredentialState.Revoked:
                         appleAuthError?.Invoke();
-                        PlayerPrefs.DeleteKey(AppleUserIdKey);
+                        PlayerPrefs.DeleteKey(GameConstants.AppleUserIdKey);
                         return;
                     
                     case CredentialState.NotFound:
                         appleAuthError?.Invoke();
-                        PlayerPrefs.DeleteKey(AppleUserIdKey);
+                        PlayerPrefs.DeleteKey(GameConstants.AppleUserIdKey);
                         return;
                 }
             },
@@ -117,7 +115,7 @@ public class AppleAuthController : PlayFabAuthControllerBase
                 var appleIdCredential = credential as IAppleIDCredential;
                 if (appleIdCredential != null)
                 {
-                    PlayerPrefs.SetString(AppleUserIdKey, credential.User);    
+                    PlayerPrefs.SetString(GameConstants.AppleUserIdKey, credential.User);    
                 }
 
                 Debug.Log("Success!!");
@@ -141,7 +139,7 @@ public class AppleAuthController : PlayFabAuthControllerBase
             credential =>
             {
                 // If a sign in with apple succeeds, we should have obtained the credential with the user id, name, and email, save it
-                PlayerPrefs.SetString(AppleUserIdKey, credential.User);
+                PlayerPrefs.SetString(GameConstants.AppleUserIdKey, credential.User);
                 Debug.Log("success!");
                 LoginToPlayFab(credential.User);
             },
