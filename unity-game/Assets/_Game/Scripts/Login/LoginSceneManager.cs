@@ -14,6 +14,7 @@ public class LoginSceneManager : MonoBehaviour
 
     [Header("PlayFab Auth Controllers")]
     public GoogleAuthController googleAuthController;
+    public AppleAuthController appleAuthController;
     
     [Header("PlayFab")]
     // Settings for what data to get from playfab on login.
@@ -47,8 +48,12 @@ public class LoginSceneManager : MonoBehaviour
     private void OnEnable()
     {
         PlayFabAuthControllerBase.OnLoginStarted += () => loginPanel.SetActive(false);
+        
+        //TODO Check if possible to change to PlayFabAuthControllerBase.On....
         googleAuthController.OnLoginSuccess += OnLoginSuccess;
         googleAuthController.OnLoginFailure += OnLoginFailure;
+        appleAuthController.OnLoginSuccess += OnLoginSuccess;
+        appleAuthController.OnLoginFailure += OnLoginFailure;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess += OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure += OnCreateOpenfortPlayerFailure;
@@ -58,6 +63,8 @@ public class LoginSceneManager : MonoBehaviour
     {
         googleAuthController.OnLoginSuccess -= OnLoginSuccess;
         googleAuthController.OnLoginFailure -= OnLoginFailure;
+        appleAuthController.OnLoginSuccess -= OnLoginSuccess;
+        appleAuthController.OnLoginFailure -= OnLoginFailure;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess -= OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;
