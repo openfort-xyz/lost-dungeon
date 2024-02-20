@@ -121,6 +121,8 @@ public class Configuration : MonoBehaviour
         PlayerPrefs.DeleteKey(PPStaticData.RememberMeKey);
         PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
         PlayerPrefs.DeleteKey(PPStaticData.LastPlayerKey);
+        // Explicit for iOS/Apple
+        PlayerPrefs.DeleteKey(GameConstants.AppleUserIdKey);
 
         // Clear all locally saved data related to the PlayFab session
         PlayFabClientAPI.ForgetAllCredentials();
