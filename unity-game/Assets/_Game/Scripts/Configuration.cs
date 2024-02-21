@@ -172,49 +172,56 @@ public class Configuration : MonoBehaviour
                     return;
                 }
 
-                if (string.IsNullOrEmpty(result.AccountInfo.PrivateInfo.Email))
-                {
-                    Debug.Log("Guest?");
-                    var customId = result.AccountInfo.CustomIdInfo.CustomId;
-                    
-                    if (string.IsNullOrEmpty(customId))
-                    {
-                        Debug.Log("No CustomID found.");
-                        return;
-                    }
-
-                    Debug.Log("Player is guest.");
-                    guestCustomId = customId;
-                    registerButton.gameObject.SetActive(true);
-                }
-                else
+                if (result.AccountInfo.PrivateInfo.Email != null ||
+                    result.AccountInfo.AppleAccountInfo != null ||
+                    result.AccountInfo.GooglePlayGamesInfo != null)
                 {
                     Debug.Log("Player is registered.");
                     
                     // IMPORTANT --> Check if player has a custodial account linked or it's self custodial.
                     PlayFabClientAPI.GetUserReadOnlyData(new GetUserDataRequest()
-                    {
-                        Keys = new List<string>() { "custodial" }
-                    },
-                    userDataResult => 
-                    {
-                        Debug.Log("Get user data successful");
-                        if (userDataResult.Data.ContainsKey("custodial"))
                         {
-                            Debug.Log("Player is custodial.");
-                            selfCustodyButton.gameObject.SetActive(true);
-                        }
-                        else
+                            Keys = new List<string>() { "custodial" }
+                        },
+                        userDataResult => 
                         {
-                            Debug.Log("Player is self-custodial.");
-                            recoveryButton.gameObject.SetActive(true);
-                        }
-                    },
-                    error => 
+                            Debug.Log("Get user data successful");
+                            if (userDataResult.Data.ContainsKey("custodial"))
+                            {
+                                Debug.Log("Player is custodial.");
+                                selfCustodyButton.gameObject.SetActive(true);
+                            }
+                            else
+                            {
+                                Debug.Log("Player is self-custodial.");
+                                recoveryButton.gameObject.SetActive(true);
+                            }
+                        },
+                        error => 
+                        {
+                            Debug.Log("Got error getting user data:");
+                            Debug.Log(error.GenerateErrorReport());
+                        });
+                }
+                else
+                {
+                    Debug.Log("Guest?");
+
+                    try
                     {
-                        Debug.Log("Got error getting user data:");
-                        Debug.Log(error.GenerateErrorReport());
-                    });
+                        var customId = result.AccountInfo.CustomIdInfo.CustomId;
+                        
+                        //TODO Atm Google also has a custom ID! CHANGE
+                        Debug.Log("Player is guest.");
+                        guestCustomId = customId;
+                        registerButton.gameObject.SetActive(true);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        Debug.Log("No CustomID found.");
+                        throw;
+                    }
                 }
             },
             error => 
