@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using AppleAuth;
 using AppleAuth.Enums;
 using AppleAuth.Extensions;
@@ -15,6 +16,8 @@ public class AppleAuthController : PlayFabAuthControllerBase
     public UnityEvent appleAuthError;
     
     private IAppleAuthManager _appleAuthManager;
+
+    private string _appleIdToken;
 
     private void Update()
     {
@@ -78,7 +81,7 @@ public class AppleAuthController : PlayFabAuthControllerBase
                     // If it's authorized, login with that user id
                     case CredentialState.Authorized:
                         Debug.Log("Authorized!");
-                        LoginToPlayFab(appleUserId);
+                        LoginToPlayFabWithApple(appleUserId);
                         return;
                     
                     // If it was revoked, or not found, we need a new sign in with apple attempt
@@ -118,8 +121,10 @@ public class AppleAuthController : PlayFabAuthControllerBase
                     PlayerPrefs.SetString(GameConstants.AppleUserIdKey, credential.User);    
                 }
 
-                Debug.Log("Success!!");
-                LoginToPlayFab(credential.User);
+                Debug.Log("Quick login success!");
+                
+                var appleIdToken = SetupIdentityToken(credential);
+                LoginToPlayFabWithApple(appleIdToken);
             },
             error =>
             {
@@ -140,8 +145,10 @@ public class AppleAuthController : PlayFabAuthControllerBase
             {
                 // If a sign in with apple succeeds, we should have obtained the credential with the user id, name, and email, save it
                 PlayerPrefs.SetString(GameConstants.AppleUserIdKey, credential.User);
-                Debug.Log("success!");
-                LoginToPlayFab(credential.User);
+                Debug.Log("Sign in with Apple success!");
+
+                var appleIdToken = SetupIdentityToken(credential);
+                LoginToPlayFabWithApple(appleIdToken);
             },
             error =>
             {
@@ -151,14 +158,31 @@ public class AppleAuthController : PlayFabAuthControllerBase
             });
     }
 
-    private void LoginToPlayFab(string appleUserId)
+    private string SetupIdentityToken(ICredential receivedCredential)
     {
-        var request = new LoginWithCustomIDRequest
+        var appleIdCredential = receivedCredential as IAppleIDCredential;
+
+        if (appleIdCredential.IdentityToken != null)
         {
-            CustomId = appleUserId,
+            var identityToken = Encoding.UTF8.GetString(appleIdCredential.IdentityToken, 0,
+                appleIdCredential.IdentityToken.Length);
+
+            _appleIdToken = identityToken;
+            return _appleIdToken;
+        }
+        
+        Debug.LogError("Identity token is null.");
+        return null;
+    }
+
+    private void LoginToPlayFabWithApple(string appleIdToken)
+    {
+        var request = new LoginWithAppleRequest()
+        {
+            IdentityToken = appleIdToken,
             CreateAccount = true,
             InfoRequestParameters = playerCombinedInfoRequestParams
         };
-        PlayFabClientAPI.LoginWithCustomID(request, RaiseLoginSuccess, RaiseLoginFailure);
+        PlayFabClientAPI.LoginWithApple(request, RaiseLoginSuccess, RaiseLoginFailure);
     }
 }
