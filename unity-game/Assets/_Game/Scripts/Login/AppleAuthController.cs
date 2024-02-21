@@ -53,22 +53,13 @@ public class AppleAuthController : PlayFabAuthControllerBase
         this._appleAuthManager.SetCredentialsRevokedCallback(result =>
         {
             Debug.Log("Received revoked callback " + result);
-            PlayerPrefs.DeleteKey(GameConstants.AppleUserIdKey);
+            //TODO attempt quick login or to playfab default auth?
         });
-
-        // If we have an Apple User Id available, get the credential status for it
-        if (PlayerPrefs.HasKey(GameConstants.AppleUserIdKey))
-        {
-            var storedAppleUserId = PlayerPrefs.GetString(GameConstants.AppleUserIdKey);
-            this.CheckCredentialStatusForUserId(storedAppleUserId);
-        }
-        // If we do not have an stored Apple User Id, attempt a quick login
-        else
-        {
-            this.AttemptQuickLogin();
-        }
+        
+        this.AttemptQuickLogin();
     }
 
+    /* Not using it
     private void CheckCredentialStatusForUserId(string appleUserId)
     {
         // If there is an apple ID available, we should check the credential state
@@ -88,12 +79,12 @@ public class AppleAuthController : PlayFabAuthControllerBase
                     // Discard previous apple user id
                     case CredentialState.Revoked:
                         appleAuthError?.Invoke();
-                        PlayerPrefs.DeleteKey(GameConstants.AppleUserIdKey);
+                        PlayerPrefs.DeleteKey(GameConstants.AppleIdTokenKey);
                         return;
                     
                     case CredentialState.NotFound:
                         appleAuthError?.Invoke();
-                        PlayerPrefs.DeleteKey(GameConstants.AppleUserIdKey);
+                        PlayerPrefs.DeleteKey(GameConstants.AppleIdTokenKey);
                         return;
                 }
             },
@@ -104,6 +95,7 @@ public class AppleAuthController : PlayFabAuthControllerBase
                 appleAuthError?.Invoke();
             });
     }
+    */
     
     private void AttemptQuickLogin()
     {
@@ -116,11 +108,8 @@ public class AppleAuthController : PlayFabAuthControllerBase
             {
                 // If it's an Apple credential, save the user ID, for later logins
                 var appleIdCredential = credential as IAppleIDCredential;
-                if (appleIdCredential != null)
-                {
-                    PlayerPrefs.SetString(GameConstants.AppleUserIdKey, credential.User);    
-                }
-
+                if (appleIdCredential == null) return;
+                
                 Debug.Log("Quick login success!");
                 
                 var appleIdToken = SetupIdentityToken(credential);
@@ -144,7 +133,6 @@ public class AppleAuthController : PlayFabAuthControllerBase
             credential =>
             {
                 // If a sign in with apple succeeds, we should have obtained the credential with the user id, name, and email, save it
-                PlayerPrefs.SetString(GameConstants.AppleUserIdKey, credential.User);
                 Debug.Log("Sign in with Apple success!");
 
                 var appleIdToken = SetupIdentityToken(credential);
