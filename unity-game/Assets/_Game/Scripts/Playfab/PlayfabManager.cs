@@ -8,7 +8,6 @@ using System.Linq;
 #region GAME_CONSTANTS
 public static class GameConstants
 {
-    public const string AppleUserIdKey = "AppleUserId";
 }
 #endregion
 
