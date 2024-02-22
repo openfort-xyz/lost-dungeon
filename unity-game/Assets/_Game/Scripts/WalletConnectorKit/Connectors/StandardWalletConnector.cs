@@ -1,7 +1,6 @@
 using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using WalletConnectSharp.Sign.Models;
 using Object = UnityEngine.Object;
 
 public class StandardWalletConnector : IWalletConnector {
@@ -19,43 +18,49 @@ public class StandardWalletConnector : IWalletConnector {
             // Handle the error appropriately
             return;
         }
-
+        
         // Subscribe to WalletConnectController events
-        _wcController.OnConnected += HandleConnected;
-        _wcController.OnConnectionError += HandleConnectionError;
-        _wcController.OnDisconnected += HandleDisconnected;
+        //TODO-WC _wcController.OnConnected += HandleConnected;
+        //TODO-WC _wcController.OnConnectionError += HandleConnectionError;
+        //TODO-WC _wcController.OnDisconnected += HandleDisconnected;
     }
 
     public void Connect() {
-        _wcController.Connect();
+        //TODO-WC _wcController.Connect();
     }
 
     public void Disconnect() {
-        _wcController.Disconnect();
+        //TODO-WC _wcController.Disconnect();
     }
 
     public async UniTask<string> Sign(string message, string address) 
     {
-        return await _wcController.Sign(message, address);
+        //TODO-WC return await _wcController.Sign(message, address);
+        return "";
     }
     
     public async UniTask<string> AcceptOwnership(string contractAddress, string newOwnerAddress)
     {
-        return await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
+        //TODO-WCreturn await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
+        return "";
     }
 
     public async UniTask<string> GetConnectedAddress() {
-        return await _wcController.GetConnectedAddressAsync();
+        //TODO-WC return await _wcController.GetConnectedAddressAsync();
+        return "";
     }
 
     public async UniTask<int?> GetChainId() {
-        return await _wcController.GetChainIdAsync();
+        //TODO-WC return await _wcController.GetChainIdAsync();
+        return 0;
     }
 
     // Event handler implementations
+    /* //TODO-WC
     private void HandleConnected(SessionStruct session) {
         OnConnected?.Invoke();
     }
+    */
     
     private void HandleConnectionError(string error)
     {
@@ -70,8 +75,8 @@ public class StandardWalletConnector : IWalletConnector {
     public void OnDestroy()
     {
         if (_wcController == null) return;
-        _wcController.OnConnected -= HandleConnected;
-        _wcController.OnConnectionError -= HandleConnectionError;
-        _wcController.OnDisconnected -= HandleDisconnected;
+        //TODO-WC _wcController.OnConnected -= HandleConnected;
+        //TODO-WC _wcController.OnConnectionError -= HandleConnectionError;
+        //TODO-WC _wcController.OnDisconnected -= HandleDisconnected;
     }
 }
