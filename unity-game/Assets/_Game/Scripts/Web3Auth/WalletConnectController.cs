@@ -9,18 +9,16 @@ using Nethereum.RPC.Eth.DTOs;
 using Nethereum.RPC.Eth.Transactions;
 using Nethereum.Web3;
 using Newtonsoft.Json;
-using UnityBinder;
 using UnityEngine;
 using UnityEngine.Events;
-using WalletConnect;
 using WalletConnectSharp.Common.Utils;
 using WalletConnectSharp.Network.Models;
 using WalletConnectSharp.Sign.Models;
 using WalletConnectSharp.Sign.Models.Engine;
 using WalletConnectSharp.Sign.Models.Engine.Events;
-using WalletConnectUnity.Utils;
+using WalletConnectUnity.Modal.Sample;
 
-public class WalletConnectController : BindableMonoBehavior
+public class WalletConnectController : MonoBehaviour
 {
     public class WCTransaction
     {
@@ -83,30 +81,32 @@ public class WalletConnectController : BindableMonoBehavior
     public event UnityAction<string> OnConnectionError;
     public event UnityAction OnDisconnected;
     
-    [Inject]
-    private WCSignClient _wcSignClient;
-    [SerializeField] private WCQRCodeHandler wcQrCodeHandler;
+    
+    // TODO-wc private WCSignClient _wcSignClient;
+    // TODO-wc [SerializeField] private WCQRCodeHandler wcQrCodeHandler;
     
     [HideInInspector] public SessionStruct CurrentSession;
 
     #region UNITY_LIFECYCLE
     private void Start()
     {
-        _wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
-        _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
-        wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
+        // TODO-wc _wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
+        // TODO-wc _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
+        // TODO-wc wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     
     private void OnDisable()
     {
-        _wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
-        _wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
-        wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
+        // TODO-wc _wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
+        // TODO-wc _wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
+        // TODO-wc wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
     
     public async void Connect()
     {
+        // TODO-wc
+        /*
         if (_wcSignClient.SignClient == null)
             await _wcSignClient.InitSignClient();
 
@@ -115,6 +115,7 @@ public class WalletConnectController : BindableMonoBehavior
             Debug.LogError("No WCSignClient scripts found in scene!");
             return;
         }
+        */
 
         // Connect Sign Client
         Debug.Log("Connecting sign client..");
@@ -149,6 +150,8 @@ public class WalletConnectController : BindableMonoBehavior
             RequiredNamespaces = requiredNamespaces
         };
 
+        // TODO-wc
+        /*
         var connectData = await _wcSignClient.Connect(dappConnectOptions);
         
         Debug.Log($"Connection successful, URI: {connectData.Uri}");
@@ -171,11 +174,12 @@ public class WalletConnectController : BindableMonoBehavior
             Debug.LogError(("Connection failed: " + e.Message));
             Debug.LogError(e);
         }
+        */
     }
     
     public void Disconnect()
     {
-        _wcSignClient.Disconnect(CurrentSession.Topic); 
+        // TODO-wc _wcSignClient.Disconnect(CurrentSession.Topic); 
     }
     
     public async UniTask<string> Sign(string message, string address)
@@ -233,12 +237,16 @@ public class WalletConnectController : BindableMonoBehavior
             // TODO!! We should be getting new CurrentSession
             await UniTask.Delay(2500);
             
+            // TODO-wc
+            /*
             // Send the transaction
             var txHash = await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
 
             // Handle the transaction hash (e.g., display it, log it, etc.)
             Debug.Log("Transaction Hash: " + txHash);
             return txHash;   
+            */
+            return "";
         }
         catch (Exception e)
         {
@@ -265,11 +273,14 @@ public class WalletConnectController : BindableMonoBehavior
         OnConnectionError?.Invoke(e.Message);
     }
     
+    // TODO-wc
+    /*
     private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
     {
         Debug.LogWarning("WC SESSION DELETED");
         OnDisconnected?.Invoke();
     });
+    */
     
     private void WcQrCodeHandlerOnOnCancelButtonClicked()
     {
@@ -288,11 +299,15 @@ public class WalletConnectController : BindableMonoBehavior
             //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
             var request = new PersonalSign(message, address);                                
         
+            // TODO-wc
+            /*
             var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
                  
             Debug.Log("Got result from request: " + result);
         
             return result; 
+            */
+            return "";
         }
         catch (Exception ex)
         {
@@ -364,12 +379,16 @@ public class WalletConnectController : BindableMonoBehavior
         
             Debug.Log(CurrentSession.Topic);
         
+            // TODO-wc
+            /*
             // Request to switch the Ethereum chain
             var result = await _wcSignClient.Request<WCSwitchEthereumChain, object>(CurrentSession.Topic, switchChainRequest, currentChain);
 
             // Interpret a null response as successful operation
             // https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/
             return result == null;
+            */
+            return true;
         }
         catch (Exception e)
         {

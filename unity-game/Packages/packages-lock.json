@@ -238,6 +238,33 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "com.walletconnect.core": {
+      "version": "file:com.walletconnect.core@3.0.6",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.0.0"
+      }
+    },
+    "com.walletconnect.modal": {
+      "version": "file:com.walletconnect.modal@1.0.6",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.walletconnect.core": "3.0.6",
+        "com.walletconnect.ui": "1.0.6"
+      }
+    },
+    "com.walletconnect.ui": {
+      "version": "file:com.walletconnect.ui@1.0.6",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.walletconnect.core": "3.0.6",
+        "com.unity.textmeshpro": "3.0.0",
+        "com.unity.ugui": "1.0.0"
+      }
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,
