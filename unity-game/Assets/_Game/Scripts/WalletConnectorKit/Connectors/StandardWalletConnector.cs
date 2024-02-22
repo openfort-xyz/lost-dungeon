@@ -21,16 +21,16 @@ public class StandardWalletConnector : IWalletConnector {
         
         // Subscribe to WalletConnectController events
         //TODO-WC _wcController.OnConnected += HandleConnected;
-        //TODO-WC _wcController.OnConnectionError += HandleConnectionError;
+        _wcController.OnConnectionError += HandleConnectionError;
         //TODO-WC _wcController.OnDisconnected += HandleDisconnected;
     }
 
     public void Connect() {
-        //TODO-WC _wcController.Connect();
+        _wcController.Connect();
     }
 
     public void Disconnect() {
-        //TODO-WC _wcController.Disconnect();
+        _wcController.Disconnect();
     }
 
     public async UniTask<string> Sign(string message, string address) 
@@ -76,7 +76,7 @@ public class StandardWalletConnector : IWalletConnector {
     {
         if (_wcController == null) return;
         //TODO-WC _wcController.OnConnected -= HandleConnected;
-        //TODO-WC _wcController.OnConnectionError -= HandleConnectionError;
+        _wcController.OnConnectionError -= HandleConnectionError;
         //TODO-WC _wcController.OnDisconnected -= HandleDisconnected;
     }
 }

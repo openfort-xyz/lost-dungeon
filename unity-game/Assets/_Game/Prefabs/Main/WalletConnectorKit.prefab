@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7308540968675068362}
   - component: {fileID: 7308540968675068363}
   - component: {fileID: 7308540968675068364}
+  - component: {fileID: 1823596467}
   m_Layer: 0
   m_Name: WalletConnectorKit
   m_TagString: Untagged
@@ -55,5 +56,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 831194c6bd9b0e2488d85126c87ebcbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1823596467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7308540968675068361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be269e370f994eb4d8a9448d1803b7e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
