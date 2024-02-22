@@ -104,6 +104,7 @@ public class Web3AuthService : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        Debug.Log("Quitting...");
         Disconnect();
     }
 

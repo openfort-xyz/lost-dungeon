@@ -16,6 +16,8 @@ using WalletConnectSharp.Network.Models;
 using WalletConnectSharp.Sign.Models;
 using WalletConnectSharp.Sign.Models.Engine;
 using WalletConnectSharp.Sign.Models.Engine.Events;
+using WalletConnectUnity.Core;
+using WalletConnectUnity.Modal;
 using WalletConnectUnity.Modal.Sample;
 
 public class WalletConnectController : MonoBehaviour
@@ -90,16 +92,39 @@ public class WalletConnectController : MonoBehaviour
     #region UNITY_LIFECYCLE
     private void Start()
     {
-        // TODO-wc _wcSignClient.SessionConnectionErrored += WcSignClientOnSessionConnectionErrored;
-        // TODO-wc _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
-        // TODO-wc wcQrCodeHandler.OnCancelButtonClicked += WcQrCodeHandlerOnOnCancelButtonClicked;
+        WalletConnectModal.Ready += (sender, args) =>
+        {
+            // WalletConnectModal events. This happens before the wallet is connected.
+            WalletConnectModal.ModalClosed += OnModalClosed_Handler;
+            WalletConnectModal.ConnectionError += ConnectionError_Handler;
+            
+            // WalletConnect.Instance events. This happens when the wallet is connected and we have an active session.
+            // TODO-wc _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
+
+            // Invoked after wallet connected
+            WalletConnect.Instance.ActiveSessionChanged += (_, @struct) =>
+            {
+                if (string.IsNullOrEmpty(@struct.Topic))
+                    return;
+                    
+                Debug.Log($"[WalletConnectModalSample] Session connected. Topic: {@struct.Topic}");
+                //TODO
+            };
+
+            // Invoked after wallet disconnected
+            WalletConnect.Instance.SessionDisconnected += (_, _) =>
+            {
+                Debug.Log($"[WalletConnectModalSample] Session deleted.");
+                //TODO
+            };
+        };
     }
     
     private void OnDisable()
     {
-        // TODO-wc _wcSignClient.SessionConnectionErrored -= WcSignClientOnSessionConnectionErrored;
+        WalletConnectModal.ModalClosed -= OnModalClosed_Handler;
+        WalletConnectModal.ConnectionError -= ConnectionError_Handler;
         // TODO-wc _wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
-        // TODO-wc wcQrCodeHandler.OnCancelButtonClicked -= WcQrCodeHandlerOnOnCancelButtonClicked;
     }
     #endregion
     
@@ -120,46 +145,22 @@ public class WalletConnectController : MonoBehaviour
         // Connect Sign Client
         Debug.Log("Connecting sign client..");
 
-        var requiredNamespaces = new RequiredNamespaces();
-        
-        // TODO Make configurable
-        var methods = new string[]
+        var dappConnectOptions = new WalletConnectModalOptions
         {
-            "eth_sendTransaction",
-            "eth_signTransaction",
-            "eth_sign",
-            "personal_sign",
-            "eth_signTypedData",
-            "wallet_switchEthereumChain"
+            ConnectOptions = BuildConnectOptions()
         };
 
-        var events = new string[]
-        {
-            "chainChanged", "accountsChanged"
-        };
-        
-        requiredNamespaces.Add(Chain.EvmNamespace, new ProposedNamespace()
-        {
-            Chains = new []{"eip155:1"}, //TODO!!
-            Events = events,
-            Methods = methods
-        });
-        
-        var dappConnectOptions = new ConnectOptions()
-        {
-            RequiredNamespaces = requiredNamespaces
-        };
-
+        WalletConnectModal.Open(dappConnectOptions);
         // TODO-wc
         /*
         var connectData = await _wcSignClient.Connect(dappConnectOptions);
-        
+
         Debug.Log($"Connection successful, URI: {connectData.Uri}");
 
         try
         {
             await connectData.Approval;
-            
+
             // We need to move this to the main unity thread
             // TODO Perhaps ensure we are using Unity's Sync context inside WalletConnectSharp
             MTQ.Enqueue(() =>
@@ -177,9 +178,10 @@ public class WalletConnectController : MonoBehaviour
         */
     }
     
-    public void Disconnect()
+    public async void Disconnect()
     {
-        // TODO-wc _wcSignClient.Disconnect(CurrentSession.Topic); 
+        WalletConnect.Instance.Dispose();
+        await WalletConnect.Instance.DisconnectAsync();
     }
     
     public async UniTask<string> Sign(string message, string address)
@@ -266,11 +268,11 @@ public class WalletConnectController : MonoBehaviour
     }
 
     #region EVENT_HANDLERS
-    private void WcSignClientOnSessionConnectionErrored(object sender, Exception e)
+    private void ConnectionError_Handler(object sender, EventArgs eventArgs)
     {
         Debug.LogWarning("WC SESSION CONNECTION ERROR");
         // No need for real disconnection as we're not connected yet.
-        OnConnectionError?.Invoke(e.Message);
+        OnConnectionError?.Invoke($"Connection error reason: {eventArgs}");
     }
     
     // TODO-wc
@@ -282,10 +284,13 @@ public class WalletConnectController : MonoBehaviour
     });
     */
     
-    private void WcQrCodeHandlerOnOnCancelButtonClicked()
+    private void OnModalClosed_Handler(object sender, EventArgs eventArgs)
     {
+        // TODO-wc (possible): add delay to make sure it's connected
+        //if (WalletConnect.Instance.IsConnected) return;
+        
         Debug.LogWarning("WC CANCEL BUTTON CLICKED");
-        OnConnectionError?.Invoke("Connection error reason: cancel button pressed.");
+        OnConnectionError?.Invoke($"Connection error reason: {eventArgs}");
     }
     #endregion
 
@@ -395,6 +400,41 @@ public class WalletConnectController : MonoBehaviour
             Debug.LogError($"Error switching Ethereum chain: {e.Message}");
             return false;
         }
+    }
+    #endregion
+
+    #region PRIVATE_METHODS
+    private ConnectOptions BuildConnectOptions()
+    {
+        var requiredNamespaces = new RequiredNamespaces();
+        
+        // TODO Make configurable
+        var methods = new string[]
+        {
+            "eth_sendTransaction",
+            "eth_signTransaction",
+            "eth_sign",
+            "personal_sign",
+            "eth_signTypedData",
+            "wallet_switchEthereumChain"
+        };
+
+        var events = new string[]
+        {
+            "chainChanged", "accountsChanged"
+        };
+        
+        requiredNamespaces.Add(Chain.EvmNamespace, new ProposedNamespace()
+        {
+            Chains = new []{"eip155:1"}, //TODO!!
+            Events = events,
+            Methods = methods
+        });
+
+        return new ConnectOptions
+        {
+            RequiredNamespaces = requiredNamespaces
+        };
     }
     #endregion
 }
