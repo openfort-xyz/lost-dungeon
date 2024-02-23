@@ -61,7 +61,6 @@ public class TransferOwnershipService : MonoBehaviour
     private OpenfortClient _openfort;
     
     #region UNITY_LIFECYCLE
-
     private void Awake() {
         _walletConnectorKit = FindObjectOfType<WalletConnectorKit>();
         if (_walletConnectorKit == null) {
@@ -109,12 +108,6 @@ public class TransferOwnershipService : MonoBehaviour
     {
         _openfort = new OpenfortClient(OFStaticData.PublishableKey);
     }
-
-    private void OnApplicationQuit()
-    {
-        //Disconnect();
-    }
-
     #endregion
 
     #region PUBLIC_METHODS

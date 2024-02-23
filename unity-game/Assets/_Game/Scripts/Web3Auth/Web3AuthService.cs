@@ -57,7 +57,6 @@ public class Web3AuthService : MonoBehaviour
     private bool _web3GLInitialized;
 
     #region UNITY_LIFECYCLE
-
     private void Awake() {
         _walletConnectorKit = FindObjectOfType<WalletConnectorKit>();
         if (_walletConnectorKit == null) {
@@ -101,13 +100,6 @@ public class Web3AuthService : MonoBehaviour
     {
         _openfort = new OpenfortClient(OFStaticData.PublishableKey);
     }
-
-    private void OnApplicationQuit()
-    {
-        //Debug.Log("Quitting...");
-        //Disconnect();
-    }
-
     #endregion
 
     #region PUBLIC_METHODS
@@ -404,8 +396,15 @@ public class Web3AuthService : MonoBehaviour
 
     public void Disconnect()
     {
-        ChangeState(State.Disconnecting);
-        _walletConnectorKit.Disconnect();
+        if (_walletConnectorKit.IsConnected())
+        {
+            ChangeState(State.Disconnecting);
+            _walletConnectorKit.Disconnect();
+        }
+        else
+        {
+            ChangeState(State.Disconnected);
+        }
     }
     #endregion
 
