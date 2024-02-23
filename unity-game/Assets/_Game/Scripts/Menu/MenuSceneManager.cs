@@ -18,20 +18,10 @@ public class MenuSceneManager : MonoBehaviour
 
     private string _currentPlayerAddress;
 
-    private void OnEnable()
-    {
-        ConfigurationPanel.OnLoggedOut += Configuration_OnLogout_Handler;
-    }
-
     private void Start()
     {
         getTitleData();
         GetUserData();
-    }
-
-    private void OnDisable()
-    {
-        ConfigurationPanel.OnLoggedOut -= Configuration_OnLogout_Handler;
     }
 
     private void Update()
@@ -129,11 +119,6 @@ public class MenuSceneManager : MonoBehaviour
         MenuPanel.SetActive(false);
         LeaderboardPanel.SetActive(false);
         ConfigurationPanel.gameObject.SetActive(true);
-    }
-    
-    private void Configuration_OnLogout_Handler()
-    {
-        SceneManager.LoadScene("Login");
     }
     
     public void OnQuitClicked()
