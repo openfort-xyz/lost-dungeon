@@ -41,8 +41,7 @@ public class StandardWalletConnector : IWalletConnector {
     
     public async UniTask<string> AcceptOwnership(string contractAddress, string newOwnerAddress)
     {
-        //TODO-WCreturn await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
-        return "";
+        return await _wcController.AcceptAccountOwnership(contractAddress, newOwnerAddress);
     }
 
     public async UniTask<string> GetConnectedAddress() {
