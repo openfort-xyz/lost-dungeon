@@ -514,6 +514,7 @@ public class LoginSceneManager : MonoBehaviour
             }
             else
             {
+                //TODO!!!!!!!!
                 // We assume it cointains OFownerAddressKey. We save it to static data
                 var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
                 OFStaticData.OFownerAddressValue = currentOwnerAddress;
