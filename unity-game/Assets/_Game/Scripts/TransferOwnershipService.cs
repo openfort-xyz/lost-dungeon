@@ -112,7 +112,7 @@ public class TransferOwnershipService : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        Disconnect();
+        //Disconnect();
     }
 
     #endregion

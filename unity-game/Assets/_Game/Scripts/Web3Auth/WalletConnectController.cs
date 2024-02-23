@@ -91,23 +91,31 @@ public class WalletConnectController : MonoBehaviour
     {
         WalletConnectModal.Ready += (sender, args) =>
         {
-            // WalletConnectModal events. This happens before the wallet is connected.
-            WalletConnectModal.ConnectionError += ConnectionError_Handler;
-
-            // WalletConnect.Instance events. This happens when the wallet is connected.
-            // Invoked after wallet connected
-            WalletConnect.Instance.SessionConnected += OnSessionConnected_Handler;
-            // Invoked after wallet disconnected
-            WalletConnect.Instance.SessionDisconnected += OnSessionDisconnected_Handler;
-            
-            // We don't do anything here but we want to have it for logs.
-            WalletConnect.Instance.ActiveSessionChanged += (_, @struct) =>
+            if (args.SessionResumed)
             {
-                if (string.IsNullOrEmpty(@struct.Topic))
-                    return;
+                // Session has been resumed, proceed to the game
+                Debug.Log("Session resumed.");
+            }
+            else
+            {
+                // WalletConnectModal events. This happens before the wallet is connected.
+                WalletConnectModal.ConnectionError += ConnectionError_Handler;
+
+                // WalletConnect.Instance events. This happens when the wallet is connected.
+                // Invoked after wallet connected
+                WalletConnect.Instance.SessionConnected += OnSessionConnected_Handler;
+                // Invoked after wallet disconnected
+                WalletConnect.Instance.SessionDisconnected += OnSessionDisconnected_Handler;
+            
+                // We don't do anything here but we want to have it for logs.
+                WalletConnect.Instance.ActiveSessionChanged += (_, @struct) =>
+                {
+                    if (string.IsNullOrEmpty(@struct.Topic))
+                        return;
                     
-                Debug.Log($"[WalletConnectModalSample] Session connected. Topic: {@struct.Topic}");
-            };
+                    Debug.Log($"[WalletConnectModalSample] Session connected. Topic: {@struct.Topic}");
+                };
+            }
         };
     }
 
