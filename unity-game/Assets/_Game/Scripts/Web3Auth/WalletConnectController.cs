@@ -46,11 +46,12 @@ public class WalletConnectController : MonoBehaviour
     [RpcRequestOptions(Clock.ONE_MINUTE, 99997)]
     public class WCEthSendTransaction : List<WCTransaction>
     {
-        public WCEthSendTransaction()
+        public WCEthSendTransaction(params WCTransaction[] transactions) : base(transactions)
         {
         }
-
-        public WCEthSendTransaction(params WCTransaction[] transactions) : base(transactions)
+        
+        [Preserve]
+        public WCEthSendTransaction()
         {
         }
     }
@@ -77,6 +78,7 @@ public class WalletConnectController : MonoBehaviour
         {
         }
         
+        [Preserve]
         public WCSwitchEthereumChain()
         {
         }
@@ -193,23 +195,18 @@ public class WalletConnectController : MonoBehaviour
             };
 
             var ethSendTransaction = new WCEthSendTransaction(txParams);
-
             // The fullChainId might need to be adjusted based on the network specifics
             var fullChainId = Chain.EvmNamespace + ":" + desiredChainId; // BEAM!
-
-            // TODO!! We should be getting new CurrentSession
+            
             await UniTask.Delay(2500);
             
-            // TODO-wc
-            /*
             // Send the transaction
-            var txHash = await _wcSignClient.Request<WCEthSendTransaction, string>(CurrentSession.Topic, ethSendTransaction, fullChainId);
+            var signClient = WalletConnect.Instance.SignClient;
+            var txHash = await signClient.Request<WCEthSendTransaction, string>(ethSendTransaction, fullChainId);
 
             // Handle the transaction hash (e.g., display it, log it, etc.)
             Debug.Log("Transaction Hash: " + txHash);
             return txHash;   
-            */
-            return "";
         }
         catch (Exception e)
         {
@@ -311,24 +308,16 @@ public class WalletConnectController : MonoBehaviour
     {
         try
         {
-            var currentSession = WalletConnect.Instance.ActiveSession;
-            
             var chainIdData = new { chainId = "0x10F1" }; // Desired chain ID in hexadecimal
-
             var switchChainRequest = new WCSwitchEthereumChain(chainIdData);
-        
-            Debug.Log(currentSession.Topic);
-        
-            // TODO-wc
-            /*
+            
+            var signClient = WalletConnect.Instance.SignClient;
             // Request to switch the Ethereum chain
-            var result = await _wcSignClient.Request<WCSwitchEthereumChain, object>(CurrentSession.Topic, switchChainRequest, currentChain);
+            var result = await signClient.Request<WCSwitchEthereumChain, object>(switchChainRequest, currentChain);
 
             // Interpret a null response as successful operation
             // https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/
             return result == null;
-            */
-            return true;
         }
         catch (Exception e)
         {
