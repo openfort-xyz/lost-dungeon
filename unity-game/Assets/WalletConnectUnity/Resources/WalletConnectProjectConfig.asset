@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b105f096d21e42cfac1c5f6ae49fe4ca, type: 3}
   m_Name: WalletConnectProjectConfig
   m_EditorClassIdentifier: 
-  <Id>k__BackingField: 51102387049a78285ee8540ff748b0a8
+  <Id>k__BackingField: 4af849cea8611919bcb3fa1b769113c0
   <Metadata>k__BackingField:
-    Name: Lost Dungeon
-    Description: Openfort's demo game
-    Url: openfort.xyz
+    Name: Testing
+    Description: kdadsklk
+    Url: asdasdsad
     Icons: []
     Redirect:
       Native: 
