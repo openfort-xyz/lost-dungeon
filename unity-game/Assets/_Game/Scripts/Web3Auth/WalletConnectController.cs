@@ -11,6 +11,8 @@ using Nethereum.Web3;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Scripting;
+using WalletConnectSharp.Common.Model.Errors;
 using WalletConnectSharp.Common.Utils;
 using WalletConnectSharp.Network.Models;
 using WalletConnectSharp.Sign.Models;
@@ -55,15 +57,16 @@ public class WalletConnectController : MonoBehaviour
     
     [RpcMethod("personal_sign")]
     [RpcRequestOptions(Clock.ONE_MINUTE, 99998)]
-    private class PersonalSign : List<string>
+    public class PersonalSign : List<string>
     {
         public PersonalSign(string hexUtf8, string account) : base(new[] { hexUtf8, account })
         {
         }
-        
-        public PersonalSign()                                              
-        {                                                                  
-        }     
+
+        [Preserve]
+        public PersonalSign()
+        {
+        }
     }
     
     [RpcMethod("wallet_switchEthereumChain")]
@@ -83,65 +86,41 @@ public class WalletConnectController : MonoBehaviour
     public event UnityAction<string> OnConnectionError;
     public event UnityAction OnDisconnected;
     
-    
-    // TODO-wc private WCSignClient _wcSignClient;
-    // TODO-wc [SerializeField] private WCQRCodeHandler wcQrCodeHandler;
-    
-    [HideInInspector] public SessionStruct CurrentSession;
-
     #region UNITY_LIFECYCLE
     private void Start()
     {
         WalletConnectModal.Ready += (sender, args) =>
         {
             // WalletConnectModal events. This happens before the wallet is connected.
-            WalletConnectModal.ModalClosed += OnModalClosed_Handler;
             WalletConnectModal.ConnectionError += ConnectionError_Handler;
-            
-            // WalletConnect.Instance events. This happens when the wallet is connected and we have an active session.
-            // TODO-wc _wcSignClient.SessionDeleted += WcSignClientOnSessionDeleted;
 
+            // WalletConnect.Instance events. This happens when the wallet is connected.
             // Invoked after wallet connected
+            WalletConnect.Instance.SessionConnected += OnSessionConnected_Handler;
+            // Invoked after wallet disconnected
+            WalletConnect.Instance.SessionDisconnected += OnSessionDisconnected_Handler;
+            
+            // We don't do anything here but we want to have it for logs.
             WalletConnect.Instance.ActiveSessionChanged += (_, @struct) =>
             {
                 if (string.IsNullOrEmpty(@struct.Topic))
                     return;
                     
                 Debug.Log($"[WalletConnectModalSample] Session connected. Topic: {@struct.Topic}");
-                //TODO
-            };
-
-            // Invoked after wallet disconnected
-            WalletConnect.Instance.SessionDisconnected += (_, _) =>
-            {
-                Debug.Log($"[WalletConnectModalSample] Session deleted.");
-                //TODO
             };
         };
     }
-    
+
     private void OnDisable()
     {
-        WalletConnectModal.ModalClosed -= OnModalClosed_Handler;
         WalletConnectModal.ConnectionError -= ConnectionError_Handler;
-        // TODO-wc _wcSignClient.SessionDeleted -= WcSignClientOnSessionDeleted;
+        WalletConnect.Instance.SessionConnected -= OnSessionConnected_Handler;
+        WalletConnect.Instance.SessionDisconnected -= OnSessionDisconnected_Handler;
     }
     #endregion
     
-    public async void Connect()
+    public void Connect()
     {
-        // TODO-wc
-        /*
-        if (_wcSignClient.SignClient == null)
-            await _wcSignClient.InitSignClient();
-
-        if (_wcSignClient == null)
-        {
-            Debug.LogError("No WCSignClient scripts found in scene!");
-            return;
-        }
-        */
-
         // Connect Sign Client
         Debug.Log("Connecting sign client..");
 
@@ -151,36 +130,10 @@ public class WalletConnectController : MonoBehaviour
         };
 
         WalletConnectModal.Open(dappConnectOptions);
-        // TODO-wc
-        /*
-        var connectData = await _wcSignClient.Connect(dappConnectOptions);
-
-        Debug.Log($"Connection successful, URI: {connectData.Uri}");
-
-        try
-        {
-            await connectData.Approval;
-
-            // We need to move this to the main unity thread
-            // TODO Perhaps ensure we are using Unity's Sync context inside WalletConnectSharp
-            MTQ.Enqueue(() =>
-            {
-                Debug.Log($"Connection approved, URI: {connectData.Uri}");
-                CurrentSession = connectData.Approval.Result;
-                OnConnected?.Invoke(CurrentSession);
-            });
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(("Connection failed: " + e.Message));
-            Debug.LogError(e);
-        }
-        */
     }
     
     public async void Disconnect()
     {
-        WalletConnect.Instance.Dispose();
         await WalletConnect.Instance.DisconnectAsync();
     }
     
@@ -262,34 +215,29 @@ public class WalletConnectController : MonoBehaviour
         return UniTask.Run(GetConnectedAddress);
     }
     
+    
     public UniTask<int?> GetChainIdAsync()
     {
         return UniTask.Run(GetChainId);
     }
 
     #region EVENT_HANDLERS
-    private void ConnectionError_Handler(object sender, EventArgs eventArgs)
+    private void OnSessionConnected_Handler(object sender, SessionStruct session)
     {
-        Debug.LogWarning("WC SESSION CONNECTION ERROR");
-        // No need for real disconnection as we're not connected yet.
-        OnConnectionError?.Invoke($"Connection error reason: {eventArgs}");
+        Debug.Log("WC SESSION CONNECTED");
+        OnConnected?.Invoke(session);
     }
     
-    // TODO-wc
-    /*
-    private void WcSignClientOnSessionDeleted(object sender, SessionEvent e) => MTQ.Enqueue(() =>
+    private void OnSessionDisconnected_Handler(object sender, EventArgs eventArgs)
     {
-        Debug.LogWarning("WC SESSION DELETED");
+        Debug.LogWarning("WC SESSION DISCONNECTED");
         OnDisconnected?.Invoke();
-    });
-    */
+    }
     
-    private void OnModalClosed_Handler(object sender, EventArgs eventArgs)
+    private void ConnectionError_Handler(object sender, EventArgs eventArgs)
     {
-        // TODO-wc (possible): add delay to make sure it's connected
-        //if (WalletConnect.Instance.IsConnected) return;
-        
-        Debug.LogWarning("WC CANCEL BUTTON CLICKED");
+        Debug.Log("WC SESSION CONNECTION ERROR");
+        // No need for real disconnection as we're not connected yet.
         OnConnectionError?.Invoke($"Connection error reason: {eventArgs}");
     }
     #endregion
@@ -297,59 +245,36 @@ public class WalletConnectController : MonoBehaviour
     #region PRIVATE_METHODS
     private async UniTask<string> PersonalSignAsync(string message, string address)
     {
+        var data = new PersonalSign(message, address);
+
         try
         {
-            var fullChainId = Chain.EvmNamespace + ":" + GetChainId(); // Needs to be something like "eip155:80001"
-
-            //var hexUtf8 = "0x" + Encoding.UTF8.GetBytes(message).ToHex();
-            var request = new PersonalSign(message, address);                                
-        
-            // TODO-wc
-            /*
-            var result = await _wcSignClient.Request<PersonalSign, string>(CurrentSession.Topic, request, fullChainId);
-                 
-            Debug.Log("Got result from request: " + result);
-        
-            return result; 
-            */
-            return "";
+            var result = await WalletConnect.Instance.RequestAsync<PersonalSign, string>(data);
+            return result;
         }
-        catch (Exception ex)
+        catch (WalletConnectException e)
         {
-            Debug.LogError($"An error occurred: {ex.Message}");
-            // Optionally, you can handle the exception more specifically or rethrow it
-            return null; // Or handle the failure case appropriately
-        }                                                                                 
+            Debug.Log(e.Message);
+            return null;
+        }
     }
-    
+
     private string GetConnectedAddress()
     {
-        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
-            
-        if (string.IsNullOrWhiteSpace(defaultChain))
-            return null;
-
-        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
-        
-        if (defaultNamespace.Accounts.Length == 0)
-            return null;
-            
-        var fullAddress = defaultNamespace.Accounts[0];
-        var addressParts = fullAddress.Split(":");
-            
-        var address = addressParts[2];
-
-        return address;
+        var currentAddress = WalletConnect.Instance.ActiveSession.CurrentAddress(Chain.EvmNamespace);
+        return currentAddress.Address;
     }
     
     private int? GetChainId()
     {
-        var defaultChain = CurrentSession.Namespaces.Keys.FirstOrDefault();
+        var currentSession = WalletConnect.Instance.ActiveSession;
+        
+        var defaultChain = currentSession.Namespaces.Keys.FirstOrDefault();
     
         if (string.IsNullOrWhiteSpace(defaultChain))
             return null;
 
-        var defaultNamespace = CurrentSession.Namespaces[defaultChain];
+        var defaultNamespace = currentSession.Namespaces[defaultChain];
     
         if (defaultNamespace.Chains.Length == 0)
             return null;
@@ -378,11 +303,13 @@ public class WalletConnectController : MonoBehaviour
     {
         try
         {
+            var currentSession = WalletConnect.Instance.ActiveSession;
+            
             var chainIdData = new { chainId = "0x10F1" }; // Desired chain ID in hexadecimal
 
             var switchChainRequest = new WCSwitchEthereumChain(chainIdData);
         
-            Debug.Log(CurrentSession.Topic);
+            Debug.Log(currentSession.Topic);
         
             // TODO-wc
             /*

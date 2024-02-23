@@ -1,6 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using WalletConnectSharp.Sign.Models;
 using Object = UnityEngine.Object;
 
 public class StandardWalletConnector : IWalletConnector {
@@ -20,9 +21,9 @@ public class StandardWalletConnector : IWalletConnector {
         }
         
         // Subscribe to WalletConnectController events
-        //TODO-WC _wcController.OnConnected += HandleConnected;
+        _wcController.OnConnected += HandleConnected;
+        _wcController.OnDisconnected += HandleDisconnected;
         _wcController.OnConnectionError += HandleConnectionError;
-        //TODO-WC _wcController.OnDisconnected += HandleDisconnected;
     }
 
     public void Connect() {
@@ -35,8 +36,7 @@ public class StandardWalletConnector : IWalletConnector {
 
     public async UniTask<string> Sign(string message, string address) 
     {
-        //TODO-WC return await _wcController.Sign(message, address);
-        return "";
+        return await _wcController.Sign(message, address);
     }
     
     public async UniTask<string> AcceptOwnership(string contractAddress, string newOwnerAddress)
@@ -46,21 +46,17 @@ public class StandardWalletConnector : IWalletConnector {
     }
 
     public async UniTask<string> GetConnectedAddress() {
-        //TODO-WC return await _wcController.GetConnectedAddressAsync();
-        return "";
+        return await _wcController.GetConnectedAddressAsync();
     }
 
     public async UniTask<int?> GetChainId() {
-        //TODO-WC return await _wcController.GetChainIdAsync();
-        return 0;
+        return await _wcController.GetChainIdAsync();
     }
 
     // Event handler implementations
-    /* //TODO-WC
     private void HandleConnected(SessionStruct session) {
         OnConnected?.Invoke();
     }
-    */
     
     private void HandleConnectionError(string error)
     {
@@ -75,8 +71,8 @@ public class StandardWalletConnector : IWalletConnector {
     public void OnDestroy()
     {
         if (_wcController == null) return;
-        //TODO-WC _wcController.OnConnected -= HandleConnected;
+        _wcController.OnConnected -= HandleConnected;
+        _wcController.OnDisconnected -= HandleDisconnected;
         _wcController.OnConnectionError -= HandleConnectionError;
-        //TODO-WC _wcController.OnDisconnected -= HandleDisconnected;
     }
 }

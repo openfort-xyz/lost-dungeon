@@ -113,7 +113,10 @@ public class Web3AuthService : MonoBehaviour
     #region PUBLIC_METHODS
     public void Connect()
     {
-        ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
+        if (authCompletedOnce)
+        {
+            ChangeState(State.WalletConnecting_Web3AuthCompleted);
+        }
         
         _walletConnectorKit.Connect();
     }
