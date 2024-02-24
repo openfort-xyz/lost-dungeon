@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class WalletConnectorKit : MonoBehaviour
 {
-
+    // Wallet events
     public event Action OnConnected;
     public event Action<string> OnDisconnected;
     public event Action<string> OnConnectionError;
@@ -12,7 +12,29 @@ public class WalletConnectorKit : MonoBehaviour
     private IWalletConnector _currentConnector;
 
     private bool _isConnected;
+    
+    public static WalletConnectorKit Instance { get; private set; }
+    
+    // Flag to enable persistent behaviour
+    public bool persistAcrossScenes = true;
 
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
+        if (persistAcrossScenes)
+        {
+            // This makes the game object persist across scenes
+            DontDestroyOnLoad(gameObject);
+        }
+    }
+    
     void Start() {
         Initialize();
     }
