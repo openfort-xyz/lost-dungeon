@@ -6,10 +6,10 @@ using UnityEngine.UI;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 
 public class Configuration : MonoBehaviour
 {
+    public event UnityAction OnLoggedOut;
     public UnityEvent closed;
     
     public TransferOwnershipService transferOwnershipService;
@@ -26,6 +26,7 @@ public class Configuration : MonoBehaviour
     private PlayFabAuthService _AuthService = PlayFabAuthService.Instance;
     
     private OpenfortClient _openfortClient;
+    private bool _loggingOut = false;
 
     [HideInInspector] public string guestCustomId;
 
@@ -97,6 +98,13 @@ public class Configuration : MonoBehaviour
                 statusTextLabel.text = "Disconnecting...";
                 break;
             case TransferOwnershipService.State.Disconnected:
+                if (_loggingOut)
+                {
+                    _loggingOut = false;
+                    OnLoggedOut?.Invoke();
+                    return;
+                }
+                
                 EnableButtons(true);
                 statusTextLabel.text = "Wallet disconnected. Please try again.";
                 break;
@@ -107,6 +115,8 @@ public class Configuration : MonoBehaviour
     
     public void OnLogoutClicked()
     {
+        _loggingOut = true;
+        
         // Clear "RememberMe" stored PlayerPrefs (Ideally just the ones related to login, but here we clear all)
         PlayerPrefs.DeleteKey(PPStaticData.RememberMeKey);
         PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
@@ -127,9 +137,8 @@ public class Configuration : MonoBehaviour
             _openfortClient.RemoveSessionKey();
         }
         
-        SceneManager.LoadScene("Login");
-        
-        //TODO? we don't disconnect from WalletConnectorKit
+        // Logout from Web3
+        transferOwnershipService.Disconnect();
     }
 
     private void ClosePanel()
