@@ -47,7 +47,7 @@ public class Configuration : MonoBehaviour
         {
             case TransferOwnershipService.State.None:
                 break;
-            case TransferOwnershipService.State.WalletConnecting:
+            case TransferOwnershipService.State.WalletConnecting: // Not using it atm
                 EnableButtons(false);
                 statusTextLabel.text = "Connecting...";
                 break;
@@ -56,6 +56,7 @@ public class Configuration : MonoBehaviour
                 statusTextLabel.text = "Wallet connection cancelled.";
                 break;
             case TransferOwnershipService.State.WalletConnected:
+                EnableButtons(false);
                 statusTextLabel.text = "Wallet connection successful.";
                 break;
             case TransferOwnershipService.State.DeployingAccount:

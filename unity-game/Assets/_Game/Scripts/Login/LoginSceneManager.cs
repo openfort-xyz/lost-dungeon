@@ -153,7 +153,7 @@ public class LoginSceneManager : MonoBehaviour
                 break;
             case Web3AuthService.State.WalletConnecting: //Not using it atm.
                 statusTextLabel.text = "Connecting...";
-                connectWalletPanel.SetActive(false);
+                //connectWalletPanel.SetActive(false);
                 break;
             case Web3AuthService.State.WalletConnecting_Web3AuthCompleted:
                 statusTextLabel.text = "Please connect with " + TrimWalletAddress(OFStaticData.OFownerAddressValue);
@@ -164,6 +164,7 @@ public class LoginSceneManager : MonoBehaviour
                 break;
             case Web3AuthService.State.WalletConnected:
                 statusTextLabel.text = "Wallet connection successful.";
+                connectWalletPanel.SetActive(false);
                 break;
             case Web3AuthService.State.RequestingMessage:
                 statusTextLabel.text = "Requesting message...";
