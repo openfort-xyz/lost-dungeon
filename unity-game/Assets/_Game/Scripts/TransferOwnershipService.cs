@@ -62,7 +62,7 @@ public class TransferOwnershipService : MonoBehaviour
     
     #region UNITY_LIFECYCLE
     private void Awake() {
-        _walletConnectorKit = FindObjectOfType<WalletConnectorKit>();
+        _walletConnectorKit = WalletConnectorKit.Instance;
         if (_walletConnectorKit == null) {
             Debug.LogError("WalletConnectorKit not found. Web3AuthService needs it to function.");
             return;
