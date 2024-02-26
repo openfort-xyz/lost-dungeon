@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class Configuration : MonoBehaviour
 {

@@ -8,6 +8,9 @@ using Openfort;
 using Openfort.Model;
 using PlayFab;
 using PlayFab.ClientModels;
+using UnityEngine.SceneManagement;
+using WalletConnectUnity.Core;
+using WalletConnectUnity.Modal;
 
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
 public class Web3AuthService : MonoBehaviour

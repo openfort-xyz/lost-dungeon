@@ -2011,6 +2011,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8234168566514961836, guid: 36531430c7daa47cbaf4ab31d67a6356, type: 3}
+      propertyPath: <InitializeOnAwake>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8234168566514961836, guid: 36531430c7daa47cbaf4ab31d67a6356, type: 3}
       propertyPath: <ResumeSessionOnInit>k__BackingField
       value: 0
       objectReference: {fileID: 0}
