@@ -71,6 +71,8 @@ public class Web3AuthService : MonoBehaviour
         _walletConnectorKit.OnConnected += WalletConnectorKit_OnConnected_Handler;
         _walletConnectorKit.OnDisconnected += WalletConnectorKit_OnDisconnected_Handler;
         _walletConnectorKit.OnConnectionError += WalletConnectorKit_OnConnectionError_Handler;
+        //Subscribing directly to WalletConnectModal :/
+        WalletConnectModal.ModalClosed += WalletConnectModal_OnModalClosed_Handler;
     }
 
     private void OnEnable()
@@ -89,6 +91,8 @@ public class Web3AuthService : MonoBehaviour
         _walletConnectorKit.OnConnected -= WalletConnectorKit_OnConnected_Handler;
         _walletConnectorKit.OnDisconnected -= WalletConnectorKit_OnDisconnected_Handler;
         _walletConnectorKit.OnConnectionError -= WalletConnectorKit_OnConnectionError_Handler;
+        //Subscribing directly to WalletConnectModal :/
+        WalletConnectModal.ModalClosed -= WalletConnectModal_OnModalClosed_Handler;
         
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess -= OnChallengeRequestSuccess;
@@ -157,6 +161,21 @@ public class Web3AuthService : MonoBehaviour
         
         //TODO Disconnect????
         ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
+    }
+    
+    private void WalletConnectModal_OnModalClosed_Handler(object sender, EventArgs e)
+    {
+        // We only do continue in this case
+        if (!authCompletedOnce) return;
+
+        // Let's wait to make sure the wallet is connected.
+        UniTask.Delay(1000);
+        
+        // We're already good
+        if (WalletConnect.Instance.IsConnected) return;
+
+        // It means we have closed the modal without connecting so we need to go back to login scene.
+        ChangeState(State.Disconnected_Web3AuthCompleted);
     }
     #endregion
 
