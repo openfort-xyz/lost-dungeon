@@ -151,7 +151,7 @@ public class LoginSceneManager : MonoBehaviour
         {
             case Web3AuthService.State.None:
                 break;
-            case Web3AuthService.State.WalletConnecting: //Not using it atm.
+            case Web3AuthService.State.WalletConnecting:
                 statusTextLabel.text = "Connecting...";
                 //connectWalletPanel.SetActive(false);
                 break;

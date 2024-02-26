@@ -19,9 +19,7 @@ public class WalletConnectorKit : MonoBehaviour
     
     // Flag to enable persistent behaviour
     public bool persistAcrossScenes = true;
-
-    public GameObject panel;
-
+    
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -91,19 +89,16 @@ public class WalletConnectorKit : MonoBehaviour
     private void WalletConnector_OnConnected_Handler() {
         OnConnected?.Invoke();
         _isConnected = true;
-        panel.SetActive(true);
     }
 
     private void WalletConnector_OnDisconnected_Handler(string reason) {
         OnDisconnected?.Invoke(reason);
         _isConnected = false;
-        panel.SetActive(false);
     }
 
     private void WalletConnector_ConnectionError_Handler(string errorMessage) {
         OnConnectionError?.Invoke(errorMessage);
         _isConnected = false;
-        panel.SetActive(false);
     }
     
     // Only in WebGL
@@ -125,7 +120,6 @@ public class WalletConnectorKit : MonoBehaviour
         // Try to connect again with StandardWalletConnector
         _currentConnector.Connect();
         */
-        panel.SetActive(false);
     }
 
     private void OnDestroy()

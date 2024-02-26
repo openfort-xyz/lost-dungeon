@@ -48,8 +48,8 @@ public class Configuration : MonoBehaviour
         {
             case TransferOwnershipService.State.None:
                 break;
-            case TransferOwnershipService.State.WalletConnecting: // Not using it atm
-                EnableButtons(false);
+            case TransferOwnershipService.State.WalletConnecting:
+                //EnableButtons(false);
                 statusTextLabel.text = "Connecting...";
                 break;
             case TransferOwnershipService.State.WalletConnectionCancelled:
