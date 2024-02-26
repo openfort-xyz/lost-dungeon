@@ -11,7 +11,6 @@ using Nethereum.Web3;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 using UnityEngine.Scripting;
 using WalletConnectSharp.Common.Model.Errors;
 using WalletConnectSharp.Common.Utils;
@@ -148,12 +147,7 @@ public class WalletConnectController : MonoBehaviour
     {
         SubscribeToEvents();
     }
-
-    private void OnEnable()
-    {
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
+    
     private async void SubscribeToEvents()
     {
         WalletConnectModal.Ready += (sender, args) =>
@@ -187,48 +181,58 @@ public class WalletConnectController : MonoBehaviour
         
         //await WalletConnectModal.InitializeAsync();
     }
-    
-    // bug-wc
-    private async void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        if (scene.name == "Login")
-        {
-            if (isFirstTime)
-            {
-                isFirstTime = false;
-                return;
-            }
-            
-            Debug.Log("Login scene loaded. Checking SignClient...");
-            // Check for sign client pending requests?
-            if (WalletConnect.Instance.SignClient.PendingSessionRequests == null)
-            {
-                Debug.Log("Sign client is null. Reinitializing to create a new one...");
-                await WalletConnect.Instance.InitializeAsync();
-            }
-        }
-    }
 
     private void OnDisable()
     {
+        // No need to unsubscribe as this class persists throughout whole game.
         /*
         WalletConnectModal.ConnectionError -= ConnectionError_Handler;
         WalletConnect.Instance.SessionConnected -= OnSessionConnected_Handler;
         WalletConnect.Instance.SessionDisconnected -= OnSessionDisconnected_Handler;
         */
-        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
     #endregion
     
-    public void Connect()
+    public async void Connect()
     {
-        Debug.Log("Connecting...");
-        var dappConnectOptions = new WalletConnectModalOptions
+        try
         {
-            ConnectOptions = BuildConnectOptions()
-        };
+            if (WalletConnect.Instance.SignClient.PendingSessionRequests.Length == 0)
+            {
+                // Normal connection.
+                Debug.Log("No pending session requests. Connecting...");
+                var dappConnectOptions = new WalletConnectModalOptions
+                {
+                    ConnectOptions = BuildConnectOptions()
+                };
 
-        WalletConnectModal.Open(dappConnectOptions);
+                WalletConnectModal.Open(dappConnectOptions);
+            }
+            else
+            {
+                Debug.Log("SignClient has some pending requests");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            
+            Debug.LogWarning("BUG: Pending session requests error inside SignClient. Disposing requests...");
+            
+            //bug-wc
+            await WalletConnect.Instance.SignClient.PendingRequests.Init();
+            
+            
+            // Make sure it is initialized.
+            await UniTask.Delay(1);  
+            
+            var dappConnectOptions = new WalletConnectModalOptions
+            {
+                ConnectOptions = BuildConnectOptions()
+            };
+
+            WalletConnectModal.Open(dappConnectOptions);
+        }
     }
     
     public async void Disconnect()
