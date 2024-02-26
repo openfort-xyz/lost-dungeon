@@ -11,6 +11,7 @@ using Nethereum.Web3;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 using UnityEngine.Scripting;
 using WalletConnectSharp.Common.Model.Errors;
 using WalletConnectSharp.Common.Utils;
@@ -24,6 +25,8 @@ using WalletConnectUnity.Modal.Sample;
 
 public class WalletConnectController : MonoBehaviour
 {
+    public static bool isFirstTime = true;
+    
     public class WCTransaction
     {
         [JsonProperty("from")] public string From { get; set; }
@@ -84,12 +87,74 @@ public class WalletConnectController : MonoBehaviour
         }
     }
     
+    [RpcMethod("wallet_addEthereumChain")]
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99997)] // Adjust the clock and priority if necessary
+    public class WCAddEthereumChain
+    {
+        // Required parameter:
+        [JsonProperty("chainId")]
+        public string ChainId { get; set; }
+
+        // Optional parameters (consider making these nullable or have default values)
+        [JsonProperty("chainName", NullValueHandling = NullValueHandling.Ignore)]
+        public string ChainName { get; set; }
+
+        [JsonProperty("nativeCurrency", NullValueHandling = NullValueHandling.Ignore)]
+        public WCNativeCurrency NativeCurrency { get; set; }
+
+        [JsonProperty("rpcUrls", NullValueHandling = NullValueHandling.Ignore)]
+        public string[] RpcUrls { get; set; }
+
+        [JsonProperty("blockExplorerUrls", NullValueHandling = NullValueHandling.Ignore)]
+        public string[] BlockExplorerUrls { get; set; }
+
+        // Constructor with required parameter
+        public WCAddEthereumChain(string chainId)
+        {
+            ChainId = chainId;
+        }
+
+        // Parameterless constructor if needed 
+        [Preserve]
+        public WCAddEthereumChain()
+        {
+        }
+    }
+
+    public class AddEthereumChainParams
+    {
+        
+    }
+// Helper class for native currency
+    public class WCNativeCurrency
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("symbol")]
+        public string Symbol { get; set; }
+
+        [JsonProperty("decimals")]
+        public int Decimals { get; set; }
+    }
+    
     public event UnityAction<SessionStruct> OnConnected;
     public event UnityAction<string> OnConnectionError;
     public event UnityAction OnDisconnected;
     
     #region UNITY_LIFECYCLE
+
     private void Start()
+    {
+        SubscribeToEvents();
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private async void SubscribeToEvents()
     {
         WalletConnectModal.Ready += (sender, args) =>
         {
@@ -119,21 +184,45 @@ public class WalletConnectController : MonoBehaviour
                 };
             }
         };
+        
+        //await WalletConnectModal.InitializeAsync();
+    }
+    
+    // bug-wc
+    private async void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "Login")
+        {
+            if (isFirstTime)
+            {
+                isFirstTime = false;
+                return;
+            }
+            
+            Debug.Log("Login scene loaded. Checking SignClient...");
+            // Check for sign client pending requests?
+            if (WalletConnect.Instance.SignClient.PendingSessionRequests == null)
+            {
+                Debug.Log("Sign client is null. Reinitializing to create a new one...");
+                await WalletConnect.Instance.InitializeAsync();
+            }
+        }
     }
 
     private void OnDisable()
     {
+        /*
         WalletConnectModal.ConnectionError -= ConnectionError_Handler;
         WalletConnect.Instance.SessionConnected -= OnSessionConnected_Handler;
         WalletConnect.Instance.SessionDisconnected -= OnSessionDisconnected_Handler;
+        */
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
     #endregion
     
     public void Connect()
     {
-        // Connect Sign Client
-        Debug.Log("Connecting sign client..");
-
+        Debug.Log("Connecting...");
         var dappConnectOptions = new WalletConnectModalOptions
         {
             ConnectOptions = BuildConnectOptions()
@@ -180,6 +269,8 @@ public class WalletConnectController : MonoBehaviour
                 if (!success)
                 {
                     Debug.LogError("Failed switching to BEAM network.");
+                    //TODO-check!!!!!!
+                    var ueah = await AddBeamNetwork(currentFullChainId);
                     return null;
                 }
             }
@@ -302,6 +393,29 @@ public class WalletConnectController : MonoBehaviour
         }
 
         return null;
+    }
+    
+    private async UniTask<bool> AddBeamNetwork(string currentChain)
+    {
+        try
+        {
+            var chainIdData = new { chainId = "0x10F1" }; // Desired chain ID in hexadecimal
+            var addChainRequest = new WCAddEthereumChain("0x10F1");
+            
+            
+            var signClient = WalletConnect.Instance.SignClient;
+            // Request to switch the Ethereum chain
+            var result = await signClient.Request<WCAddEthereumChain, object>(addChainRequest, currentChain);
+
+            // Interpret a null response as successful operation
+            // https://docs.metamask.io/wallet/reference/wallet_addethereumchain/
+            return result == null;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error adding Ethereum chain: {e.Message}");
+            return false;
+        }
     }
     
     private async UniTask<bool> SwitchToBeamNetwork(string currentChain)

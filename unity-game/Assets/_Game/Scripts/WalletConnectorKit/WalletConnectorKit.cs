@@ -1,6 +1,8 @@
 using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using WalletConnectUnity.Core;
+using WalletConnectUnity.Modal;
 
 public class WalletConnectorKit : MonoBehaviour
 {
