@@ -351,10 +351,6 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8234168565996615044, guid: 36531430c7daa47cbaf4ab31d67a6356, type: 3}
-      propertyPath: m_Color.a
-      value: 0.6862745
-      objectReference: {fileID: 0}
     - target: {fileID: 8234168566514961838, guid: 36531430c7daa47cbaf4ab31d67a6356, type: 3}
       propertyPath: m_Name
       value: WalletConnectModal
