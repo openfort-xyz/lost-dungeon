@@ -24,8 +24,6 @@ using WalletConnectUnity.Modal.Sample;
 
 public class WalletConnectController : MonoBehaviour
 {
-    public static bool isFirstTime = true;
-    
     public class WCTransaction
     {
         [JsonProperty("from")] public string From { get; set; }
@@ -178,8 +176,6 @@ public class WalletConnectController : MonoBehaviour
                 };
             }
         };
-        
-        //await WalletConnectModal.InitializeAsync();
     }
 
     private void OnDisable()
@@ -216,22 +212,9 @@ public class WalletConnectController : MonoBehaviour
         catch (Exception e)
         {
             Console.WriteLine(e);
-            
             Debug.LogWarning("BUG: Pending session requests error inside SignClient. Disposing requests...");
-            
-            //bug-wc
-            await WalletConnect.Instance.SignClient.PendingRequests.Init();
-            
-            
-            // Make sure it is initialized.
-            await UniTask.Delay(1);  
-            
-            var dappConnectOptions = new WalletConnectModalOptions
-            {
-                ConnectOptions = BuildConnectOptions()
-            };
 
-            WalletConnectModal.Open(dappConnectOptions);
+            OnConnectionError?.Invoke("Known bug error.");
         }
     }
     
