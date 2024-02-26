@@ -113,7 +113,7 @@ public class TransferOwnershipService : MonoBehaviour
     #region PUBLIC_METHODS
     public void Connect()
     {
-        // ChangeState(State.WalletConnecting); not using it anymore. Going directly to WalletConnected after connect successful.
+        ChangeState(State.WalletConnecting);
         _walletConnectorKit.Connect();
     }
     #endregion
