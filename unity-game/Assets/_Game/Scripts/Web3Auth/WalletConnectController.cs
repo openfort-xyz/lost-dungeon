@@ -425,7 +425,7 @@ public class WalletConnectController : MonoBehaviour
         
         requiredNamespaces.Add(Chain.EvmNamespace, new ProposedNamespace()
         {
-            Chains = new []{"eip155:1"}, //TODO!!
+            Chains = new []{"eip155:4337"}, //BEAM
             Events = events,
             Methods = methods
         });
