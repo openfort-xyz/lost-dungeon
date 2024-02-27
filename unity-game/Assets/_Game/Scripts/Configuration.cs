@@ -61,6 +61,7 @@ public class Configuration : MonoBehaviour
                 statusTextLabel.text = "Wallet connection successful.";
                 break;
             case TransferOwnershipService.State.DeployingAccount:
+                EnableButtons(false);
                 statusTextLabel.text = "Deploying account...";
                 break;
             case TransferOwnershipService.State.RequestingMessage:
