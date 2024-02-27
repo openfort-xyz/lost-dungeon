@@ -111,6 +111,8 @@ public class WalletConnectController : MonoBehaviour
     public event UnityAction<SessionStruct> OnConnected;
     public event UnityAction<string> OnConnectionError;
     public event UnityAction OnDisconnected;
+
+    public SessionStruct? connectedSession;
     
     #region UNITY_LIFECYCLE
 
@@ -135,17 +137,19 @@ public class WalletConnectController : MonoBehaviour
 
                 // WalletConnect.Instance events. This happens when the wallet is connected.
                 // Invoked after wallet connected
-                WalletConnect.Instance.SessionConnected += OnSessionConnected_Handler;
+                //WalletConnect.Instance.SessionConnected += OnSessionConnected_Handler;
                 // Invoked after wallet disconnected
                 WalletConnect.Instance.SessionDisconnected += OnSessionDisconnected_Handler;
             
                 // We don't do anything here but we want to have it for logs.
-                WalletConnect.Instance.ActiveSessionChanged += (_, @struct) =>
+                WalletConnect.Instance.ActiveSessionChanged += (s, @struct) =>
                 {
                     if (string.IsNullOrEmpty(@struct.Topic))
                         return;
                     
                     Debug.Log($"[WalletConnectModalSample] Session connected. Topic: {@struct.Topic}");
+                    connectedSession = @struct;
+                    OnSessionConnected_Handler(s, connectedSession);
                 };
             }
         };
@@ -287,7 +291,7 @@ public class WalletConnectController : MonoBehaviour
     }
 
     #region EVENT_HANDLERS
-    private async void OnSessionConnected_Handler(object sender, SessionStruct session)
+    private async void OnSessionConnected_Handler(object sender, SessionStruct? session)
     {
         Debug.Log("WC SESSION CONNECTED");
 
@@ -295,6 +299,8 @@ public class WalletConnectController : MonoBehaviour
         // Let's check if we need to switch to BEAM or not
         var currentChainId = GetChainId();
         Debug.Log($"Current chain id: {currentChainId}");
+        
+        /*
         if (currentChainId == GameConstants.GameChainId)
         {
             // No need to switch
@@ -325,11 +331,13 @@ public class WalletConnectController : MonoBehaviour
         
         // This means we switched to BEAM correctly, we can go ahead and trigger OnConnected event.
         OnConnected?.Invoke(session);
+        */
     }
     
     private void OnSessionDisconnected_Handler(object sender, EventArgs eventArgs)
     {
         Debug.LogWarning("WC SESSION DISCONNECTED");
+        connectedSession = null;
         OnDisconnected?.Invoke();
     }
     
@@ -337,6 +345,7 @@ public class WalletConnectController : MonoBehaviour
     {
         Debug.Log("WC SESSION CONNECTION ERROR");
         // No need for real disconnection as we're not connected yet.
+        connectedSession = null;
         OnConnectionError?.Invoke($"Connection error reason: {eventArgs}");
     }
     #endregion
@@ -366,14 +375,12 @@ public class WalletConnectController : MonoBehaviour
     
     private int? GetChainId()
     {
-        var currentSession = WalletConnect.Instance.ActiveSession;
-        
-        var defaultChain = currentSession.Namespaces.Keys.FirstOrDefault();
+        var defaultChain = connectedSession.GetValueOrDefault().Namespaces.Keys.FirstOrDefault();
     
         if (string.IsNullOrWhiteSpace(defaultChain))
             return null;
 
-        var defaultNamespace = currentSession.Namespaces[defaultChain];
+        var defaultNamespace = connectedSession.GetValueOrDefault().Namespaces[defaultChain];
     
         if (defaultNamespace.Chains.Length == 0)
             return null;
@@ -462,7 +469,6 @@ public class WalletConnectController : MonoBehaviour
         // TODO Make configurable
         var methods = new string[]
         {
-            "eth_chainId",
             "eth_sendTransaction",
             "eth_signTransaction",
             "eth_sign",
@@ -479,7 +485,7 @@ public class WalletConnectController : MonoBehaviour
         
         requiredNamespaces.Add(Chain.EvmNamespace, new ProposedNamespace()
         {
-            Chains = new []{$"eip155:{GameConstants.GameChainId}"}, //BEAM
+            Chains = new []{$"eip155:5"}, //BEAM
             Events = events,
             Methods = methods
         });
