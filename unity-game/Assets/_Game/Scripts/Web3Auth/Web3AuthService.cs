@@ -266,6 +266,7 @@ public class Web3AuthService : MonoBehaviour
 
         string signature;
 
+        UniTask.Delay(2500);
         try
         {
             _currentAddress = await _walletConnectorKit.GetConnectedAddress();
