@@ -8,6 +8,9 @@ using System.Linq;
 #region GAME_CONSTANTS
 public static class GameConstants
 {
+    // TODO we should fetch this from server
+    public const int GameChainId = 4337; // BEAM
+    public const string GameChainIdHex = "0x10F1"; // BEAM
 }
 #endregion
 
