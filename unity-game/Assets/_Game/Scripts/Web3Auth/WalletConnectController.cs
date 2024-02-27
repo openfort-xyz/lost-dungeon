@@ -86,47 +86,16 @@ public class WalletConnectController : MonoBehaviour
     
     [RpcMethod("wallet_addEthereumChain")]
     [RpcRequestOptions(Clock.ONE_MINUTE, 99998)] // Adjust the clock and priority as needed
-    public class WCAddEthereumChain: List<WCAddEthereumChainParams>
+    public class WCAddEthereumChain : List<object>
     {
-        public WCAddEthereumChain(params WCAddEthereumChainParams[] addChainParams) : base(addChainParams)
+        public WCAddEthereumChain(object chainData) : base(new[] { chainData })
         {
         }
-
+        
         [Preserve]
         public WCAddEthereumChain()
         {
         }
-    }
-
-    public class WCAddEthereumChainParams
-    {
-        [JsonProperty("chainId")]
-        public string ChainId { get; set; }
-
-        [JsonProperty("chainName")]
-        public string ChainName { get; set; }
-
-        [JsonProperty("nativeCurrency")]
-        public NativeCurrency NativeCurrency { get; set; } 
-
-        [JsonProperty("rpcUrls")]
-        public string[] RpcUrls { get; set; }
-
-        [JsonProperty("blockExplorerUrls", NullValueHandling = NullValueHandling.Ignore)]
-        public string[] BlockExplorerUrls { get; set; } // Optional   
-    }
-    
-    // Nested class for native currency details
-    public class NativeCurrency
-    {
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
-        [JsonProperty("symbol")]
-        public string Symbol { get; set; }
-
-        [JsonProperty("decimals")]
-        public int Decimals { get; set; }
     }
     
     public event UnityAction<SessionStruct> OnConnected;
@@ -239,20 +208,20 @@ public class WalletConnectController : MonoBehaviour
             var encodedData = acceptOwnershipFunction.GetData();
             
             var currentChainId = GetChainId(); // Implement this method to get the current chain ID
-            var currentFullChainId = Chain.EvmNamespace + ":" + currentChainId;
+            //var currentFullChainId = Chain.EvmNamespace + ":" + currentChainId;
             var desiredChainId = 4337; // BEAM network chain ID
 
             if (currentChainId != desiredChainId)
             {
                 Debug.LogWarning($"Wrong network. Please switch your wallet to the correct network. Chain ID should be {desiredChainId}");
-                var success = await SwitchToBeamNetwork(currentFullChainId); // Implement this method for network switching
+                var switched = await SwitchToBeamNetwork();
 
-                if (!success)
+                if (!switched)
                 {
                     Debug.LogError("Failed switching to BEAM network.");
-                    //TODO-check!!!!!!
-                    var ueah = await AddBeamNetwork(currentFullChainId);
-                    return null;
+                    var added = await AddBeamNetwork();
+
+                    if (!added) return null;
                 }
             }
 
@@ -376,28 +345,27 @@ public class WalletConnectController : MonoBehaviour
         return null;
     }
     
-    private async UniTask<bool> AddBeamNetwork(string currentChain)
+    private async UniTask<bool> AddBeamNetwork()
     {
         try
         {
-            var addChainParams = new WCAddEthereumChainParams()
+            var addChainParams = new
             {
-                ChainId = "0x10F1", // Beam ID
-                ChainName = "Beam Mainnet",
-                NativeCurrency = new NativeCurrency()
+                chainId = "0x10F1",
+                chainName = "Beam",
+                rpcUrls = new [] {"https://build.onbeam.com/rpc"},
+                nativeCurrency = new
                 {
-                    Name = "Beam Mainnet",
-                    Symbol = "BEAM",
-                    Decimals = 18
+                    symbol = "BEAM",
+                    decimals = 18
                 },
-                RpcUrls = new[] { "https://build.onbeam.com/rpc" }, 
-                BlockExplorerUrls = new[] { "https://subnets.avax.network/beam" } 
+                blockExplorerUrls = new [] {"https://subnets.avax.network/beam"}
             };
             var addChainRequest = new WCAddEthereumChain(addChainParams);
             
             var signClient = WalletConnect.Instance.SignClient;
             // Request to switch the Ethereum chain
-            var result = await signClient.Request<WCAddEthereumChain, object>(addChainRequest, currentChain);
+            var result = await signClient.Request<WCAddEthereumChain, object>(addChainRequest);
 
             // Interpret a null response as successful operation
             // https://docs.metamask.io/wallet/reference/wallet_addethereumchain/
@@ -410,7 +378,7 @@ public class WalletConnectController : MonoBehaviour
         }
     }
     
-    private async UniTask<bool> SwitchToBeamNetwork(string currentChain)
+    private async UniTask<bool> SwitchToBeamNetwork()
     {
         try
         {
@@ -419,7 +387,7 @@ public class WalletConnectController : MonoBehaviour
             
             var signClient = WalletConnect.Instance.SignClient;
             // Request to switch the Ethereum chain
-            var result = await signClient.Request<WCSwitchEthereumChain, object>(switchChainRequest, currentChain);
+            var result = await signClient.Request<WCSwitchEthereumChain, object>(switchChainRequest);
 
             // Interpret a null response as successful operation
             // https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/
@@ -446,7 +414,8 @@ public class WalletConnectController : MonoBehaviour
             "eth_sign",
             "personal_sign",
             "eth_signTypedData",
-            "wallet_switchEthereumChain"
+            "wallet_switchEthereumChain",
+            "wallet_addEthereumChain"
         };
 
         var events = new string[]
