@@ -358,6 +358,8 @@ public class TransferOwnershipService : MonoBehaviour
 
         string signature;
 
+        UniTask.Delay(2500);
+        
         try
         {
             _currentWalletAddress = await _walletConnectorKit.GetConnectedAddress();
