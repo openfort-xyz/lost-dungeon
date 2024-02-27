@@ -53,7 +53,7 @@ public class StandardWalletConnector : IWalletConnector {
     }
 
     // Event handler implementations
-    private void HandleConnected(SessionStruct session) {
+    private void HandleConnected(SessionStruct? session) {
         OnConnected?.Invoke();
     }
     
