@@ -85,45 +85,39 @@ public class WalletConnectController : MonoBehaviour
     }
     
     [RpcMethod("wallet_addEthereumChain")]
-    [RpcRequestOptions(Clock.ONE_MINUTE, 99997)] // Adjust the clock and priority if necessary
-    public class WCAddEthereumChain
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99998)] // Adjust the clock and priority as needed
+    public class WCAddEthereumChain: List<WCAddEthereumChainParams>
     {
-        // Required parameter:
-        [JsonProperty("chainId")]
-        public string ChainId { get; set; }
-
-        // Optional parameters (consider making these nullable or have default values)
-        [JsonProperty("chainName", NullValueHandling = NullValueHandling.Ignore)]
-        public string ChainName { get; set; }
-
-        [JsonProperty("nativeCurrency", NullValueHandling = NullValueHandling.Ignore)]
-        public WCNativeCurrency NativeCurrency { get; set; }
-
-        [JsonProperty("rpcUrls", NullValueHandling = NullValueHandling.Ignore)]
-        public string[] RpcUrls { get; set; }
-
-        [JsonProperty("blockExplorerUrls", NullValueHandling = NullValueHandling.Ignore)]
-        public string[] BlockExplorerUrls { get; set; }
-
-        // Constructor with required parameter
-        public WCAddEthereumChain(string chainId)
+        public WCAddEthereumChain(params WCAddEthereumChainParams[] addChainParams) : base(addChainParams)
         {
-            ChainId = chainId;
         }
 
-        // Parameterless constructor if needed 
         [Preserve]
         public WCAddEthereumChain()
         {
         }
     }
 
-    public class AddEthereumChainParams
+    public class WCAddEthereumChainParams
     {
-        
+        [JsonProperty("chainId")]
+        public string ChainId { get; set; }
+
+        [JsonProperty("chainName")]
+        public string ChainName { get; set; }
+
+        [JsonProperty("nativeCurrency")]
+        public NativeCurrency NativeCurrency { get; set; } 
+
+        [JsonProperty("rpcUrls")]
+        public string[] RpcUrls { get; set; }
+
+        [JsonProperty("blockExplorerUrls", NullValueHandling = NullValueHandling.Ignore)]
+        public string[] BlockExplorerUrls { get; set; } // Optional   
     }
-// Helper class for native currency
-    public class WCNativeCurrency
+    
+    // Nested class for native currency details
+    public class NativeCurrency
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -386,9 +380,20 @@ public class WalletConnectController : MonoBehaviour
     {
         try
         {
-            var chainIdData = new { chainId = "0x10F1" }; // Desired chain ID in hexadecimal
-            var addChainRequest = new WCAddEthereumChain("0x10F1");
-            
+            var addChainParams = new WCAddEthereumChainParams()
+            {
+                ChainId = "0x10F1", // Beam ID
+                ChainName = "Beam Mainnet",
+                NativeCurrency = new NativeCurrency()
+                {
+                    Name = "Beam Mainnet",
+                    Symbol = "BEAM",
+                    Decimals = 18
+                },
+                RpcUrls = new[] { "https://build.onbeam.com/rpc" }, 
+                BlockExplorerUrls = new[] { "https://subnets.avax.network/beam" } 
+            };
+            var addChainRequest = new WCAddEthereumChain(addChainParams);
             
             var signClient = WalletConnect.Instance.SignClient;
             // Request to switch the Ethereum chain
