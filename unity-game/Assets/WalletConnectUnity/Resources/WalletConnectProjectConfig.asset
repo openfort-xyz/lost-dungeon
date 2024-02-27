@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Id>k__BackingField: 51102387049a78285ee8540ff748b0a8
   <Metadata>k__BackingField:
-    Name: zxczx
-    Description: zxczxczx
-    Url: zxczxczxxc.com
-    Icons: []
+    Name: Lost Dungeon
+    Description: Openfort's demo game
+    Url: openfort.xyz
+    Icons:
+    - https://twitter.com/openfortxyz/photo
     Redirect:
       Native: 
       Universal: 
