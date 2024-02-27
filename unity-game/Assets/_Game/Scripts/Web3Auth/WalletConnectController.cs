@@ -72,12 +72,8 @@ public class WalletConnectController : MonoBehaviour
     
     [RpcMethod("eth_chainId")]
     [RpcRequestOptions(Clock.ONE_MINUTE, 99998)]
-    public class EthChainId : List<object>
+    public class EthChainId
     {
-        public EthChainId(object chainIdData) : base(new[] { chainIdData })
-        {
-        }
-        
         [Preserve]
         public EthChainId()
         {
@@ -223,7 +219,7 @@ public class WalletConnectController : MonoBehaviour
             
             // Get ActiveSession namespace
             //var currentNamespace = WalletConnect.Instance.ActiveSession.Namespaces.FirstOrDefault();
-            var currentChainId = await GetChainId(); // Implement this method to get the current chain ID
+            var currentChainId = GetChainId(); // Implement this method to get the current chain ID
             var currentFullChainId = Chain.EvmNamespace + ":" + currentChainId;
             var desiredChainId = GameConstants.GameChainId; // BEAM network chain ID
 
@@ -284,12 +280,11 @@ public class WalletConnectController : MonoBehaviour
         return UniTask.Run(GetConnectedAddress);
     }
     
-    /*
+    
     public UniTask<int?> GetChainIdAsync()
     {
         return UniTask.Run(GetChainId);
     }
-    */
 
     #region EVENT_HANDLERS
     private async void OnSessionConnected_Handler(object sender, SessionStruct session)
@@ -298,7 +293,7 @@ public class WalletConnectController : MonoBehaviour
 
         UniTask.Delay(500);
         // Let's check if we need to switch to BEAM or not
-        var currentChainId = await GetChainId();
+        var currentChainId = GetChainId();
         Debug.Log($"Current chain id: {currentChainId}");
         if (currentChainId == GameConstants.GameChainId)
         {
@@ -369,38 +364,17 @@ public class WalletConnectController : MonoBehaviour
         return currentAddress.Address;
     }
     
-    public async UniTask<int?> GetChainId()
+    private int? GetChainId()
     {
-        //TODO?
-        var chainIdRequest = new EthChainId( new {});
-        var hexChainId = await WalletConnect.Instance.SignClient.Request<EthChainId, string>(chainIdRequest);
-        
-        // This comes in Hex. We need to convert it to int.
-        Debug.Log(hexChainId);
-        
-        try
-        {
-            int chainId = Convert.ToInt32(hexChainId, 16);
-            Debug.Log(chainId);
-            return chainId;
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Error converting Hex to Int: {ex.Message}");
-            return null;
-        }
-
-        return null;
-        /*
         var currentSession = WalletConnect.Instance.ActiveSession;
-
+        
         var defaultChain = currentSession.Namespaces.Keys.FirstOrDefault();
-
+    
         if (string.IsNullOrWhiteSpace(defaultChain))
             return null;
 
         var defaultNamespace = currentSession.Namespaces[defaultChain];
-
+    
         if (defaultNamespace.Chains.Length == 0)
             return null;
 
@@ -422,7 +396,6 @@ public class WalletConnectController : MonoBehaviour
         }
 
         return null;
-        */
     }
     
     private async UniTask<bool> AddBeamNetwork(string currentFullChainId)

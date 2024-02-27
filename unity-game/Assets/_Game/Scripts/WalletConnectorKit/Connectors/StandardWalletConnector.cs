@@ -49,7 +49,7 @@ public class StandardWalletConnector : IWalletConnector {
     }
 
     public async UniTask<int?> GetChainId() {
-        return await _wcController.GetChainId();
+        return await _wcController.GetChainIdAsync();
     }
 
     // Event handler implementations
