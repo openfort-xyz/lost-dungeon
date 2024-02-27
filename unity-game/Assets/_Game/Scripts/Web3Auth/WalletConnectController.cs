@@ -70,6 +70,16 @@ public class WalletConnectController : MonoBehaviour
         }
     }
     
+    [RpcMethod("eth_chainId")]
+    [RpcRequestOptions(Clock.ONE_MINUTE, 99998)]
+    public class EthChainId
+    {
+        [Preserve]
+        public EthChainId()
+        {
+        }
+    }
+    
     [RpcMethod("wallet_switchEthereumChain")]
     [RpcRequestOptions(Clock.ONE_MINUTE, 99998)] // Adjust the clock and priority as needed
     public class WCSwitchEthereumChain : List<object>
@@ -452,6 +462,7 @@ public class WalletConnectController : MonoBehaviour
         // TODO Make configurable
         var methods = new string[]
         {
+            "eth_chainId",
             "eth_sendTransaction",
             "eth_signTransaction",
             "eth_sign",
