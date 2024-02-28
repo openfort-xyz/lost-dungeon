@@ -20,7 +20,7 @@ MonoBehaviour:
     Icons:
     - https://pbs.twimg.com/profile_images/1691482304747646976/4HUy-4ku_400x400.jpg
     Redirect:
-      Native: 
+      Native: lostdungeon://request
       Universal: 
     VerifyUrl: 
   <LoggingEnabled>k__BackingField: 0
