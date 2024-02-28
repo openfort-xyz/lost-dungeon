@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,10 +19,8 @@ using WalletConnectSharp.Sign.Models;
 using WalletConnectSharp.Sign.Models.Engine;
 using WalletConnectSharp.Sign.Models.Engine.Events;
 using WalletConnectUnity.Core;
-using WalletConnectUnity.Core.Networking;
 using WalletConnectUnity.Modal;
 using WalletConnectUnity.Modal.Sample;
-using Debug = UnityEngine.Debug;
 
 public class WalletConnectController : MonoBehaviour
 {
@@ -154,12 +151,6 @@ public class WalletConnectController : MonoBehaviour
                     connectedSession = @struct;
                     OnSessionConnected_Handler(s, connectedSession);
                 };
-
-                WalletConnect.Instance.SessionUpdated += (o, @struct) =>
-                {
-                    Debug.Log(@struct.Namespaces);
-                    Debug.Log("************* Updated!!!!!!");
-                };
             }
         };
     }
@@ -274,14 +265,20 @@ public class WalletConnectController : MonoBehaviour
             
             await UniTask.Delay(1500);
             
-            //TODO big change!
+            /* TODO not using it
+            // Let's update the session with Beam network
+            var updated = await AddBeamNetworkToSession();
+            if (!updated) return null;
+            */
+            
             // Send the transaction
             //var signClient = WalletConnect.Instance.SignClient;
             var txHash = await WalletConnect.Instance.RequestAsync<WCEthSendTransaction, string>(ethSendTransaction);
-
+            
             // Handle the transaction hash (e.g., display it, log it, etc.)
             Debug.Log("Transaction Hash: " + txHash);
-            return txHash;   
+            return txHash;
+
         }
         catch (Exception e)
         {
@@ -305,25 +302,10 @@ public class WalletConnectController : MonoBehaviour
     private void OnSessionConnected_Handler(object sender, SessionStruct? session)
     {
         Debug.Log("WC SESSION CONNECTED");
-        return;
-        
         connectedSession = session;
         OnConnected?.Invoke(connectedSession);
     }
-
-    private async void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            // TODO let's update the session
-            var currentSession = WalletConnect.Instance.ActiveSession;
-            var buildNamespace = BuildBeamNamespace();
-        
-            var hee = await WalletConnect.Instance.SignClient.UpdateSession(currentSession.Topic, new Namespaces(buildNamespace));
-            Debug.Log(hee.Acknowledged().Id);
-        }
-    }
-
+    
     private void OnSessionDisconnected_Handler(object sender, EventArgs eventArgs)
     {
         Debug.LogWarning("WC SESSION DISCONNECTED");
@@ -477,7 +459,7 @@ public class WalletConnectController : MonoBehaviour
         
         requiredNamespaces.Add(Chain.EvmNamespace, new ProposedNamespace()
         {
-            Chains = new []{"eip155:1"},
+            Chains = new []{"eip155:4337"},
             Events = events,
             Methods = methods
         });
@@ -487,12 +469,11 @@ public class WalletConnectController : MonoBehaviour
             RequiredNamespaces = requiredNamespaces
         };
     }
-
-    private Namespaces BuildBeamNamespace()
+    
+    private async UniTask<bool> AddBeamNetworkToSession()
     {
         var namespaces = new Namespaces();
         
-        // TODO Make configurable
         var methods = new string[]
         {
             "eth_sendTransaction",
@@ -513,13 +494,26 @@ public class WalletConnectController : MonoBehaviour
         
         namespaces.Add(Chain.EvmNamespace, new Namespace()
         {
-            Chains = new []{$"eip155:{GameConstants.GameChainId}"}, //BEAM
+            Chains = new []{$"eip155:{GameConstants.GameChainId}"},
             Events = events,
             Methods = methods,
             Accounts = new []{$"eip155:1:{connectedAddress}"}
         });
 
-        return namespaces;
+        try
+        {
+            var result = await WalletConnect.Instance.SignClient.UpdateSession(WalletConnect.Instance.ActiveSession.Topic,
+                new Namespaces(namespaces));
+
+            // We updated the session and added Beam network to namespaces.
+            Debug.Log("Updated");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
     }
     #endregion
 }
