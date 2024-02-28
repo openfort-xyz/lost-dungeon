@@ -223,8 +223,6 @@ public class WalletConnectController : MonoBehaviour
             
             var desiredChainId = GameConstants.GameChainId; // BEAM network chain ID
             
-            //TODO we don't use it because we force switching to BEAM while connecting!
-            /*
             // Get ActiveSession namespace
             //var currentNamespace = WalletConnect.Instance.ActiveSession.Namespaces.FirstOrDefault();
             var currentChainId = GetChainId(); // Implement this method to get the current chain ID
@@ -250,7 +248,6 @@ public class WalletConnectController : MonoBehaviour
                 }
                 // This means we switched to BEAM correctly, we can go ahead.
             }
-            */
 
             // Prepare the transaction
             var txParams = new WCTransaction()
@@ -266,7 +263,7 @@ public class WalletConnectController : MonoBehaviour
             // The fullChainId might need to be adjusted based on the network specifics
             var fullChainId = Chain.EvmNamespace + ":" + desiredChainId; // BEAM!
             
-            await UniTask.Delay(2500);
+            await UniTask.Delay(1500);
             
             // Send the transaction
             var signClient = WalletConnect.Instance.SignClient;
@@ -295,58 +292,11 @@ public class WalletConnectController : MonoBehaviour
     }
 
     #region EVENT_HANDLERS
-    private async void OnSessionConnected_Handler(object sender, SessionStruct? session)
+    private void OnSessionConnected_Handler(object sender, SessionStruct? session)
     {
         Debug.Log("WC SESSION CONNECTED");
-
-        UniTask.Delay(500);
-        // Let's check if we need to switch to BEAM or not
-        var currentChainId = GetChainId();
-        Debug.Log($"Current chain id: {currentChainId}");
-        
-        if (currentChainId == GameConstants.GameChainId)
-        {
-            // No need to switch
-            OnConnected?.Invoke(session);
-            return; 
-        }
-        
-        var currentFullChainId = Chain.EvmNamespace + ":" + currentChainId;
-        // Let's switch to BEAM
-        var switched = await SwitchToBeamNetwork(currentFullChainId);
-
-        if (!switched)
-        {
-            // We couldn't switch, let's try to add BEAM
-            var added = await AddBeamNetwork(currentFullChainId);
-
-            if (!added)
-            {
-                var message = "Failed to switch to BEAM network and add BEAM network";
-                OnConnectionError?.Invoke(message);
-                return;
-            }
-            
-            // This means we added BEAM correctly, we can go ahead and trigger OnConnected event.
-            //TODO update session with new chain id?
-            /*
-            var topic = session.GetValueOrDefault().Topic;
-            var namespaces = new Namespaces();
-            namespaces.Add(Chain.EvmNamespace, new Namespace()
-            {
-                Chains = new []{$"eip155:{GameConstants.GameChainId}"}
-            });
-            await WalletConnect.Instance.SignClient.UpdateSession(topic, namespaces);
-            */
-            UniTask.Delay(1000);
-            OnConnected?.Invoke(session);
-            return;
-        }
-        
-        // This means we switched to BEAM correctly, we can go ahead and trigger OnConnected event.
-        //TODO update session with new chain id?
-        UniTask.Delay(1000);
-        OnConnected?.Invoke(session);
+        connectedSession = session;
+        OnConnected?.Invoke(connectedSession);
     }
     
     private void OnSessionDisconnected_Handler(object sender, EventArgs eventArgs)
@@ -384,7 +334,7 @@ public class WalletConnectController : MonoBehaviour
 
     private string GetConnectedAddress()
     {
-        var currentAddress = WalletConnect.Instance.ActiveSession.CurrentAddress(Chain.EvmNamespace);
+        var currentAddress = connectedSession.GetValueOrDefault().CurrentAddress(Chain.EvmNamespace);
         return currentAddress.Address;
     }
     
@@ -440,7 +390,8 @@ public class WalletConnectController : MonoBehaviour
             
             var signClient = WalletConnect.Instance.SignClient;
             // Request to switch the Ethereum chain
-            var result = await signClient.Request<WCAddEthereumChain, object>(addChainRequest, currentFullChainId);
+            //TODO big change
+            var result = await WalletConnect.Instance.RequestAsync<WCAddEthereumChain, object>(addChainRequest);
 
             // Interpret a null response as successful operation
             // https://docs.metamask.io/wallet/reference/wallet_addethereumchain/
@@ -462,7 +413,8 @@ public class WalletConnectController : MonoBehaviour
             
             var signClient = WalletConnect.Instance.SignClient;
             // Request to switch the Ethereum chain
-            var result = await signClient.Request<WCSwitchEthereumChain, object>(switchChainRequest, currentFullChainId);
+            //TODO big change!
+            var result = await WalletConnect.Instance.RequestAsync<WCSwitchEthereumChain, object>(switchChainRequest);
 
             // Interpret a null response as successful operation
             // https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/
@@ -500,7 +452,7 @@ public class WalletConnectController : MonoBehaviour
         
         requiredNamespaces.Add(Chain.EvmNamespace, new ProposedNamespace()
         {
-            Chains = new []{$"eip155:{GameConstants.GameChainId}"}, //BEAM
+            Chains = new []{"eip155:1"},
             Events = events,
             Methods = methods
         });
