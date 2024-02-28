@@ -346,7 +346,7 @@ public class Web3AuthService : MonoBehaviour
         // TODO Careful, almost all AzureFunctionCaller requests trigger this if failed.
         Debug.Log("Request failed.");
         Disconnect();
-    }
+    }   
     #endregion
 
     #region PRIVATE_METHODS
