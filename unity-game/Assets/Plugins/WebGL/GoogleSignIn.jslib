@@ -14,7 +14,6 @@ mergeInto(LibraryManager.library, {
             google.accounts.id.initialize({
                 client_id: clientId,
                 callback: function(response) {
-                    var email = response.email;
 
                     // Decode the JWT to get the sub field
                     var parts = response.credential.split('.');
@@ -23,7 +22,9 @@ mergeInto(LibraryManager.library, {
                     }
                     var payloadStr = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
                     var payload = JSON.parse(payloadStr);
+
                     var sub = payload.sub;
+                    var email = payload.email;
 
                     // Package the data into a JSON object
                     var data = {
