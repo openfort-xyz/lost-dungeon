@@ -51,6 +51,7 @@ public class LoginSceneManager : MonoBehaviour
         
         //TODO Check if possible to change to PlayFabAuthControllerBase.On....
         googleAuthController.OnLoginSuccess += OnLoginSuccess;
+        googleAuthController.OnRegisterSuccess += OnRegistrationSuccess;
         googleAuthController.OnLoginFailure += OnLoginFailure;
         appleAuthController.OnLoginSuccess += OnLoginSuccess;
         appleAuthController.OnLoginFailure += OnLoginFailure;
@@ -62,6 +63,7 @@ public class LoginSceneManager : MonoBehaviour
     private void OnDisable()
     {
         googleAuthController.OnLoginSuccess -= OnLoginSuccess;
+        googleAuthController.OnRegisterSuccess -= OnRegistrationSuccess;
         googleAuthController.OnLoginFailure -= OnLoginFailure;
         appleAuthController.OnLoginSuccess -= OnLoginSuccess;
         appleAuthController.OnLoginFailure -= OnLoginFailure;
@@ -499,6 +501,9 @@ public class LoginSceneManager : MonoBehaviour
 
     private void DecideWhereToGoNext(LoginResult result)
     {
+        loginPanel.SetActive(false);
+        statusTextLabel.text = "Getting player info...";
+        
         var userReadOnlyData = result.InfoResultPayload.UserReadOnlyData;
         
         // We check if the PlayFab user has an Openfort Player assigned to its ReadOnlyData values.

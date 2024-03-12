@@ -27,7 +27,7 @@ public class InitSceneManager : MonoBehaviour
         await WalletConnectModal.InitializeAsync();
 #else
         // for WebGL we don't use WalletConnect
-        //ExecuteAction();
+        SceneManager.LoadScene("Login");
 #endif
     }
 }
