@@ -520,10 +520,19 @@ public class LoginSceneManager : MonoBehaviour
             }
             else
             {
-                //TODO!!!!!!!!
-                // We assume it cointains OFownerAddressKey. We save it to static data
-                var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
-                OFStaticData.OFownerAddressValue = currentOwnerAddress;
+                try
+                {
+                    var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
+                    OFStaticData.OFownerAddressValue = currentOwnerAddress;
+                }
+                catch (Exception e)
+                {
+                    Debug.Log(e.Message);
+                    Console.WriteLine(e);
+                    //** IMPORTANT **//
+                    // TODO This means this is an old user. Old users don't have OFownerAddressKey saved in PlayFab User Data.
+                    // TODO Check if we need to add this key somehow
+                }
                 
                 // Check if the device has a session key
                 var sessionKey = _openfortClient.LoadSessionKey();
