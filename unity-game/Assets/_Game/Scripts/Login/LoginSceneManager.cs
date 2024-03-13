@@ -43,6 +43,8 @@ public class LoginSceneManager : MonoBehaviour
     {
         // Get Openfort client with publishable key.
         _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
+        
+        StartLogin();
     }
 
     private void OnEnable()

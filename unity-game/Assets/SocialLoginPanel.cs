@@ -1,42 +1,44 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class AuthControllersManager : MonoBehaviour
+public class SocialLoginPanel : MonoBehaviour
 {
-    [Header("Controllers")]
-    public LoginSceneManager loginSceneManager; //TODO we need to change it to DefaultAuthController at some point
-    public AppleAuthController appleController;
-    public GooglePlayAuth googlePlayController;
+    [Header("Buttons")]
+    public Button googleButton;
+    public Button appleButton;
+    public Button googlePlayButton;
 
-    // Not using it as we now use SocialLoginPanel.cs
-    /*
-    private void Awake()
+    [Header("Other")]
+    public TextMeshProUGUI notAvailableText;
+    
+    private void OnEnable()
     {
         switch (Application.platform)
         {
             case RuntimePlatform.OSXEditor:
-                loginSceneManager.StartLogin();
+                notAvailableText.gameObject.SetActive(true);
                 break;
             case RuntimePlatform.OSXPlayer:
-                appleController.Initialize();
+                appleButton.gameObject.SetActive(true);
                 break;
             case RuntimePlatform.WindowsPlayer:
-                loginSceneManager.StartLogin();
+                notAvailableText.gameObject.SetActive(true);
                 break;
             case RuntimePlatform.WindowsEditor:
-                loginSceneManager.StartLogin();
+                notAvailableText.gameObject.SetActive(true);
                 break;
             case RuntimePlatform.IPhonePlayer:
-                appleController.Initialize();
+                appleButton.gameObject.SetActive(true);
                 break;
             case RuntimePlatform.Android:
-                googlePlayController.Authenticate();
+                googlePlayButton.gameObject.SetActive(true);
                 break;
             case RuntimePlatform.WebGLPlayer:
-                //TODO double-check this
-                loginSceneManager.StartLogin();
+                googleButton.gameObject.SetActive(true);
                 break;
             case RuntimePlatform.LinuxPlayer:
                 //TODO
@@ -99,5 +101,4 @@ public class AuthControllersManager : MonoBehaviour
                 throw new ArgumentOutOfRangeException();
         }
     }
-    */
 }
