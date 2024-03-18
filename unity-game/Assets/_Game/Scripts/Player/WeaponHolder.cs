@@ -81,7 +81,7 @@ public class WeaponHolder : MonoBehaviour
     {
         if (!_equipped) return;
         
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
         // Iterate through all active touches
         for (int i = 0; i < Input.touchCount; i++)
         {

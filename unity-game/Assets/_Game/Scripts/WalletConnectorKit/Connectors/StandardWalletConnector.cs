@@ -19,11 +19,11 @@ public class StandardWalletConnector : IWalletConnector {
             // Handle the error appropriately
             return;
         }
-
+        
         // Subscribe to WalletConnectController events
         _wcController.OnConnected += HandleConnected;
-        _wcController.OnConnectionError += HandleConnectionError;
         _wcController.OnDisconnected += HandleDisconnected;
+        _wcController.OnConnectionError += HandleConnectionError;
     }
 
     public void Connect() {
@@ -53,7 +53,7 @@ public class StandardWalletConnector : IWalletConnector {
     }
 
     // Event handler implementations
-    private void HandleConnected(SessionStruct session) {
+    private void HandleConnected(SessionStruct? session) {
         OnConnected?.Invoke();
     }
     
@@ -71,7 +71,7 @@ public class StandardWalletConnector : IWalletConnector {
     {
         if (_wcController == null) return;
         _wcController.OnConnected -= HandleConnected;
-        _wcController.OnConnectionError -= HandleConnectionError;
         _wcController.OnDisconnected -= HandleDisconnected;
+        _wcController.OnConnectionError -= HandleConnectionError;
     }
 }

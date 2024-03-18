@@ -74,6 +74,14 @@ public class GoogleAuthController : PlayFabAuthControllerBase
         var authData = JsonUtility.FromJson<GoogleAuthData>(jsonData);
         Debug.Log($"Received hashed token: {authData.customID} and email: {authData.email}");
         
+        // Check if customId or email are null
+        if (string.IsNullOrEmpty(authData.customID) || string.IsNullOrEmpty(authData.email))
+        {
+            Debug.LogError("Received invalid auth data");
+            RaiseLoginFailure(new PlayFabError());
+            return;
+        }
+        
         // Use the hashed token to log in with PlayFab
         LoginWithPlayFab(authData.customID, authData.email);
         RaiseLoginStarted();
@@ -82,13 +90,53 @@ public class GoogleAuthController : PlayFabAuthControllerBase
 
     private void LoginWithPlayFab(string customId, string email)
     {
-        var request = new LoginWithCustomIDRequest
+        // TODO We can't use LoginWithGoogleAccount as it's expecting authToken from deprecated sign in method:
+        // https://developers.google.com/identity/sign-in/web/sign-in
+        // TODO In consequence, we're using google custom id as a password, which is not ideal security-wise.
+        // TODO This needs to be updated when PlayFab updates LoginWithGoogleAccount to new Google sign in method.
+        
+        var request = new LoginWithEmailAddressRequest()
         {
-            CustomId = customId,
-            CreateAccount = true, // set to true if you want to create an account if it doesn't exist
+            Password = customId,
+            Email = email,
             InfoRequestParameters = PlayerCombinedInfoRequestParams
         };
 
-        PlayFabClientAPI.LoginWithCustomID(request, RaiseLoginSuccess, RaiseLoginFailure);
+        PlayFabClientAPI.LoginWithEmailAddress(request, RaiseLoginSuccess, error =>
+        {
+            if (error.Error == PlayFabErrorCode.AccountNotFound)
+            {
+                // Here, you can call your RegisterPlayFabUser function, with the username and password that was just rejected
+                RegisterPlayFabUser(email, customId);
+            }
+            else
+            {
+                RaiseLoginFailure(error);
+            }
+        });
+    }
+    
+    private void RegisterPlayFabUser(string email, string customId)
+    {
+        var request = new RegisterPlayFabUserRequest()
+        {
+            Email = email,
+            Password = customId,
+            InfoRequestParameters = playerCombinedInfoRequestParams,
+            RequireBothUsernameAndEmail = false
+        };
+
+        PlayFabClientAPI.RegisterPlayFabUser(
+            request,
+            result =>
+            {
+                Debug.Log("New PlayFab account registered successfully.");
+                RaiseRegisterSuccess(result);
+            },
+            error =>
+            {
+                Debug.LogError("Failed to register a new PlayFab account.");
+                RaiseLoginFailure(error);
+            });
     }
 }

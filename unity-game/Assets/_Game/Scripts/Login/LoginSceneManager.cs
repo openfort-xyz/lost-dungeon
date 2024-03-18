@@ -14,6 +14,7 @@ public class LoginSceneManager : MonoBehaviour
 
     [Header("PlayFab Auth Controllers")]
     public GoogleAuthController googleAuthController;
+    public AppleAuthController appleAuthController;
     
     [Header("PlayFab")]
     // Settings for what data to get from playfab on login.
@@ -42,13 +43,20 @@ public class LoginSceneManager : MonoBehaviour
     {
         // Get Openfort client with publishable key.
         _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
+        
+        StartLogin();
     }
 
     private void OnEnable()
     {
         PlayFabAuthControllerBase.OnLoginStarted += () => loginPanel.SetActive(false);
+        
+        //TODO Check if possible to change to PlayFabAuthControllerBase.On....
         googleAuthController.OnLoginSuccess += OnLoginSuccess;
+        googleAuthController.OnRegisterSuccess += OnRegistrationSuccess;
         googleAuthController.OnLoginFailure += OnLoginFailure;
+        appleAuthController.OnLoginSuccess += OnLoginSuccess;
+        appleAuthController.OnLoginFailure += OnLoginFailure;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess += OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure += OnCreateOpenfortPlayerFailure;
@@ -57,7 +65,10 @@ public class LoginSceneManager : MonoBehaviour
     private void OnDisable()
     {
         googleAuthController.OnLoginSuccess -= OnLoginSuccess;
+        googleAuthController.OnRegisterSuccess -= OnRegistrationSuccess;
         googleAuthController.OnLoginFailure -= OnLoginFailure;
+        appleAuthController.OnLoginSuccess -= OnLoginSuccess;
+        appleAuthController.OnLoginFailure -= OnLoginFailure;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess -= OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;
@@ -146,11 +157,10 @@ public class LoginSceneManager : MonoBehaviour
                 break;
             case Web3AuthService.State.WalletConnecting:
                 statusTextLabel.text = "Connecting...";
-                connectWalletPanel.SetActive(false);
+                //connectWalletPanel.SetActive(false);
                 break;
             case Web3AuthService.State.WalletConnecting_Web3AuthCompleted:
                 statusTextLabel.text = "Please connect with " + TrimWalletAddress(OFStaticData.OFownerAddressValue);
-                connectWalletPanel.SetActive(false);
                 break;
             case Web3AuthService.State.WalletConnectionCancelled:
                 connectWalletPanel.SetActive(true);
@@ -158,6 +168,7 @@ public class LoginSceneManager : MonoBehaviour
                 break;
             case Web3AuthService.State.WalletConnected:
                 statusTextLabel.text = "Wallet connection successful.";
+                connectWalletPanel.SetActive(false);
                 break;
             case Web3AuthService.State.RequestingMessage:
                 statusTextLabel.text = "Requesting message...";
@@ -492,6 +503,9 @@ public class LoginSceneManager : MonoBehaviour
 
     private void DecideWhereToGoNext(LoginResult result)
     {
+        loginPanel.SetActive(false);
+        statusTextLabel.text = "Getting player info...";
+        
         var userReadOnlyData = result.InfoResultPayload.UserReadOnlyData;
         
         // We check if the PlayFab user has an Openfort Player assigned to its ReadOnlyData values.
@@ -508,9 +522,19 @@ public class LoginSceneManager : MonoBehaviour
             }
             else
             {
-                // We assume it cointains OFownerAddressKey. We save it to static data
-                var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
-                OFStaticData.OFownerAddressValue = currentOwnerAddress;
+                try
+                {
+                    var currentOwnerAddress = userReadOnlyData[OFStaticData.OFownerAddressKey].Value;
+                    OFStaticData.OFownerAddressValue = currentOwnerAddress;
+                }
+                catch (Exception e)
+                {
+                    Debug.Log(e.Message);
+                    Console.WriteLine(e);
+                    //** IMPORTANT **//
+                    // TODO This means this is an old user. Old users don't have OFownerAddressKey saved in PlayFab User Data.
+                    // TODO Check if we need to add this key somehow
+                }
                 
                 // Check if the device has a session key
                 var sessionKey = _openfortClient.LoadSessionKey();

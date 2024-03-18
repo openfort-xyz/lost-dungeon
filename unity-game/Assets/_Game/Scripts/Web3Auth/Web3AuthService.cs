@@ -8,6 +8,9 @@ using Openfort;
 using Openfort.Model;
 using PlayFab;
 using PlayFab.ClientModels;
+using UnityEngine.SceneManagement;
+using WalletConnectUnity.Core;
+using WalletConnectUnity.Modal;
 
 [DefaultExecutionOrder(100)] //VERY IMPORTANT FOR ANDROID BUILD --> OnEnable() method was called very early in script execution order therefore we weren't subscribing to events.
 public class Web3AuthService : MonoBehaviour
@@ -57,7 +60,6 @@ public class Web3AuthService : MonoBehaviour
     private bool _web3GLInitialized;
 
     #region UNITY_LIFECYCLE
-
     private void Awake() {
         _walletConnectorKit = FindObjectOfType<WalletConnectorKit>();
         if (_walletConnectorKit == null) {
@@ -69,6 +71,8 @@ public class Web3AuthService : MonoBehaviour
         _walletConnectorKit.OnConnected += WalletConnectorKit_OnConnected_Handler;
         _walletConnectorKit.OnDisconnected += WalletConnectorKit_OnDisconnected_Handler;
         _walletConnectorKit.OnConnectionError += WalletConnectorKit_OnConnectionError_Handler;
+        //Subscribing directly to WalletConnectModal :/
+        WalletConnectModal.ModalClosed += WalletConnectModal_OnModalClosed_Handler;
     }
 
     private void OnEnable()
@@ -87,6 +91,8 @@ public class Web3AuthService : MonoBehaviour
         _walletConnectorKit.OnConnected -= WalletConnectorKit_OnConnected_Handler;
         _walletConnectorKit.OnDisconnected -= WalletConnectorKit_OnDisconnected_Handler;
         _walletConnectorKit.OnConnectionError -= WalletConnectorKit_OnConnectionError_Handler;
+        //Subscribing directly to WalletConnectModal :/
+        WalletConnectModal.ModalClosed -= WalletConnectModal_OnModalClosed_Handler;
         
         // AzureFunctionCaller Events
         AzureFunctionCaller.onChallengeRequestSuccess -= OnChallengeRequestSuccess;
@@ -101,18 +107,19 @@ public class Web3AuthService : MonoBehaviour
     {
         _openfort = new OpenfortClient(OFStaticData.PublishableKey);
     }
-
-    private void OnApplicationQuit()
-    {
-        Disconnect();
-    }
-
     #endregion
 
     #region PUBLIC_METHODS
     public void Connect()
     {
-        ChangeState(authCompletedOnce ? State.WalletConnecting_Web3AuthCompleted : State.WalletConnecting);
+        if (authCompletedOnce)
+        {
+            ChangeState(State.WalletConnecting_Web3AuthCompleted);
+        }
+        else
+        {
+            ChangeState(State.WalletConnecting);
+        }
         
         _walletConnectorKit.Connect();
     }
@@ -154,6 +161,21 @@ public class Web3AuthService : MonoBehaviour
         
         //TODO Disconnect????
         ChangeState(authCompletedOnce ? State.Disconnected_Web3AuthCompleted : State.Disconnected);
+    }
+    
+    private void WalletConnectModal_OnModalClosed_Handler(object sender, EventArgs e)
+    {
+        // We only do continue in this case
+        if (!authCompletedOnce) return;
+
+        // Let's wait to make sure the wallet is connected.
+        UniTask.Delay(1000);
+        
+        // We're already good
+        if (WalletConnect.Instance.IsConnected) return;
+
+        // It means we have closed the modal without connecting so we need to go back to login scene.
+        ChangeState(State.Disconnected_Web3AuthCompleted);
     }
     #endregion
 
@@ -244,6 +266,7 @@ public class Web3AuthService : MonoBehaviour
 
         string signature;
 
+        UniTask.Delay(2500);
         try
         {
             _currentAddress = await _walletConnectorKit.GetConnectedAddress();
@@ -323,7 +346,7 @@ public class Web3AuthService : MonoBehaviour
         // TODO Careful, almost all AzureFunctionCaller requests trigger this if failed.
         Debug.Log("Request failed.");
         Disconnect();
-    }
+    }   
     #endregion
 
     #region PRIVATE_METHODS
@@ -400,8 +423,15 @@ public class Web3AuthService : MonoBehaviour
 
     public void Disconnect()
     {
-        ChangeState(State.Disconnecting);
-        _walletConnectorKit.Disconnect();
+        if (_walletConnectorKit.IsConnected())
+        {
+            ChangeState(State.Disconnecting);
+            _walletConnectorKit.Disconnect();
+        }
+        else
+        {
+            ChangeState(State.Disconnected);
+        }
     }
     #endregion
 

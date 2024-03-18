@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class Configuration : MonoBehaviour
 {
@@ -48,7 +49,7 @@ public class Configuration : MonoBehaviour
             case TransferOwnershipService.State.None:
                 break;
             case TransferOwnershipService.State.WalletConnecting:
-                EnableButtons(false);
+                //EnableButtons(false);
                 statusTextLabel.text = "Connecting...";
                 break;
             case TransferOwnershipService.State.WalletConnectionCancelled:
@@ -56,9 +57,11 @@ public class Configuration : MonoBehaviour
                 statusTextLabel.text = "Wallet connection cancelled.";
                 break;
             case TransferOwnershipService.State.WalletConnected:
+                EnableButtons(false);
                 statusTextLabel.text = "Wallet connection successful.";
                 break;
             case TransferOwnershipService.State.DeployingAccount:
+                EnableButtons(false);
                 statusTextLabel.text = "Deploying account...";
                 break;
             case TransferOwnershipService.State.RequestingMessage:
@@ -98,14 +101,15 @@ public class Configuration : MonoBehaviour
                 statusTextLabel.text = "Disconnecting...";
                 break;
             case TransferOwnershipService.State.Disconnected:
-                EnableButtons(true);
-                statusTextLabel.text = "Wallet disconnected. Please try again.";
-                
                 if (_loggingOut)
                 {
                     _loggingOut = false;
                     OnLoggedOut?.Invoke();
+                    return;
                 }
+                
+                EnableButtons(true);
+                statusTextLabel.text = "Wallet disconnected. Please try again.";
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(currentState), currentState, null);
@@ -131,7 +135,7 @@ public class Configuration : MonoBehaviour
         
         // Remove openfort session key
         var sessionKey = _openfortClient.LoadSessionKey();
-        if (sessionKey == null)
+        if (sessionKey != null)
         {
             _openfortClient.RemoveSessionKey();
         }
@@ -169,49 +173,56 @@ public class Configuration : MonoBehaviour
                     return;
                 }
 
-                if (string.IsNullOrEmpty(result.AccountInfo.PrivateInfo.Email))
-                {
-                    Debug.Log("Guest?");
-                    var customId = result.AccountInfo.CustomIdInfo.CustomId;
-                    
-                    if (string.IsNullOrEmpty(customId))
-                    {
-                        Debug.Log("No CustomID found.");
-                        return;
-                    }
-
-                    Debug.Log("Player is guest.");
-                    guestCustomId = customId;
-                    registerButton.gameObject.SetActive(true);
-                }
-                else
+                if (result.AccountInfo.PrivateInfo.Email != null ||
+                    result.AccountInfo.AppleAccountInfo != null ||
+                    result.AccountInfo.GooglePlayGamesInfo != null)
                 {
                     Debug.Log("Player is registered.");
                     
                     // IMPORTANT --> Check if player has a custodial account linked or it's self custodial.
                     PlayFabClientAPI.GetUserReadOnlyData(new GetUserDataRequest()
-                    {
-                        Keys = new List<string>() { "custodial" }
-                    },
-                    userDataResult => 
-                    {
-                        Debug.Log("Get user data successful");
-                        if (userDataResult.Data.ContainsKey("custodial"))
                         {
-                            Debug.Log("Player is custodial.");
-                            selfCustodyButton.gameObject.SetActive(true);
-                        }
-                        else
+                            Keys = new List<string>() { "custodial" }
+                        },
+                        userDataResult => 
                         {
-                            Debug.Log("Player is self-custodial.");
-                            recoveryButton.gameObject.SetActive(true);
-                        }
-                    },
-                    error => 
+                            Debug.Log("Get user data successful");
+                            if (userDataResult.Data.ContainsKey("custodial"))
+                            {
+                                Debug.Log("Player is custodial.");
+                                selfCustodyButton.gameObject.SetActive(true);
+                            }
+                            else
+                            {
+                                Debug.Log("Player is self-custodial.");
+                                recoveryButton.gameObject.SetActive(true);
+                            }
+                        },
+                        error => 
+                        {
+                            Debug.Log("Got error getting user data:");
+                            Debug.Log(error.GenerateErrorReport());
+                        });
+                }
+                else
+                {
+                    Debug.Log("Guest?");
+
+                    try
                     {
-                        Debug.Log("Got error getting user data:");
-                        Debug.Log(error.GenerateErrorReport());
-                    });
+                        var customId = result.AccountInfo.CustomIdInfo.CustomId;
+                        
+                        //TODO Atm Google also has a custom ID! CHANGE
+                        Debug.Log("Player is guest.");
+                        guestCustomId = customId;
+                        registerButton.gameObject.SetActive(true);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        Debug.Log("No CustomID found.");
+                        throw;
+                    }
                 }
             },
             error => 
