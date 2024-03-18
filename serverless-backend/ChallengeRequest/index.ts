@@ -36,7 +36,7 @@ const httpTrigger: AzureFunction = async function (
       status: 200,
       body: JSON.stringify({
         address: address,
-        chainId: chainId,
+        chainId: 4337, //BEAM
         message: "Message from Lost Dungeon's backend",
       }),
     };

@@ -19,7 +19,7 @@ public class LevelManager : MonoBehaviour
 
     private void Awake()
     {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
         joystick.SetActive(true);
 #endif
     }

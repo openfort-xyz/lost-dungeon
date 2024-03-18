@@ -21,7 +21,7 @@ public class LevelTrigger : MonoBehaviour
         }
         if (collision.CompareTag("Player"))
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
             EnterInteractionText.text = "Enter";
 #endif
             EnterInteraction.SetActive(true);

@@ -14,20 +14,7 @@ public class GooglePlayAuth : MonoBehaviour
 {
     public UnityEvent<string> OnGooglePlayAuthSuccess;
     public UnityEvent OnGooglePlayAuthError;
-
-    private void Start()
-    {
-        if (Application.platform == RuntimePlatform.Android)
-        {
-            Authenticate();
-        }
-        else
-        {
-            Debug.Log("Application.Platform is not Android. We go ahead with PlayFab standard login.");
-            OnGooglePlayAuthError?.Invoke();
-        }
-    }
-
+    
     public void Authenticate()
     {
         #if UNITY_ANDROID
