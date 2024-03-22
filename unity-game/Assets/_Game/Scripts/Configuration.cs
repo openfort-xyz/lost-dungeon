@@ -123,6 +123,8 @@ public class Configuration : MonoBehaviour
         // Clear "RememberMe" stored PlayerPrefs (Ideally just the ones related to login, but here we clear all)
         PlayerPrefs.DeleteKey(PPStaticData.RememberMeKey);
         PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
+        PlayerPrefs.DeleteKey(PPStaticData.AppleSubjectIdKey);
+        PlayerPrefs.DeleteKey(PPStaticData.GooglePlayGamesPlayerIdKey);
         PlayerPrefs.DeleteKey(PPStaticData.LastPlayerKey);
 
         // Clear all locally saved data related to the PlayFab session
