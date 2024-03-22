@@ -15,6 +15,7 @@ public class LoginSceneManager : MonoBehaviour
     [Header("PlayFab Auth Controllers")]
     public GoogleAuthController googleAuthController;
     public AppleAuthController appleAuthController;
+    public GooglePlayAuthController googlePlayAuthController;
     
     [Header("PlayFab")]
     // Settings for what data to get from playfab on login.
@@ -52,11 +53,9 @@ public class LoginSceneManager : MonoBehaviour
         PlayFabAuthControllerBase.OnLoginStarted += () => loginPanel.SetActive(false);
         
         //TODO Check if possible to change to PlayFabAuthControllerBase.On....
-        googleAuthController.OnLoginSuccess += OnLoginSuccess;
-        googleAuthController.OnRegisterSuccess += OnRegistrationSuccess;
-        googleAuthController.OnLoginFailure += OnLoginFailure;
-        appleAuthController.OnLoginSuccess += OnLoginSuccess;
-        appleAuthController.OnLoginFailure += OnLoginFailure;
+        PlayFabAuthControllerBase.OnLoginSuccess += OnLoginSuccess;
+        PlayFabAuthControllerBase.OnLoginFailure += OnLoginFailure;
+        PlayFabAuthControllerBase.OnRegisterSuccess += OnRegistrationSuccess;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess += OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure += OnCreateOpenfortPlayerFailure;
@@ -64,76 +63,77 @@ public class LoginSceneManager : MonoBehaviour
 
     private void OnDisable()
     {
-        googleAuthController.OnLoginSuccess -= OnLoginSuccess;
-        googleAuthController.OnRegisterSuccess -= OnRegistrationSuccess;
-        googleAuthController.OnLoginFailure -= OnLoginFailure;
-        appleAuthController.OnLoginSuccess -= OnLoginSuccess;
-        appleAuthController.OnLoginFailure -= OnLoginFailure;
+        PlayFabAuthControllerBase.OnLoginSuccess -= OnLoginSuccess;
+        PlayFabAuthControllerBase.OnLoginFailure -= OnLoginFailure;
+        PlayFabAuthControllerBase.OnRegisterSuccess -= OnRegistrationSuccess;
         
         AzureFunctionCaller.onCreateOpenfortPlayerSuccess -= OnCreateOpenfortPlayerSuccess;
         AzureFunctionCaller.onCreateOpenfortPlayerFailure -= OnCreateOpenfortPlayerFailure;
     }
 
     public void StartLogin()
-    {
+    { 
         loginPanel.SetActive(true);
 
-        if (Application.platform == RuntimePlatform.WindowsPlayer ||
-            Application.platform == RuntimePlatform.OSXPlayer ||
-            Application.platform == RuntimePlatform.LinuxPlayer)
+        if (Application.platform == RuntimePlatform.WindowsPlayer || 
+            Application.platform == RuntimePlatform.OSXPlayer || 
+            Application.platform == RuntimePlatform.LinuxPlayer) 
         {
             statusTextLabel.text = "Press Q to exit the game anytime.";
         }
-        
-        // Check if PlayerPrefs has a key for "RememberMe" and it's set to 1 (True)
+
         if (PlayerPrefs.GetInt(PPStaticData.RememberMeKey, 0) == 1)
         {
             loginPanel.SetActive(false);
+        
+            var customId = PlayerPrefs.GetString(PPStaticData.CustomIdKey, null);
+            var appleSubjectId = PlayerPrefs.GetString(PPStaticData.AppleSubjectIdKey, null);
+            var googlePlayId = PlayerPrefs.GetString(PPStaticData.GooglePlayGamesPlayerIdKey, null);
 
-            // Retrieve CustomID from PlayerPrefs (Secure this using encryption in a real-world application)
-            string storedCustomID = PlayerPrefs.GetString(PPStaticData.CustomIdKey, null);
-
-            // If CustomID exists
-            if (!string.IsNullOrEmpty(storedCustomID))
+            if (!string.IsNullOrEmpty(customId))
             {
-                statusTextLabel.text = $"Logging in as {storedCustomID}...";
-                
-                // Attempt to login using CustomID
-                LoginWithCustomIDRequest request = new LoginWithCustomIDRequest
-                {
-                    CustomId = storedCustomID,
-                    CreateAccount = false, // Set to false because this should already be an existing account
-                    InfoRequestParameters = new GetPlayerCombinedInfoRequestParams
-                    {
-                        GetUserReadOnlyData = true,
-                        UserReadOnlyDataKeys = null
-                    }
-                };
-
-                PlayFabClientAPI.LoginWithCustomID(request, DecideWhereToGoNext, error =>
-                {
-                    PlayerPrefs.DeleteAll();
-                    loginPanel.SetActive(true);
-                    statusTextLabel.text = "Automatic login failed.";
-                    Debug.Log("We couldn't log in using custom id");
-                });
+                LoginWithCustomId(customId);
+            }  
+            else if (!string.IsNullOrEmpty(appleSubjectId)) 
+            {
+                appleAuthController.Initialize();
+            } 
+            else if (!string.IsNullOrEmpty(googlePlayId)) 
+            {
+                googlePlayAuthController.Authenticate();
             }
+            else
+            {
+                Debug.LogError("No login preference found.");
+            }
+        }
+        else
+        {
+            Debug.Log("No RememberMe preference set.");
         }
     }
     
-    public void LoginUserWithGooglePlay(string googleAuthCode)
+    private void LoginWithCustomId(string customId)
     {
-        statusTextLabel.text = "Logging in with Google Play...";
+        statusTextLabel.text = $"Logging in as {customId}...";
         
-        var loginRequest = new LoginWithGooglePlayGamesServicesRequest()
+        LoginWithCustomIDRequest request = new LoginWithCustomIDRequest 
         {
-            TitleId = PlayFabSettings.TitleId,
-            ServerAuthCode = googleAuthCode,
-            CreateAccount = true,
-            InfoRequestParameters = infoRequestParams
+            CustomId = customId,
+            CreateAccount = false,
+            InfoRequestParameters = new GetPlayerCombinedInfoRequestParams
+            {
+                GetUserReadOnlyData = true,
+                UserReadOnlyDataKeys = null
+            }
         };
 
-        PlayFabClientAPI.LoginWithGooglePlayGamesServices(loginRequest, OnLoginWithGooglePlaySuccess, OnLoginFailure);
+        PlayFabClientAPI.LoginWithCustomID(request, DecideWhereToGoNext, error =>
+        {
+            PlayerPrefs.DeleteAll();
+            loginPanel.SetActive(true);
+            Debug.Log("A problem occurred while logging in using the custom ID");
+        });
     }
     
     private void Update()
@@ -225,53 +225,44 @@ public class LoginSceneManager : MonoBehaviour
     {
         Debug.LogFormat("Logged In as: {0}", result.PlayFabId);
         statusTextLabel.text = "Logged in as: " + result.PlayFabId;
-    
         // We get the CustomID we linked when we registered the user
         var request = new GetAccountInfoRequest();
         PlayFabClientAPI.GetAccountInfo(request, accountInfoResult =>
         {
             Debug.Log("Got account info");
-
-            // You can check if result.AccountInfo contains the CustomId field
-            if (accountInfoResult.AccountInfo != null && accountInfoResult.AccountInfo.CustomIdInfo.CustomId != null)
+            // Checking and saving the accounts IDs
+            string accountId = accountInfoResult.AccountInfo.CustomIdInfo?.CustomId;
+            if(accountId != null) 
             {
-                string customId = accountInfoResult.AccountInfo.CustomIdInfo.CustomId;
-                Debug.Log("Custom ID found: " + customId);
-
-                // If "Remember Me" is checked, save this custom ID locally (securely)
-                if (rememberMeToggle.isOn)
+                SaveAccountInfo(accountId, PPStaticData.CustomIdKey, "Email account Custom ID");
+            } 
+            else 
+            {
+                accountId = accountInfoResult.AccountInfo.AppleAccountInfo?.AppleSubjectId;
+                if(accountId != null) 
                 {
-                    PlayerPrefs.SetString(PPStaticData.CustomIdKey, customId);  // TODO Secure this using encryption in a real-world application
-                    PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 1);
-            
-                    Debug.Log("Added user CustomID to PlayerPrefs");
-                }
-                else
+                    SaveAccountInfo(accountId, PPStaticData.AppleSubjectIdKey, "Apple account Custom ID");
+                } 
+                else 
                 {
-                    PlayerPrefs.DeleteKey(PPStaticData.CustomIdKey);
-                    PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 0);
-                    Debug.Log("Custom ID not saved");
+                    accountId = accountInfoResult.AccountInfo.GooglePlayGamesInfo?.GooglePlayGamesPlayerId;
+                    if(accountId != null) 
+                    {
+                        SaveAccountInfo(accountId, PPStaticData.GooglePlayGamesPlayerIdKey, "GooglePlayGames account Custom ID");
+                    } 
+                    else 
+                    {
+                        Debug.Log("Account ID not found in any account.");
+                    }
                 }
             }
-            else
-            {
-                Debug.Log("Custom ID not found.");
-            }
+            // Call DecideWhereToGoNext() after the GetAccountInfo() operation completes
+            DecideWhereToGoNext(result);
         }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
             statusTextLabel.text = "Error: " + error.GenerateErrorReport();
         });
-
-        DecideWhereToGoNext(result);
-    }
-    
-    private void OnLoginWithGooglePlaySuccess(LoginResult result)
-    {
-        Debug.LogFormat("Logged In as: {0}", result.PlayFabId);
-
-        statusTextLabel.text = "Logged in as: " + result.PlayFabId;
-        DecideWhereToGoNext(result);
     }
 
     private void OnRegistrationSuccess(RegisterPlayFabUserResult result)
@@ -499,6 +490,24 @@ public class LoginSceneManager : MonoBehaviour
     {
         AzureFunctionCaller.CreateOpenfortPlayer();
         statusTextLabel.text = "Creating an Openfort Player...";
+    }
+    
+    private void SaveAccountInfo(string accountId, string playerPrefsKey, string debugMessage)
+    {
+        Debug.Log(debugMessage + " found: " + accountId);
+        // If "Remember Me" is checked, save this account ID locally
+        if (rememberMeToggle.isOn)
+        {
+            PlayerPrefs.SetString(playerPrefsKey, accountId);
+            PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 1);
+            Debug.Log("Added user " + debugMessage + " to PlayerPrefs");
+        }
+        else
+        {
+            PlayerPrefs.DeleteKey(playerPrefsKey);
+            PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 0);
+            Debug.Log(debugMessage + " not saved");
+        }
     }
 
     private void DecideWhereToGoNext(LoginResult result)

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using PlayFab;
+using PlayFab.ClientModels;
 #if UNITY_ANDROID
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
@@ -10,7 +12,7 @@ using GooglePlayGames.BasicApi;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class GooglePlayAuth : MonoBehaviour
+public class GooglePlayAuthController : PlayFabAuthControllerBase
 {
     public UnityEvent<string> OnGooglePlayAuthSuccess;
     public UnityEvent OnGooglePlayAuthError;
@@ -28,7 +30,7 @@ public class GooglePlayAuth : MonoBehaviour
                 PlayGamesPlatform.Instance.RequestServerSideAccess(true, authCode =>
                 {
                     Debug.Log($"Auth code is {authCode}");
-                    OnGooglePlayAuthSuccess?.Invoke(authCode);
+                    LoginUserWithGooglePlay(authCode);
                 });
             }
             else 
@@ -41,5 +43,18 @@ public class GooglePlayAuth : MonoBehaviour
         #else
         Debug.Log("Google Play Games SDK only works on Android devices. Please build your app to an Android device.");
         #endif
+    }
+    
+    private void LoginUserWithGooglePlay(string googleAuthCode)
+    {
+        var loginRequest = new LoginWithGooglePlayGamesServicesRequest()
+        {
+            TitleId = PlayFabSettings.TitleId,
+            ServerAuthCode = googleAuthCode,
+            CreateAccount = true,
+            InfoRequestParameters = playerCombinedInfoRequestParams
+        };
+
+        PlayFabClientAPI.LoginWithGooglePlayGamesServices(loginRequest, RaiseLoginSuccess, RaiseLoginFailure);
     }
 }

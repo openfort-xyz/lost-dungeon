@@ -10,9 +10,9 @@ public abstract class PlayFabAuthControllerBase : MonoBehaviour
     protected GetPlayerCombinedInfoRequestParams PlayerCombinedInfoRequestParams => playerCombinedInfoRequestParams;
 
     public static event Action OnLoginStarted;
-    public event Action<LoginResult> OnLoginSuccess;
-    public event Action<PlayFabError> OnLoginFailure;
-    public event Action<RegisterPlayFabUserResult> OnRegisterSuccess;
+    public static event Action<LoginResult> OnLoginSuccess;
+    public static event Action<PlayFabError> OnLoginFailure;
+    public static event Action<RegisterPlayFabUserResult> OnRegisterSuccess;
 
     protected void RaiseLoginStarted()
     {
