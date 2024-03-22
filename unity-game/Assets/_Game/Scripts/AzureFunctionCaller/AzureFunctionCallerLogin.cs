@@ -17,11 +17,14 @@ public static partial class AzureFunctionCaller
     public static Action<string> onChallengeRequestSuccess;
     public static Action onChallengeVerifySuccess;
     public static Action<string> onRegisterSessionSuccess;
+    public static Action<Transaction, bool> onFindSessionRegistrationSuccess;
     public static Action<string> onCompleteWeb3AuthSuccess;
     public static Action<OpenfortPlayerResponse> onCreateOpenfortPlayerSuccess;
 
     public static Action onCreateOpenfortPlayerFailure;
     public static Action<PlayFabError> onRegisterSessionFailure;
+    public static Action<PlayFabError> onFindSessionRegistrationFailure;
+    
     // Any Request failure
     public static Action onRequestFailure;
 
@@ -90,6 +93,22 @@ public static partial class AzureFunctionCaller
         };
         
         PlayFabCloudScriptAPI.ExecuteFunction(request, OnRegisterSessionSuccess, OnRegisterSessionFailure);
+    }
+    
+    public static void FindSessionRegistration()
+    {
+        var request = new ExecuteFunctionRequest()
+        {
+            Entity = new PlayFab.CloudScriptModels.EntityKey()
+            {
+                Id = PlayFabSettings.staticPlayer.EntityId,
+                Type = PlayFabSettings.staticPlayer.EntityType,
+            },
+            FunctionName = "FindSessionRegistration",
+            GeneratePlayStreamEvent = true
+        };
+        
+        PlayFabCloudScriptAPI.ExecuteFunction(request, OnFindSessionRegistrationSuccess, OnFindSessionRegistrationFailure);
     }
 
     public static void CompleteWeb3Auth(string ownerAddress)
@@ -164,6 +183,30 @@ public static partial class AzureFunctionCaller
         onRegisterSessionSuccess?.Invoke(result.FunctionResult.ToString());
     }
     
+    private static void OnFindSessionRegistrationSuccess(ExecuteFunctionResult result)
+    {
+        if (!IsFunctionResultValid(result)) return;
+        
+        var tx = JsonUtility.FromJson<Transaction>(result.FunctionResult.ToString());
+
+        // Check if deserialization was successful
+        if (tx == null)
+        {
+            Debug.Log("Failed to parse JSON");
+            onRequestFailure?.Invoke();
+            return;
+        }
+        
+        if (!string.IsNullOrEmpty(tx.userOpHash))
+        {
+            onFindSessionRegistrationSuccess?.Invoke(tx, true);
+        }
+        else
+        {
+            onFindSessionRegistrationSuccess?.Invoke(tx, false);
+        }
+    }
+    
     private static void OnCompleteWeb3AuthSuccess(ExecuteFunctionResult result)
     {
         if (!IsFunctionResultValid(result)) return;
@@ -203,6 +246,12 @@ public static partial class AzureFunctionCaller
     {
         Debug.Log($"Oops, something went wrong: {error.GenerateErrorReport()}");
         onRegisterSessionFailure?.Invoke(error);
+    }
+    
+    private static void OnFindSessionRegistrationFailure(PlayFabError error)
+    {
+        Debug.Log($"Oops, something went wrong: {error.GenerateErrorReport()}");
+        onFindSessionRegistrationFailure?.Invoke(error);
     }
     
     // Almost all AzureFunctionCaller partial classes use this.
