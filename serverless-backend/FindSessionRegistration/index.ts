@@ -66,10 +66,10 @@ const httpTrigger: AzureFunction = async function (
         return;
       });
 
-    if (!sessions || sessions.data.length === 0) return;
-
+    if (!sessions) return;
+    context.log(sessions.data)
     let userOpHash;
-    if (sessions.data[0].nextAction) {
+    if (sessions.data.length > 0 && sessions.data[0].nextAction) {
       userOpHash =
       sessions.data[0].nextAction.payload.userOperationHash
     } else {
@@ -80,7 +80,7 @@ const httpTrigger: AzureFunction = async function (
     context.res = {
       status: 200,
       body: JSON.stringify({
-        id: sessions.data[0].id,
+        id: sessions.data[0]?.id,
         userOpHash: userOpHash,
       }),
     };
