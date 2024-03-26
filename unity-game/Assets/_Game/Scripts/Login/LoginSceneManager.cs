@@ -502,12 +502,6 @@ public class LoginSceneManager : MonoBehaviour
             PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 1);
             Debug.Log("Added user " + debugMessage + " to PlayerPrefs");
         }
-        else
-        {
-            PlayerPrefs.DeleteKey(playerPrefsKey);
-            PlayerPrefs.SetInt(PPStaticData.RememberMeKey, 0);
-            Debug.Log(debugMessage + " not saved");
-        }
     }
 
     private void DecideWhereToGoNext(LoginResult result)
