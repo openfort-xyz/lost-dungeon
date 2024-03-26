@@ -84,7 +84,6 @@ public class GoogleAuthController : PlayFabAuthControllerBase
         
         // Use the hashed token to log in with PlayFab
         LoginWithPlayFab(authData.customID, authData.email);
-        RaiseLoginStarted();
     }
     #endregion
 
@@ -114,6 +113,7 @@ public class GoogleAuthController : PlayFabAuthControllerBase
                 RaiseLoginFailure(error);
             }
         });
+        RaiseLoginStarted();
     }
     
     private void RegisterPlayFabUser(string email, string customId)

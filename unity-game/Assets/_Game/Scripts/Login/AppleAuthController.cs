@@ -172,5 +172,6 @@ public class AppleAuthController : PlayFabAuthControllerBase
             InfoRequestParameters = playerCombinedInfoRequestParams
         };
         PlayFabClientAPI.LoginWithApple(request, RaiseLoginSuccess, RaiseLoginFailure);
+        RaiseLoginStarted();
     }
 }
