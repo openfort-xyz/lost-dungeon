@@ -56,5 +56,6 @@ public class GooglePlayAuthController : PlayFabAuthControllerBase
         };
 
         PlayFabClientAPI.LoginWithGooglePlayGamesServices(loginRequest, RaiseLoginSuccess, RaiseLoginFailure);
+        RaiseLoginStarted();
     }
 }
