@@ -26,7 +26,7 @@ public class Configuration : MonoBehaviour
 
     private PlayFabAuthService _AuthService = PlayFabAuthService.Instance;
     
-    private OpenfortClient _openfortClient;
+    private OpenfortSDK _openfort;
     private bool _loggingOut = false;
 
     [HideInInspector] public string guestCustomId;
@@ -34,7 +34,7 @@ public class Configuration : MonoBehaviour
     public void Start()
     {
         // Get Openfort client with publishable key.
-        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
+        _openfort = new OpenfortSDK(OFStaticData.PublishableKey);
     }
 
     private void OnEnable()
@@ -135,12 +135,8 @@ public class Configuration : MonoBehaviour
         _AuthService.Password = string.Empty;
         _AuthService.AuthTicket = string.Empty;
         
-        // Remove openfort session key
-        var sessionKey = _openfortClient.LoadSessionKey();
-        if (sessionKey != null)
-        {
-            _openfortClient.RemoveSessionKey();
-        }
+        //TODO-EMB
+        // We removed session key here. Should we do anything related to session keys?
         
         // Logout from Web3
         transferOwnershipService.Disconnect();

@@ -53,7 +53,7 @@ public class Web3AuthService : MonoBehaviour
     private string _currentAddress;
     private int? _currentChainId;
     
-    private OpenfortClient _openfort;
+    private OpenfortSDK _openfort;
 
     [HideInInspector] public bool authCompletedOnce;
 
@@ -109,7 +109,7 @@ public class Web3AuthService : MonoBehaviour
 
     private void Start()
     {
-        _openfort = new OpenfortClient(OFStaticData.PublishableKey);
+        _openfort = new OpenfortSDK(OFStaticData.PublishableKey);
     }
     #endregion
 
@@ -333,12 +333,15 @@ public class Web3AuthService : MonoBehaviour
         else
         {
             Debug.Log("RegisterSession failed.");
+            //TODO-EMB
+            /*
             // Remove the session key if we have failed during registering a new session
             var sessionKey = _openfort.LoadSessionKey();
             if (sessionKey == null)
             {
                 _openfort.RemoveSessionKey();
             }
+            */
 
             Disconnect();
         }
@@ -393,12 +396,15 @@ public class Web3AuthService : MonoBehaviour
     private void OnFindRegisterSessionIntentFailure(PlayFabError error)
     {
         Debug.LogError(error.ErrorMessage);
+        //TODO-EMB
+        /*
         // Remove the session key if we have failed during registering a new session
         var sessionKey = _openfort.LoadSessionKey();
         if (sessionKey == null)
         {
             _openfort.RemoveSessionKey();
         }
+        */
 
         Disconnect();
     }
@@ -442,6 +448,8 @@ public class Web3AuthService : MonoBehaviour
     {
         ChangeState(State.RegisteringSession);
 
+        //TODO-EMB
+        /*
         // IMPORTANT Clear current session key if existent
         var loadedSessionKey = _openfort.LoadSessionKey();
         if (loadedSessionKey != null)
@@ -462,6 +470,7 @@ public class Web3AuthService : MonoBehaviour
 
         // Register session
         AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
+        */
     }
 
     private async UniTask<bool> CheckIfCorrectAccount()
