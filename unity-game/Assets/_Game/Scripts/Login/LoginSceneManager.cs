@@ -194,15 +194,20 @@ public class LoginSceneManager : MonoBehaviour
             CustomId = customID,  // The unique ID you've generated
             ForceLink = false // Set to true to overwrite any existing account with this Custom ID
         };
-        PlayFabClientAPI.LinkCustomID(linkCustomIDRequest, requestResponse =>
+
+        async void ResultCallback(LinkCustomIDResult requestResponse)
         {
             Debug.Log("Successfully linked custom ID to the currently logged-in user");
-            
+
             //TODO-EMB
-            // Before it went to connect panel
-            // Create embedded account?
+            // Create embedded account
+            await OpenfortController.Instance.AuthenticateWithOAuth(result.SessionTicket);
+            Debug.Log("Embedded account created");
             
-        }, error =>
+            LoadMenuScene();
+        }
+
+        PlayFabClientAPI.LinkCustomID(linkCustomIDRequest, ResultCallback, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
             Debug.Log("We couldn't link a custom ID to the user");
@@ -398,7 +403,7 @@ public class LoginSceneManager : MonoBehaviour
         }
     }
 
-    private void DecideWhereToGoNext(LoginResult result)
+    private async void DecideWhereToGoNext(LoginResult result)
     {
         loginPanel.SetActive(false);
 
@@ -440,6 +445,10 @@ public class LoginSceneManager : MonoBehaviour
         {
             //TODO-EMB
             // Create embedded account
+            await OpenfortController.Instance.AuthenticateWithOAuth(result.SessionTicket);
+            Debug.Log("Embedded account created");
+            
+            LoadMenuScene();
         }
     }
 
