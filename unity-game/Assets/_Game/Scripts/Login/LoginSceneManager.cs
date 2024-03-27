@@ -31,14 +31,8 @@ public class LoginSceneManager : MonoBehaviour
     [Header("General")]
     public Text statusTextLabel;
     
-    // OPENFORT
-    private OpenfortClient _openfortClient;
-
     private void Start()
     {
-        // Get Openfort client with publishable key.
-        _openfortClient = new OpenfortClient(OFStaticData.PublishableKey);
-        
         StartLogin();
     }
 
