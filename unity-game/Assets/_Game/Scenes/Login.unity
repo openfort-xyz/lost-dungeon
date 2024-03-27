@@ -4340,67 +4340,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1201353152}
   m_CullTransparentMesh: 1
---- !u!1 &1204259164
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1204259166}
-  - component: {fileID: 1204259165}
-  m_Layer: 0
-  m_Name: Web3AuthService
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1204259165
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1204259164}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b77cd591d44ef4c73b6cca8692a21959, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  currentState: 0
-  onStateChanged:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1672366811}
-        m_TargetAssemblyTypeName: LoginSceneManager, Assembly-CSharp
-        m_MethodName: OnWeb3AuthStateChanged
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  authCompletedOnce: 0
---- !u!4 &1204259166
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1204259164}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1247163041
 GameObject:
   m_ObjectHideFlags: 0
@@ -5339,7 +5278,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6f49b14db16a7646a95ea75693c3116, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  web3AuthService: {fileID: 1204259165}
   googleAuthController: {fileID: 1425921588}
   appleAuthController: {fileID: 177399812}
   googlePlayAuthController: {fileID: 1556676548}
@@ -5382,7 +5320,6 @@ MonoBehaviour:
   rememberMeToggle: {fileID: 1560826939}
   registerPanel: {fileID: 1760847816}
   confirmPassword: {fileID: 466215805}
-  connectWalletPanel: {fileID: 281501652}
   statusTextLabel: {fileID: 2120360421}
 --- !u!1 &1704052925
 GameObject:
