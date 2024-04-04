@@ -1,3 +1,4 @@
+using Clients;
 using Cysharp.Threading.Tasks;
 using Openfort;
 using Openfort.Model;
@@ -30,15 +31,22 @@ public class OpenfortController: MonoBehaviour
     
         _openfort = new OpenfortSDK(OFStaticData.PublishableKey); 
         _oauthAccessToken = await _openfort.AuthenticateWithOAuth(OAuthProvider.Playfab, idToken, TokenType.IdToken);
+        
+        var auth = new Shield.OpenfortAuthOptions
+        {
+            authProvider = Shield.ShieldAuthProvider.Openfort,
+            openfortOAuthToken = _oauthAccessToken,
+        };
+        
         Debug.Log("Access Token: " + _oauthAccessToken);
         
         try
         {
-            _openfort.ConfigureEmbeddedSigner(4337);
+            await _openfort.ConfigureEmbeddedSigner(80001, auth);
         }
         catch (MissingRecoveryMethod)
         {
-            await _openfort.ConfigureEmbeddedRecovery(new PasswordRecovery("secret"));
+            await _openfort.ConfigureEmbeddedSignerRecovery(4337, auth, "secret");
         }
     }
 }
