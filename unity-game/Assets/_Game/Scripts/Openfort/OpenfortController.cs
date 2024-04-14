@@ -1,8 +1,8 @@
+using System;
 using Clients;
 using Cysharp.Threading.Tasks;
 using Openfort;
 using Openfort.Model;
-using Openfort.Recovery;
 using UnityEngine;
 
 public class OpenfortController: MonoBehaviour
@@ -28,25 +28,28 @@ public class OpenfortController: MonoBehaviour
     public async UniTask AuthenticateWithOAuth(string idToken)
     {
         Debug.Log("PlayFab session ticket: " + idToken);
-    
-        _openfort = new OpenfortSDK(OFStaticData.PublishableKey); 
-        _oauthAccessToken = await _openfort.AuthenticateWithOAuth(OAuthProvider.Playfab, idToken, TokenType.IdToken);
-        
-        var auth = new Shield.OpenfortAuthOptions
-        {
-            authProvider = Shield.ShieldAuthProvider.Openfort,
-            openfortOAuthToken = _oauthAccessToken,
-        };
-        
-        Debug.Log("Access Token: " + _oauthAccessToken);
+
+        var authOptions = new Shield.ShieldAuthOptions();
         
         try
         {
-            await _openfort.ConfigureEmbeddedSigner(80001, auth);
+            _openfort = new OpenfortSDK(OFStaticData.PublishableKey);
+            var authResponse = await _openfort.AuthenticateWithOAuth(OAuthProvider.Playfab, idToken, TokenType.IdToken);
+            _oauthAccessToken = authResponse.Token;
+
+            Debug.Log(_oauthAccessToken);
+
+            authOptions = new Shield.OpenfortAuthOptions
+            {
+                authProvider = Shield.ShieldAuthProvider.Openfort,
+                openfortOAuthToken = _oauthAccessToken
+            };
+
+            await _openfort.ConfigureEmbeddedSigner(4337, authOptions);
         }
-        catch (MissingRecoveryMethod)
+        catch (MissingRecoveryPassword)
         {
-            await _openfort.ConfigureEmbeddedSignerRecovery(4337, auth, "secret");
+            await _openfort.ConfigureEmbeddedSignerRecovery(4337, authOptions, "secret");
         }
     }
 }
