@@ -30,17 +30,19 @@ namespace Openfort
         private readonly string _openfortURL;
         private readonly string _shieldAPIKey;
         private readonly string _shieldURL;
+        private readonly string _encryptionShare;
         private readonly OpenfortAuth _openfortAuth;
         private readonly IStorage _storage;
         private readonly SessionsApi _sessionApi;
         private readonly TransactionIntentsApi _transactionIntentsApi;
 
-        public OpenfortSDK(string publishableKey, string shieldAPIKey = null, string openfortURL = "https://api.openfort.xyz", string shieldURL = "https://shield.openfort.xyz")
+        public OpenfortSDK(string publishableKey, string shieldAPIKey = null, string encryptionShare = null, string openfortURL = "https://api.openfort.xyz", string shieldURL = "https://shield.openfort.xyz")
         {
             _publishableKey = publishableKey;
             _openfortURL = openfortURL;
             _shieldAPIKey = shieldAPIKey;
             _shieldURL = shieldURL;
+            _encryptionShare = encryptionShare;
             _storage = new PlayerPreferencesStorage();
             _openfortAuth = new OpenfortAuth(publishableKey);
             var configuration = new Configuration(
@@ -52,7 +54,7 @@ namespace Openfort
             _transactionIntentsApi = new TransactionIntentsApi(configuration);
 
         }
-        
+
         public string PlayerID => _storage.Get(Keys.PlayerId);
 
         public SessionKey ConfigureSessionKey()
@@ -85,7 +87,7 @@ namespace Openfort
                 throw new NotLoggedIn("Must be logged in to configure embedded signer");
             }
 
-            var signer = new EmbeddedSigner(chainId, _publishableKey, _storage, _shieldAPIKey, _openfortURL, _shieldURL);
+            var signer = new EmbeddedSigner(chainId, _publishableKey, _storage, _shieldAPIKey, _encryptionShare,_openfortURL, _shieldURL);
             try
             {
                 await signer.EnsureEmbeddedAccount(auth: auth);
@@ -102,7 +104,7 @@ namespace Openfort
                         throw;
                 }
             }
-            
+
             _signer = signer;
         }
 
@@ -113,7 +115,7 @@ namespace Openfort
                 throw new NotLoggedIn("Must be logged in to configure embedded signer");
             }
 
-            var signer = new EmbeddedSigner(chainId, _publishableKey, _storage, _shieldAPIKey, _openfortURL, _shieldURL);
+            var signer = new EmbeddedSigner(chainId, _publishableKey, _storage, _shieldAPIKey, _encryptionShare, _openfortURL, _shieldURL);
             try
             {
                 await signer.EnsureEmbeddedAccount(recoveryPassword, auth);
@@ -124,13 +126,13 @@ namespace Openfort
                 {
                     throw new EmbeddedNotConfigured("Recovery not configured");
                 }
-                
+
                 throw;
             }
-            
+
             _signer = signer;
         }
-        
+
         public async Task AuthenticateWithThirdPartyProvider(string provider, string token, TokenType tokenType)
         {
             var tokenTypeStr = tokenType switch
@@ -146,18 +148,20 @@ namespace Openfort
             _storage.Set(Keys.ThirdPartyTokenType, tokenType.ToString());
         }
 
-        public async Task<string> LoginWithEmailPassword(string email, string password)
+        public async Task<AuthResponse> LoginWithEmailPassword(string email, string password)
         {
-            var auth = await _openfortAuth.LoginEmailPassword(email, password);
-            StoreCredentials(auth);
-            return auth.Token;
+            var response = await _openfortAuth.LoginEmailPassword(email, password);
+            var authentication = new Authentication { Token = response.Token, RefreshToken = response.RefreshToken, PlayerId = response.Player.Id };
+            StoreCredentials(authentication);
+            return response;
         }
 
-        public async Task<string> SignUpWithEmailPassword(string email, string password, string name = null)
+        public async Task<AuthResponse> SignUpWithEmailPassword(string email, string password, string name = null)
         {
-            var auth = await _openfortAuth.SignupEmailPassword(email, password, name);
-            StoreCredentials(auth);
-            return auth.Token;
+            var response = await _openfortAuth.SignupEmailPassword(email, password, name);
+            var authentication = new Authentication { Token = response.Token, RefreshToken = response.RefreshToken, PlayerId = response.Player.Id };
+            StoreCredentials(authentication);
+            return response;
         }
 
         public async Task<OAuthInitResponse> InitOAuth(OAuthProvider provider, OAuthInitRequestOptions options = default(OAuthInitRequestOptions))
@@ -165,11 +169,12 @@ namespace Openfort
             return await _openfortAuth.InitOAuth(provider, options: options);
         }
 
-        public async Task<string> AuthenticateWithOAuth(OAuthProvider provider, string key, TokenType tokenType)
+        public async Task<AuthResponse> AuthenticateWithOAuth(OAuthProvider provider, string key, TokenType tokenType)
         {
-            var auth = await _openfortAuth.AuthenticateOAuth(provider, key, tokenType);
-            StoreCredentials(auth);
-            return auth.Token;
+            var response = await _openfortAuth.AuthenticateOAuth(provider, key, tokenType);
+            var authentication = new Authentication { Token = response.Token, RefreshToken = response.RefreshToken, PlayerId = response.Player.Id };
+            StoreCredentials(authentication);
+            return response;
         }
 
         public async Task<SIWEInitResponse> InitOAuth(string address)
@@ -177,11 +182,12 @@ namespace Openfort
             return await _openfortAuth.InitSIWE(address);
         }
 
-        public async Task<string> AuthenticateWithSIWE(string signature, string message, string walletClientType, string connectorType)
+        public async Task<AuthResponse> AuthenticateWithSIWE(string signature, string message, string walletClientType, string connectorType)
         {
-            var auth = await _openfortAuth.AuthenticateSIWE(signature, message, walletClientType, connectorType);
-            StoreCredentials(auth);
-            return auth.Token;
+            var response = await _openfortAuth.AuthenticateSIWE(signature, message, walletClientType, connectorType);
+            var authentication = new Authentication { Token = response.Token, RefreshToken = response.RefreshToken, PlayerId = response.Player.Id };
+            StoreCredentials(authentication);
+            return response;
         }
 
         private void StoreCredentials(Authentication authentication)
@@ -233,9 +239,15 @@ namespace Openfort
 
         public async Task Logout()
         {
-            if (CredentialsProvided())
+            if (CredentialsProvided() && !string.IsNullOrEmpty(_storage.Get(Keys.RefreshToken)))
             {
-                await _openfortAuth.Logout(_storage.Get(Keys.AuthToken), _storage.Get(Keys.RefreshToken));
+                try
+                {
+                    await _openfortAuth.Logout(_storage.Get(Keys.AuthToken), _storage.Get(Keys.RefreshToken));
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
             _signer.Logout();
             _storage.Delete(Keys.AuthToken);
@@ -279,7 +291,7 @@ namespace Openfort
             }
             var accessToken = _storage.Get(Keys.AuthToken);
             var refreshToken = _storage.Get(Keys.RefreshToken);
-            
+
             if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
             {
                 return;
