@@ -53,7 +53,7 @@ public class Web3AuthService : MonoBehaviour
     private string _currentAddress;
     private int? _currentChainId;
     
-    private OpenfortClient _openfort;
+    private OpenfortSDK _openfort;
 
     [HideInInspector] public bool authCompletedOnce;
 
@@ -81,8 +81,10 @@ public class Web3AuthService : MonoBehaviour
         AzureFunctionCaller.onChallengeRequestSuccess += OnChallengeRequestSuccess;
         AzureFunctionCaller.onChallengeVerifySuccess += OnChallengeVerifySuccess;
         AzureFunctionCaller.onRegisterSessionSuccess += OnRegisterSessionSuccess;
+        AzureFunctionCaller.onFindSessionRegistrationSuccess += OnFindRegisterSessionIntentSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess += OnCompleteWeb3AuthSuccess;
         AzureFunctionCaller.onRegisterSessionFailure += OnRegisterSessionFailure;
+        AzureFunctionCaller.onFindSessionRegistrationFailure += OnFindRegisterSessionIntentFailure;
         AzureFunctionCaller.onRequestFailure += OnAnyRequestFailure;
     }
 
@@ -98,14 +100,16 @@ public class Web3AuthService : MonoBehaviour
         AzureFunctionCaller.onChallengeRequestSuccess -= OnChallengeRequestSuccess;
         AzureFunctionCaller.onChallengeVerifySuccess -= OnChallengeVerifySuccess;
         AzureFunctionCaller.onRegisterSessionSuccess -= OnRegisterSessionSuccess;
+        AzureFunctionCaller.onFindSessionRegistrationSuccess -= OnFindRegisterSessionIntentSuccess;
         AzureFunctionCaller.onCompleteWeb3AuthSuccess -= OnCompleteWeb3AuthSuccess;
         AzureFunctionCaller.onRegisterSessionFailure -= OnRegisterSessionFailure;
+        AzureFunctionCaller.onFindSessionRegistrationFailure -= OnFindRegisterSessionIntentFailure;
         AzureFunctionCaller.onRequestFailure -= OnAnyRequestFailure;
     }
 
     private void Start()
     {
-        _openfort = new OpenfortClient(OFStaticData.PublishableKey);
+        _openfort = new OpenfortSDK(OFStaticData.PublishableKey);
     }
     #endregion
 
@@ -312,6 +316,10 @@ public class Web3AuthService : MonoBehaviour
             //TODO we should retry the registration of the sessionKey
             // Timeout means most probably succeeded.
             Debug.Log("RegisterSession timeout.");
+            
+            AzureFunctionCaller.FindSessionRegistration();
+            /*
+            //AzureFunctionCaller.FindTransactionIntent();
             // Remove the session key if we have failed during registering a new session
             var sessionKey = _openfort.LoadSessionKey();
             if (sessionKey == null)
@@ -320,19 +328,85 @@ public class Web3AuthService : MonoBehaviour
             }
 
             Disconnect();
+            */
         }
         else
         {
             Debug.Log("RegisterSession failed.");
+            //TODO-EMB
+            /*
             // Remove the session key if we have failed during registering a new session
             var sessionKey = _openfort.LoadSessionKey();
             if (sessionKey == null)
             {
                 _openfort.RemoveSessionKey();
             }
+            */
 
             Disconnect();
         }
+    }
+    
+    private async void OnFindRegisterSessionIntentSuccess(Transaction tx, bool completed)
+    {
+        if (completed)
+        {
+            string signature;
+
+            try
+            {
+                _currentAddress = await _walletConnectorKit.GetConnectedAddress();
+                signature = await _walletConnectorKit.Sign(tx.userOpHash, _currentAddress);
+        
+                if (string.IsNullOrEmpty(signature))
+                {
+                    Debug.Log("Signature failed.");
+                    Disconnect();
+                    return;
+                }
+            
+                ChangeState(State.SessionSigned);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Disconnect();
+                throw;
+            }
+
+            try
+            {
+                await _openfort.SendSignatureSessionRequest(tx.id, signature); // tx.id is the session id, check azure response
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Disconnect();
+                throw;
+            }
+        
+            AzureFunctionCaller.CompleteWeb3Auth(_currentAddress);
+        }
+        else
+        {
+            AzureFunctionCaller.FindSessionRegistration();
+        }
+    }
+    
+    private void OnFindRegisterSessionIntentFailure(PlayFabError error)
+    {
+        Debug.LogError(error.ErrorMessage);
+        //TODO-EMB
+        /*
+        // Remove the session key if we have failed during registering a new session
+        var sessionKey = _openfort.LoadSessionKey();
+        if (sessionKey == null)
+        {
+            _openfort.RemoveSessionKey();
+        }
+        */
+
+        Disconnect();
     }
 
     private void OnCompleteWeb3AuthSuccess(string result)
@@ -374,6 +448,8 @@ public class Web3AuthService : MonoBehaviour
     {
         ChangeState(State.RegisteringSession);
 
+        //TODO-EMB
+        /*
         // IMPORTANT Clear current session key if existent
         var loadedSessionKey = _openfort.LoadSessionKey();
         if (loadedSessionKey != null)
@@ -394,6 +470,7 @@ public class Web3AuthService : MonoBehaviour
 
         // Register session
         AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
+        */
     }
 
     private async UniTask<bool> CheckIfCorrectAccount()

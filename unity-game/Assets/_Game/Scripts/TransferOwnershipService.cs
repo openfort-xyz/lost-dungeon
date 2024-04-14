@@ -58,7 +58,7 @@ public class TransferOwnershipService : MonoBehaviour
     private string _currentWalletAddress;
     private int? _currentChainId;
     
-    private OpenfortClient _openfort;
+    private OpenfortSDK _openfort;
     
     #region UNITY_LIFECYCLE
     private void Awake() {
@@ -106,7 +106,7 @@ public class TransferOwnershipService : MonoBehaviour
 
     private void Start()
     {
-        _openfort = new OpenfortClient(OFStaticData.PublishableKey);
+        _openfort = new OpenfortSDK(OFStaticData.PublishableKey);
     }
     #endregion
 
@@ -226,6 +226,8 @@ public class TransferOwnershipService : MonoBehaviour
     {
         ChangeState(State.RegisteringSession);
 
+        //TODO-EMB
+        /*
         // IMPORTANT Clear current session key if existent
         var loadedSessionKey = _openfort.LoadSessionKey();
         if (loadedSessionKey != null)
@@ -246,6 +248,7 @@ public class TransferOwnershipService : MonoBehaviour
 
         // Register session
         AzureFunctionCaller.RegisterSession(sessionKey.Address, OFStaticData.OFplayerValue); //OFplayer was saved during login
+        */
     }
 
     public void Disconnect()
@@ -405,24 +408,31 @@ public class TransferOwnershipService : MonoBehaviour
             //TODO we should retry the registration of the sessionKey
             // Timeout means most probably succeeded.
             Debug.Log("RegisterSession timeout.");
+            
+            //TODO-EMB
+            /*
             // Remove the session key if we have failed during registering a new session
             var sessionKey = _openfort.LoadSessionKey();
             if (sessionKey == null)
             {
                 _openfort.RemoveSessionKey();
             }
+            */
 
             Disconnect();
         }
         else
         {
             Debug.Log("RegisterSession failed.");
+            //TODO-EMB
+            /*
             // Remove the session key if we have failed during registering a new session
             var sessionKey = _openfort.LoadSessionKey();
             if (sessionKey == null)
             {
                 _openfort.RemoveSessionKey();
             }
+            */
 
             Disconnect();
         }

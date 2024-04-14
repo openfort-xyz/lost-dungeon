@@ -29,13 +29,13 @@ public class Shop : MonoBehaviour
     
     private static readonly int CloseCondition = Animator.StringToHash("Close");
 
-    private OpenfortClient _openfort;
+    private OpenfortSDK _openfort;
 
     #region UNITY_LIFECYCLE
 
     private void Start()
     {
-        _openfort = new OpenfortClient(OFStaticData.PublishableKey);
+        _openfort = new OpenfortSDK(OFStaticData.PublishableKey);
     }
 
     private void OnEnable()
@@ -218,6 +218,8 @@ public class Shop : MonoBehaviour
         // Prepare the ExecuteFunctionRequest
         Debug.Log("sendSignUserOpHash");
         
+        //TODO-EMB
+        /*
         // should sign using a session
         _openfort.LoadSessionKey();
 
@@ -234,6 +236,7 @@ public class Shop : MonoBehaviour
             SceneManager.LoadScene("Menu");
             throw;
         }
+        */
 
         _poolCoroutine = StartCoroutine(PoolEveryTwoSeconds(transactionIntentId));
     }

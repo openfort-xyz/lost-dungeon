@@ -36,6 +36,8 @@ public static class PPStaticData
 {
     public const string RememberMeKey = "RememberMe";
     public const string CustomIdKey = "CustomID";
+    public const string AppleSubjectIdKey = "AppleSubjectId";
+    public const string GooglePlayGamesPlayerIdKey = "GooglePlayGamesPlayerId";
     public const string LastPlayerKey = "LastPlayer";
 }
 #endregion
