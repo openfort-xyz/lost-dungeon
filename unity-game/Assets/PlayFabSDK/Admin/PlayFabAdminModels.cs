@@ -21,13 +21,69 @@ namespace PlayFab.AdminModels
         public string TaskInstanceId;
     }
 
+    /// <summary>
+    /// The work to be performed on each entity which can only be of one type.
+    /// </summary>
+    [Serializable]
+    public class Action : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Action content to add inventory item v2
+        /// </summary>
+        public AddInventoryItemV2Content AddInventoryItemV2Content;
+        /// <summary>
+        /// Action content to ban player
+        /// </summary>
+        public BanPlayerContent BanPlayerContent;
+        /// <summary>
+        /// Action content to delete inventory item v2
+        /// </summary>
+        public DeleteInventoryItemV2Content DeleteInventoryItemV2Content;
+        /// <summary>
+        /// Action content to delete player
+        /// </summary>
+        public DeletePlayerContent DeletePlayerContent;
+        /// <summary>
+        /// Action content to execute cloud script
+        /// </summary>
+        public ExecuteCloudScriptContent ExecuteCloudScriptContent;
+        /// <summary>
+        /// Action content to execute azure function
+        /// </summary>
+        public ExecuteFunctionContent ExecuteFunctionContent;
+        /// <summary>
+        /// Action content to grant item
+        /// </summary>
+        public GrantItemContent GrantItemContent;
+        /// <summary>
+        /// Action content to grant virtual currency
+        /// </summary>
+        public GrantVirtualCurrencyContent GrantVirtualCurrencyContent;
+        /// <summary>
+        /// Action content to increment player statistic
+        /// </summary>
+        public IncrementPlayerStatisticContent IncrementPlayerStatisticContent;
+        /// <summary>
+        /// Action content to send push notification
+        /// </summary>
+        public PushNotificationContent PushNotificationContent;
+        /// <summary>
+        /// Action content to send email
+        /// </summary>
+        public SendEmailContent SendEmailContent;
+        /// <summary>
+        /// Action content to subtract inventory item v2
+        /// </summary>
+        public SubtractInventoryItemV2Content SubtractInventoryItemV2Content;
+    }
+
     [Serializable]
     public class ActionsOnPlayersInSegmentTaskParameter : PlayFabBaseModel
     {
         /// <summary>
-        /// ID of the action to perform on each player in segment.
+        /// List of actions to perform on each player in a segment. Each action object can contain only one action type.
         /// </summary>
-        public string ActionId;
+        public List<Action> Actions;
         /// <summary>
         /// ID of the segment to perform actions on.
         /// </summary>
@@ -136,6 +192,56 @@ namespace PlayFab.AdminModels
         /// Campaign comparison.
         /// </summary>
         public SegmentFilterComparison? Comparison;
+    }
+
+    [Serializable]
+    public class AddInventoryItemsV2SegmentAction : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Amount of the item to be granted to a player
+        /// </summary>
+        public int? Amount;
+        /// <summary>
+        /// The collection id for where the item will be granted in the player inventory
+        /// </summary>
+        public string CollectionId;
+        /// <summary>
+        /// The duration in seconds of the subscription to be granted to a player
+        /// </summary>
+        public int? DurationInSeconds;
+        /// <summary>
+        /// The id of item to be granted to the player
+        /// </summary>
+        public string ItemId;
+        /// <summary>
+        /// The stack id for where the item will be granted in the player inventory
+        /// </summary>
+        public string StackId;
+    }
+
+    [Serializable]
+    public class AddInventoryItemV2Content : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Amount of the item to be granted to a player
+        /// </summary>
+        public int? Amount;
+        /// <summary>
+        /// The collection id for where the item will be granted in the player inventory
+        /// </summary>
+        public string CollectionId;
+        /// <summary>
+        /// The duration in seconds of the subscription to be granted to a player
+        /// </summary>
+        public int? DurationInSeconds;
+        /// <summary>
+        /// The id of item to be granted to the player
+        /// </summary>
+        public string ItemId;
+        /// <summary>
+        /// The stack id for where the item will be granted in the player inventory
+        /// </summary>
+        public string StackId;
     }
 
     [Serializable]
@@ -314,6 +420,23 @@ namespace PlayFab.AdminModels
         /// The reason why this ban was applied.
         /// </summary>
         public string Reason;
+        /// <summary>
+        /// The family type of the suer that is included in the ban.
+        /// </summary>
+        public string UserFamilyType;
+    }
+
+    [Serializable]
+    public class BanPlayerContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Duration(in hours) to ban a player. If not provided, the player will be banned permanently.
+        /// </summary>
+        public int? BanDurationHours;
+        /// <summary>
+        /// Reason to ban a player
+        /// </summary>
+        public string BanReason;
     }
 
     [Serializable]
@@ -351,6 +474,10 @@ namespace PlayFab.AdminModels
         /// The reason for this ban. Maximum 140 characters.
         /// </summary>
         public string Reason;
+        /// <summary>
+        /// The family type of the user that should be included in the ban if applicable. May affect multiple players.
+        /// </summary>
+        public UserFamilyType? UserFamilyType;
     }
 
     /// <summary>
@@ -1124,6 +1251,10 @@ namespace PlayFab.AdminModels
         /// Manually specified information for an OpenID Connect issuer.
         /// </summary>
         public OpenIdIssuerInformation IssuerInformation;
+        /// <summary>
+        /// Override the issuer name for user indexing and lookup.
+        /// </summary>
+        public string IssuerOverride;
     }
 
     /// <summary>
@@ -1401,6 +1532,40 @@ namespace PlayFab.AdminModels
         public string Key;
     }
 
+    [Serializable]
+    public class DeleteInventoryItemsV2SegmentAction : PlayFabBaseModel
+    {
+        /// <summary>
+        /// The collection id for where the item will be removed from the player inventory
+        /// </summary>
+        public string CollectionId;
+        /// <summary>
+        /// The id of item to be removed from the player
+        /// </summary>
+        public string ItemId;
+        /// <summary>
+        /// The stack id for where the item will be removed from the player inventory
+        /// </summary>
+        public string StackId;
+    }
+
+    [Serializable]
+    public class DeleteInventoryItemV2Content : PlayFabBaseModel
+    {
+        /// <summary>
+        /// The collection id for where the item will be removed from the player inventory
+        /// </summary>
+        public string CollectionId;
+        /// <summary>
+        /// The id of item to be removed from the player
+        /// </summary>
+        public string ItemId;
+        /// <summary>
+        /// The stack id for where the item will be removed from the player inventory
+        /// </summary>
+        public string StackId;
+    }
+
     /// <summary>
     /// Deletes all data associated with the master player account, including data from all titles the player has played, such
     /// as statistics, custom data, inventory, purchases, virtual currency balances, characters, group memberships, publisher
@@ -1493,6 +1658,11 @@ namespace PlayFab.AdminModels
         /// unique name of the connection
         /// </summary>
         public string ConnectionId;
+    }
+
+    [Serializable]
+    public class DeletePlayerContent : PlayFabBaseModel
+    {
     }
 
     /// <summary>
@@ -1711,6 +1881,23 @@ namespace PlayFab.AdminModels
     }
 
     [Serializable]
+    public class ExecuteCloudScriptContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Arguments(JSON) to be passed into the cloudscript method
+        /// </summary>
+        public string CloudScriptMethodArguments;
+        /// <summary>
+        /// Cloudscript method name
+        /// </summary>
+        public string CloudScriptMethodName;
+        /// <summary>
+        /// Publish cloudscript results as playstream event
+        /// </summary>
+        public bool PublishResultsToPlayStream;
+    }
+
+    [Serializable]
     public class ExecuteCloudScriptResult : PlayFabBaseModel
     {
         /// <summary>
@@ -1780,6 +1967,23 @@ namespace PlayFab.AdminModels
         /// Cloud script function parameter json text.
         /// </summary>
         public string FunctionParameterJson;
+    }
+
+    [Serializable]
+    public class ExecuteFunctionContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Arguments(JSON) to be passed into the cloudscript azure function
+        /// </summary>
+        public string CloudScriptFunctionArguments;
+        /// <summary>
+        /// Cloudscript azure function name
+        /// </summary>
+        public string CloudScriptFunctionName;
+        /// <summary>
+        /// Publish results from executing the azure function as playstream event
+        /// </summary>
+        public bool PublishResultsToPlayStream;
     }
 
     /// <summary>
@@ -1858,36 +2062,6 @@ namespace PlayFab.AdminModels
         /// First player login duration.
         /// </summary>
         public double DurationInMinutes;
-    }
-
-    public enum GameBuildStatus
-    {
-        Available,
-        Validating,
-        InvalidBuildPackage,
-        Processing,
-        FailedToProcess
-    }
-
-    [Serializable]
-    public class GameModeInfo : PlayFabBaseModel
-    {
-        /// <summary>
-        /// specific game mode type
-        /// </summary>
-        public string Gamemode;
-        /// <summary>
-        /// maximum user count a specific Game Server Instance can support
-        /// </summary>
-        public uint MaxPlayerCount;
-        /// <summary>
-        /// minimum user count required for this Game Server Instance to continue (usually 1)
-        /// </summary>
-        public uint MinPlayerCount;
-        /// <summary>
-        /// whether to start as an open session, meaning that players can matchmake into it (defaults to true)
-        /// </summary>
-        public bool? StartOpen;
     }
 
     public enum GenericErrorCodes
@@ -2442,6 +2616,41 @@ namespace PlayFab.AdminModels
         InvalidServiceConfiguration,
         InvalidNamespaceMismatch,
         LeaderboardColumnLengthMismatch,
+        InvalidStatisticScore,
+        LeaderboardColumnsNotSpecified,
+        LeaderboardMaxSizeTooLarge,
+        InvalidAttributeStatisticsSpecified,
+        LeaderboardNotFound,
+        TokenSigningKeyNotFound,
+        LeaderboardNameConflict,
+        LinkedStatisticColumnMismatch,
+        NoLinkedStatisticToLeaderboard,
+        StatDefinitionAlreadyLinkedToLeaderboard,
+        LinkingStatsNotAllowedForEntityType,
+        LeaderboardCountLimitExceeded,
+        LeaderboardSizeLimitExceeded,
+        LeaderboardDefinitionModificationNotAllowedWhileLinked,
+        StatisticDefinitionModificationNotAllowedWhileLinked,
+        LeaderboardUpdateNotAllowedWhileLinked,
+        CloudScriptAzureFunctionsEventHubRequestError,
+        ExternalEntityNotAllowedForTier,
+        InvalidBaseTimeForInterval,
+        EntityTypeMismatchWithStatDefinition,
+        SpecifiedVersionLeaderboardNotFound,
+        LeaderboardColumnLengthMismatchWithStatDefinition,
+        DuplicateColumnNameFound,
+        LinkedStatisticColumnNotFound,
+        LinkedStatisticColumnRequired,
+        MultipleLinkedStatisticsNotAllowed,
+        DuplicateLinkedStatisticColumnNameFound,
+        AggregationTypeNotAllowedForMultiColumnStatistic,
+        MaxQueryableVersionsValueNotAllowedForTier,
+        StatisticDefinitionHasNullOrEmptyVersionConfiguration,
+        StatisticColumnLengthMismatch,
+        InvalidExternalEntityId,
+        UpdatingStatisticsUsingTransactionIdNotAvailableForFreeTier,
+        TransactionAlreadyApplied,
+        ReportDataNotRetrievedSuccessfully,
         MatchmakingEntityInvalid,
         MatchmakingPlayerAttributesInvalid,
         MatchmakingQueueNotFound,
@@ -2485,6 +2694,7 @@ namespace PlayFab.AdminModels
         CatalogItemTypeInvalid,
         CatalogBadRequest,
         CatalogTooManyRequests,
+        InvalidCatalogItemConfiguration,
         ExportInvalidStatusUpdate,
         ExportInvalidPrefix,
         ExportBlobContainerDoesNotExist,
@@ -2586,6 +2796,12 @@ namespace PlayFab.AdminModels
         LobbyNewOwnerMustBeConnected,
         LobbyCurrentOwnerStillConnected,
         LobbyMemberIsNotOwner,
+        LobbyServerMismatch,
+        LobbyServerNotFound,
+        LobbyDifferentServerAlreadyJoined,
+        LobbyServerAlreadyJoined,
+        LobbyIsNotClientOwned,
+        LobbyDoesNotUseConnections,
         EventSamplingInvalidRatio,
         EventSamplingInvalidEventNamespace,
         EventSamplingInvalidEventName,
@@ -2609,6 +2825,10 @@ namespace PlayFab.AdminModels
         EventSinkTenantNotFound,
         EventSinkAadNotFound,
         EventSinkDatabaseNotFound,
+        EventSinkTitleUnauthorized,
+        EventSinkInsufficientRoleAssignment,
+        EventSinkContainerNotFound,
+        EventSinkTenantIdInvalid,
         OperationCanceled,
         InvalidDisplayNameRandomSuffixLength,
         AllowNonUniquePlayerDisplayNamesDisableNotAllowed,
@@ -2628,7 +2848,98 @@ namespace PlayFab.AdminModels
         PlayerCustomPropertiesDuplicatePropertyName,
         PlayerCustomPropertiesPropertyDoesNotExist,
         AddonAlreadyExists,
-        AddonDoesntExist
+        AddonDoesntExist,
+        CopilotDisabled,
+        CopilotInvalidRequest,
+        TrueSkillUnauthorized,
+        TrueSkillInvalidTitleId,
+        TrueSkillInvalidScenarioId,
+        TrueSkillInvalidModelId,
+        TrueSkillInvalidModelName,
+        TrueSkillInvalidPlayerIds,
+        TrueSkillInvalidEntityKey,
+        TrueSkillInvalidConditionKey,
+        TrueSkillInvalidConditionValue,
+        TrueSkillInvalidConditionAffinityWeight,
+        TrueSkillInvalidEventName,
+        TrueSkillMatchResultCreated,
+        TrueSkillMatchResultAlreadySubmitted,
+        TrueSkillBadPlayerIdInMatchResult,
+        TrueSkillInvalidBotIdInMatchResult,
+        TrueSkillDuplicatePlayerInMatchResult,
+        TrueSkillNoPlayerInMatchResultTeam,
+        TrueSkillPlayersInMatchResultExceedingLimit,
+        TrueSkillInvalidPreMatchPartyInMatchResult,
+        TrueSkillInvalidTimestampInMatchResult,
+        TrueSkillStartTimeMissingInMatchResult,
+        TrueSkillEndTimeMissingInMatchResult,
+        TrueSkillInvalidPlayerSecondsPlayedInMatchResult,
+        TrueSkillNoTeamInMatchResult,
+        TrueSkillNotEnoughTeamsInMatchResult,
+        TrueSkillInvalidRanksInMatchResult,
+        TrueSkillNoWinnerInMatchResult,
+        TrueSkillMissingRequiredCondition,
+        TrueSkillMissingRequiredEvent,
+        TrueSkillUnknownEventName,
+        TrueSkillInvalidEventCount,
+        TrueSkillUnknownConditionKey,
+        TrueSkillUnknownConditionValue,
+        TrueSkillScenarioConfigDoesNotExist,
+        TrueSkillUnknownModelId,
+        TrueSkillNoModelInScenario,
+        TrueSkillNotSupportedForTitle,
+        TrueSkillModelIsNotActive,
+        TrueSkillUnauthorizedToQueryOtherPlayerSkills,
+        TrueSkillInvalidMaxIterations,
+        TrueSkillEndTimeBeforeStartTime,
+        TrueSkillInvalidJobId,
+        TrueSkillInvalidMetadataId,
+        TrueSkillMissingBuildVerison,
+        TrueSkillJobAlreadyExists,
+        TrueSkillJobNotFound,
+        TrueSkillOperationCanceled,
+        TrueSkillActiveModelLimitExceeded,
+        TrueSkillTotalModelLimitExceeded,
+        TrueSkillUnknownInitialModelId,
+        TrueSkillUnauthorizedForJob,
+        TrueSkillInvalidScenarioName,
+        TrueSkillConditionStateIsRequired,
+        TrueSkillEventStateIsRequired,
+        TrueSkillDuplicateEvent,
+        TrueSkillDuplicateCondition,
+        TrueSkillInvalidAnomalyThreshold,
+        TrueSkillConditionKeyLimitExceeded,
+        TrueSkillConditionValuePerKeyLimitExceeded,
+        TrueSkillInvalidTimestamp,
+        TrueSkillEventLimitExceeded,
+        TrueSkillInvalidPlayers,
+        TrueSkillTrueSkillPlayerNull,
+        TrueSkillInvalidPlayerId,
+        TrueSkillInvalidSquadSize,
+        TrueSkillConditionSetNotInModel,
+        TrueSkillModelStateInvalidForOperation,
+        TrueSkillScenarioContainsActiveModel,
+        GameSaveManifestNotFound,
+        GameSaveManifestVersionAlreadyExists,
+        GameSaveConflictUpdatingManifest,
+        GameSaveManifestUpdatesNotAllowed,
+        GameSaveFileAlreadyExists,
+        GameSaveManifestVersionNotFinalized,
+        GameSaveUnknownFileInManifest,
+        GameSaveFileExceededReportedSize,
+        GameSaveFileNotUploaded,
+        GameSaveBadRequest,
+        GameSaveOperationNotAllowed,
+        GameSaveDataStorageQuotaExceeded,
+        GameSaveNewerManifestExists,
+        StateShareForbidden,
+        StateShareTitleNotInFlight,
+        StateShareStateNotFound,
+        StateShareLinkNotFound,
+        StateShareStateRedemptionLimitExceeded,
+        StateShareStateRedemptionLimitNotUpdated,
+        StateShareCreatedStatesLimitExceeded,
+        StateShareIdMissingOrMalformed
     }
 
     [Serializable]
@@ -2828,91 +3139,6 @@ namespace PlayFab.AdminModels
         /// reports can be found at: https://docs.microsoft.com/en-us/gaming/playfab/features/analytics/reports/quickstart.
         /// </summary>
         public string DownloadUrl;
-    }
-
-    [Serializable]
-    public class GetMatchmakerGameInfoRequest : PlayFabRequestCommon
-    {
-        /// <summary>
-        /// unique identifier of the lobby for which info is being requested
-        /// </summary>
-        public string LobbyId;
-    }
-
-    [Serializable]
-    public class GetMatchmakerGameInfoResult : PlayFabResultCommon
-    {
-        /// <summary>
-        /// version identifier of the game server executable binary being run
-        /// </summary>
-        public string BuildVersion;
-        /// <summary>
-        /// time when Game Server Instance is currently scheduled to end
-        /// </summary>
-        public DateTime? EndTime;
-        /// <summary>
-        /// unique identifier of the lobby
-        /// </summary>
-        public string LobbyId;
-        /// <summary>
-        /// game mode for this Game Server Instance
-        /// </summary>
-        public string Mode;
-        /// <summary>
-        /// array of unique PlayFab identifiers for users currently connected to this Game Server Instance
-        /// </summary>
-        public List<string> Players;
-        /// <summary>
-        /// region in which the Game Server Instance is running
-        /// </summary>
-        public Region? Region;
-        /// <summary>
-        /// IPV4 address of the server
-        /// </summary>
-        public string ServerIPV4Address;
-        /// <summary>
-        /// IPV6 address of the server
-        /// </summary>
-        public string ServerIPV6Address;
-        /// <summary>
-        /// communication port for this Game Server Instance
-        /// </summary>
-        public uint ServerPort;
-        /// <summary>
-        /// Public DNS name (if any) of the server
-        /// </summary>
-        public string ServerPublicDNSName;
-        /// <summary>
-        /// time when the Game Server Instance was created
-        /// </summary>
-        public DateTime StartTime;
-        /// <summary>
-        /// unique identifier of the Game Server Instance for this lobby
-        /// </summary>
-        public string TitleId;
-    }
-
-    /// <summary>
-    /// These details are used by the PlayFab matchmaking service to determine if an existing Game Server Instance has room for
-    /// additional users, and by the PlayFab game server management service to determine when a new Game Server Host should be
-    /// created in order to prevent excess load on existing Hosts.
-    /// </summary>
-    [Serializable]
-    public class GetMatchmakerGameModesRequest : PlayFabRequestCommon
-    {
-        /// <summary>
-        /// previously uploaded build version for which game modes are being requested
-        /// </summary>
-        public string BuildVersion;
-    }
-
-    [Serializable]
-    public class GetMatchmakerGameModesResult : PlayFabResultCommon
-    {
-        /// <summary>
-        /// array of game modes available for the specified build
-        /// </summary>
-        public List<GameModeInfo> GameModes;
     }
 
     /// <summary>
@@ -3664,6 +3890,23 @@ namespace PlayFab.AdminModels
     }
 
     [Serializable]
+    public class GrantItemContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// The catalog version of the item to be granted to the player
+        /// </summary>
+        public string CatalogVersion;
+        /// <summary>
+        /// The id of item to be granted to the player
+        /// </summary>
+        public string ItemId;
+        /// <summary>
+        /// Quantity of the item to be granted to a player
+        /// </summary>
+        public int ItemQuantity;
+    }
+
+    [Serializable]
     public class GrantItemSegmentAction : PlayFabBaseModel
     {
         /// <summary>
@@ -3716,6 +3959,19 @@ namespace PlayFab.AdminModels
     }
 
     [Serializable]
+    public class GrantVirtualCurrencyContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Amount of currency to be granted to a player
+        /// </summary>
+        public int CurrencyAmount;
+        /// <summary>
+        /// Code of the currency to be granted to a player
+        /// </summary>
+        public string CurrencyCode;
+    }
+
+    [Serializable]
     public class GrantVirtualCurrencySegmentAction : PlayFabBaseModel
     {
         /// <summary>
@@ -3756,6 +4012,19 @@ namespace PlayFab.AdminModels
     [Serializable]
     public class IncrementLimitedEditionItemAvailabilityResult : PlayFabResultCommon
     {
+    }
+
+    [Serializable]
+    public class IncrementPlayerStatisticContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Amount(in whole number) to increase the player statistic by
+        /// </summary>
+        public int StatisticChangeBy;
+        /// <summary>
+        /// Name of the player statistic to be incremented
+        /// </summary>
+        public string StatisticName;
     }
 
     [Serializable]
@@ -4073,7 +4342,9 @@ namespace PlayFab.AdminModels
         OpenIdConnect,
         Apple,
         NintendoSwitchAccount,
-        GooglePlayGames
+        GooglePlayGames,
+        XboxMobileStore,
+        King
     }
 
     [Serializable]
@@ -4153,95 +4424,6 @@ namespace PlayFab.AdminModels
     }
 
     [Serializable]
-    public class ModifyServerBuildRequest : PlayFabRequestCommon
-    {
-        /// <summary>
-        /// array of regions where this build can used, when it is active
-        /// </summary>
-        public List<Region> ActiveRegions;
-        /// <summary>
-        /// unique identifier of the previously uploaded build executable to be updated
-        /// </summary>
-        public string BuildId;
-        /// <summary>
-        /// appended to the end of the command line when starting game servers
-        /// </summary>
-        public string CommandLineTemplate;
-        /// <summary>
-        /// developer comment(s) for this build
-        /// </summary>
-        public string Comment;
-        /// <summary>
-        /// The optional custom tags associated with the request (e.g. build number, external trace identifiers, etc.).
-        /// </summary>
-        public Dictionary<string,string> CustomTags;
-        /// <summary>
-        /// path to the game server executable. Defaults to gameserver.exe
-        /// </summary>
-        public string ExecutablePath;
-        /// <summary>
-        /// maximum number of game server instances that can run on a single host machine
-        /// </summary>
-        public int MaxGamesPerHost;
-        /// <summary>
-        /// minimum capacity of additional game server instances that can be started before the autoscaling service starts new host
-        /// machines (given the number of current running host machines and game server instances)
-        /// </summary>
-        public int MinFreeGameSlots;
-        /// <summary>
-        /// new timestamp
-        /// </summary>
-        public DateTime? Timestamp;
-    }
-
-    [Serializable]
-    public class ModifyServerBuildResult : PlayFabResultCommon
-    {
-        /// <summary>
-        /// array of regions where this build can used, when it is active
-        /// </summary>
-        public List<Region> ActiveRegions;
-        /// <summary>
-        /// unique identifier for this build executable
-        /// </summary>
-        public string BuildId;
-        /// <summary>
-        /// appended to the end of the command line when starting game servers
-        /// </summary>
-        public string CommandLineTemplate;
-        /// <summary>
-        /// developer comment(s) for this build
-        /// </summary>
-        public string Comment;
-        /// <summary>
-        /// path to the game server executable. Defaults to gameserver.exe
-        /// </summary>
-        public string ExecutablePath;
-        /// <summary>
-        /// maximum number of game server instances that can run on a single host machine
-        /// </summary>
-        public int MaxGamesPerHost;
-        /// <summary>
-        /// minimum capacity of additional game server instances that can be started before the autoscaling service starts new host
-        /// machines (given the number of current running host machines and game server instances)
-        /// </summary>
-        public int MinFreeGameSlots;
-        /// <summary>
-        /// the current status of the build validation and processing steps
-        /// </summary>
-        public GameBuildStatus? Status;
-        /// <summary>
-        /// time this build was last modified (or uploaded, if this build has never been modified)
-        /// </summary>
-        public DateTime Timestamp;
-        /// <summary>
-        /// Unique identifier for the title, found in the Settings > Game Properties section of the PlayFab developer site when a
-        /// title has been selected.
-        /// </summary>
-        public string TitleId;
-    }
-
-    [Serializable]
     public class ModifyUserVirtualCurrencyResult : PlayFabResultCommon
     {
         /// <summary>
@@ -4300,9 +4482,17 @@ namespace PlayFab.AdminModels
         /// </summary>
         public bool DiscoverConfiguration;
         /// <summary>
+        /// Ignore 'nonce' claim in identity tokens.
+        /// </summary>
+        public bool? IgnoreNonce;
+        /// <summary>
         /// Information for an OpenID Connect provider.
         /// </summary>
         public OpenIdIssuerInformation IssuerInformation;
+        /// <summary>
+        /// Override the issuer name for user indexing and lookup.
+        /// </summary>
+        public string IssuerOverride;
     }
 
     [Serializable]
@@ -4774,6 +4964,23 @@ namespace PlayFab.AdminModels
         public uint Version;
     }
 
+    [Serializable]
+    public class PushNotificationContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Text of message to send.
+        /// </summary>
+        public string Message;
+        /// <summary>
+        /// Id of the push notification template.
+        /// </summary>
+        public string PushNotificationTemplateId;
+        /// <summary>
+        /// Subject of message to send (may not be displayed in all platforms)
+        /// </summary>
+        public string Subject;
+    }
+
     public enum PushNotificationPlatform
     {
         ApplePushNotificationService,
@@ -4887,17 +5094,6 @@ namespace PlayFab.AdminModels
         /// The order's updated purchase status.
         /// </summary>
         public string PurchaseStatus;
-    }
-
-    public enum Region
-    {
-        USCentral,
-        USEast,
-        EUWest,
-        Singapore,
-        Japan,
-        Brazil,
-        Australia
     }
 
     /// <summary>
@@ -5888,9 +6084,17 @@ namespace PlayFab.AdminModels
     public class SegmentTrigger : PlayFabBaseModel
     {
         /// <summary>
+        /// Add inventory item v2 segment trigger action.
+        /// </summary>
+        public AddInventoryItemsV2SegmentAction AddInventoryItemsV2Action;
+        /// <summary>
         /// Ban player segment trigger action.
         /// </summary>
         public BanPlayerSegmentAction BanPlayerAction;
+        /// <summary>
+        /// Delete inventory item v2 segment trigger action.
+        /// </summary>
+        public DeleteInventoryItemsV2SegmentAction DeleteInventoryItemsV2Action;
         /// <summary>
         /// Delete player segment trigger action.
         /// </summary>
@@ -5927,6 +6131,10 @@ namespace PlayFab.AdminModels
         /// Push notification segment trigger action.
         /// </summary>
         public PushNotificationSegmentAction PushNotificationAction;
+        /// <summary>
+        /// Subtract inventory item v2 segment trigger action.
+        /// </summary>
+        public SubtractInventoryItemsV2SegmentAction SubtractInventoryItemsV2Action;
     }
 
     /// <summary>
@@ -5954,6 +6162,15 @@ namespace PlayFab.AdminModels
     [Serializable]
     public class SendAccountRecoveryEmailResult : PlayFabResultCommon
     {
+    }
+
+    [Serializable]
+    public class SendEmailContent : PlayFabBaseModel
+    {
+        /// <summary>
+        /// The email template id of the email template to send.
+        /// </summary>
+        public string EmailTemplateId;
     }
 
     /// <summary>
@@ -6346,6 +6563,56 @@ namespace PlayFab.AdminModels
     }
 
     [Serializable]
+    public class SubtractInventoryItemsV2SegmentAction : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Amount of the item to removed from the player
+        /// </summary>
+        public int? Amount;
+        /// <summary>
+        /// The collection id for where the item will be removed from the player inventory
+        /// </summary>
+        public string CollectionId;
+        /// <summary>
+        /// The duration in seconds to be removed from the subscription in the players inventory
+        /// </summary>
+        public int? DurationInSeconds;
+        /// <summary>
+        /// The id of item to be removed from the player
+        /// </summary>
+        public string ItemId;
+        /// <summary>
+        /// The stack id for where the item will be removed from the player inventory
+        /// </summary>
+        public string StackId;
+    }
+
+    [Serializable]
+    public class SubtractInventoryItemV2Content : PlayFabBaseModel
+    {
+        /// <summary>
+        /// Amount of the item to removed from the player
+        /// </summary>
+        public int? Amount;
+        /// <summary>
+        /// The collection id for where the item will be removed from the player inventory
+        /// </summary>
+        public string CollectionId;
+        /// <summary>
+        /// The duration in seconds to be removed from the subscription in the players inventory
+        /// </summary>
+        public int? DurationInSeconds;
+        /// <summary>
+        /// The id of item to be removed from the player
+        /// </summary>
+        public string ItemId;
+        /// <summary>
+        /// The stack id for where the item will be removed from the player inventory
+        /// </summary>
+        public string StackId;
+    }
+
+    [Serializable]
     public class SubtractUserVirtualCurrencyRequest : PlayFabRequestCommon
     {
         /// <summary>
@@ -6509,6 +6776,10 @@ namespace PlayFab.AdminModels
         /// The updated reason for the ban to be updated. Maximum 140 characters. Null for no change.
         /// </summary>
         public string Reason;
+        /// <summary>
+        /// The updated family type of the user that should be included in the ban. Null for no change.
+        /// </summary>
+        public UserFamilyType? UserFamilyType;
     }
 
     /// <summary>
@@ -6618,6 +6889,10 @@ namespace PlayFab.AdminModels
         /// </summary>
         public string ConnectionId;
         /// <summary>
+        /// Ignore 'nonce' claim in identity tokens.
+        /// </summary>
+        public bool? IgnoreNonce;
+        /// <summary>
         /// The issuer URL or discovery document URL to read issuer information from
         /// </summary>
         public string IssuerDiscoveryUrl;
@@ -6625,6 +6900,10 @@ namespace PlayFab.AdminModels
         /// Manually specified information for an OpenID Connect issuer.
         /// </summary>
         public OpenIdIssuerInformation IssuerInformation;
+        /// <summary>
+        /// Override the issuer name for user indexing and lookup.
+        /// </summary>
+        public string IssuerOverride;
     }
 
     /// <summary>
@@ -7151,6 +7430,13 @@ namespace PlayFab.AdminModels
         public string FacebookInstantGamesId;
     }
 
+    public enum UserFamilyType
+    {
+        None,
+        Xbox,
+        Steam
+    }
+
     [Serializable]
     public class UserGameCenterInfo : PlayFabBaseModel
     {
@@ -7284,7 +7570,9 @@ namespace PlayFab.AdminModels
         OpenIdConnect,
         Apple,
         NintendoSwitchAccount,
-        GooglePlayGames
+        GooglePlayGames,
+        XboxMobileStore,
+        King
     }
 
     [Serializable]
