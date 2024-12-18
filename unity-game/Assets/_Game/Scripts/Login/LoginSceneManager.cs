@@ -285,7 +285,8 @@ public class LoginSceneManager : MonoBehaviour
             
             // IMPORTANT! We reset this in order for next user not be biased by it.
             web3AuthService.authCompletedOnce = false;
-            
+            CreateOpenfortPlayer();
+
         }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
@@ -466,20 +467,6 @@ public class LoginSceneManager : MonoBehaviour
     {
         web3AuthService.Connect();
     }
-    
-    public void OnSkipButtonClicked()
-    {
-        CreateOpenfortPlayer();
-    }
-
-    public void OnSelfCustodyCloseClicked()
-    {
-        //TODO NEW debug it
-        // Back to log in!
-        ResetFormsAndStatusLabel();
-        
-        loginPanel.SetActive(true);
-    }
     #endregion
     
     #region PRIVATE_METHODS
@@ -538,6 +525,7 @@ public class LoginSceneManager : MonoBehaviour
                     else
                     {
                         web3AuthService.authCompletedOnce = false;
+                        CreateOpenfortPlayer();
                     }
                 }
                 else
@@ -572,6 +560,7 @@ public class LoginSceneManager : MonoBehaviour
                     else
                     {
                         web3AuthService.authCompletedOnce = false;
+                        CreateOpenfortPlayer();
                     }
                 }
             }
@@ -579,8 +568,9 @@ public class LoginSceneManager : MonoBehaviour
         else
         {
             // It's a new user
-            // We need to create an Openfort Player, either with self-custody account or not. The user will chose it in ConnectWallet panel. 
+            // We need to create an Openfort Player
             web3AuthService.authCompletedOnce = false;
+            CreateOpenfortPlayer();
         }
     }
 
