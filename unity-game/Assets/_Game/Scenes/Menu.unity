@@ -907,6 +907,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d83232ca084c8c4faa9f76a0c720be2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  googleAuthController: {fileID: 1626755858}
   onGuestRegistered:
     m_PersistentCalls:
       m_Calls:
@@ -7606,7 +7607,6 @@ MonoBehaviour:
     TitleDataKeys: []
     UserDataKeys: []
     UserReadOnlyDataKeys: []
-  text: {fileID: 0}
   googleClientId: 264294987257-7514prvk38c080aa0fr71k1dtoq7hguj.apps.googleusercontent.com
 --- !u!1 &1674701454
 GameObject:
