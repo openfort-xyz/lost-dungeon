@@ -8,6 +8,8 @@ using UnityEngine.UI;
 
 public class GuestToRegisteredController : MonoBehaviour
 {
+    public GoogleAuthController googleAuthController;
+
     public UnityEvent onGuestRegistered;
     
     public Configuration configurationPanel;
@@ -22,12 +24,14 @@ public class GuestToRegisteredController : MonoBehaviour
 
     private void OnEnable()
     {
+        googleAuthController.OnRegisterSuccess += LinkGuestAccountFromGoogle;
         AzureFunctionCaller.onTransferUserDataSuccess += OnTransferUserDataSuccess;
         AzureFunctionCaller.onTransferUserDataFailure += OnTransferUserDataFailure;
     }
 
     private void OnDisable()
     {
+        googleAuthController.OnRegisterSuccess += LinkGuestAccountFromGoogle;
         AzureFunctionCaller.onTransferUserDataSuccess -= OnTransferUserDataSuccess;
         AzureFunctionCaller.onTransferUserDataFailure -= OnTransferUserDataFailure;
     }
@@ -120,6 +124,19 @@ public class GuestToRegisteredController : MonoBehaviour
             // Show the content
             content.SetActive(true);
         });
+    }
+
+    void LinkGuestAccountFromGoogle(RegisterPlayFabUserResult result)
+    {
+        if (string.IsNullOrEmpty(GetGuestCustomId()))
+        {
+            Debug.LogError("The Custom ID is null");
+            return;
+        }
+
+        statusText.text = "User registered. Linking guest account...";
+
+        LinkGuestAccountToRegistered(GetGuestCustomId());
     }
 
     void LinkGuestAccountToRegistered(string guestCustomId)
