@@ -30,9 +30,6 @@ public class LoginSceneManager : MonoBehaviour
     public GameObject registerPanel;
     public InputField confirmPassword;
 
-    [Header("Connect Wallet")]
-    public GameObject connectWalletPanel;
-
     [Header("General")]
     public Text statusTextLabel;
     
@@ -157,18 +154,15 @@ public class LoginSceneManager : MonoBehaviour
                 break;
             case Web3AuthService.State.WalletConnecting:
                 statusTextLabel.text = "Connecting...";
-                //connectWalletPanel.SetActive(false);
                 break;
             case Web3AuthService.State.WalletConnecting_Web3AuthCompleted:
                 statusTextLabel.text = "Please connect with " + TrimWalletAddress(OFStaticData.OFownerAddressValue);
                 break;
             case Web3AuthService.State.WalletConnectionCancelled:
-                connectWalletPanel.SetActive(true);
                 statusTextLabel.text = "Wallet connection cancelled.";
                 break;
             case Web3AuthService.State.WalletConnected:
                 statusTextLabel.text = "Wallet connection successful.";
-                connectWalletPanel.SetActive(false);
                 break;
             case Web3AuthService.State.RequestingMessage:
                 statusTextLabel.text = "Requesting message...";
@@ -206,11 +200,9 @@ public class LoginSceneManager : MonoBehaviour
                 statusTextLabel.text = "Disconnecting...";
                 break;
             case Web3AuthService.State.Disconnected:
-                connectWalletPanel.SetActive(true);
                 statusTextLabel.text = "Wallet disconnected. Please try again.";
                 break;
             case Web3AuthService.State.Disconnected_Web3AuthCompleted:
-                connectWalletPanel.SetActive(false);
                 loginPanel.SetActive(true);
                 statusTextLabel.text = "Wallet disconnected. Please log in again.";
                 break;
@@ -293,9 +285,8 @@ public class LoginSceneManager : MonoBehaviour
             
             // IMPORTANT! We reset this in order for next user not be biased by it.
             web3AuthService.authCompletedOnce = false;
-            // We go to ConnectWallet panel
-            connectWalletPanel.SetActive(true);
-            
+            CreateOpenfortPlayer();
+
         }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
@@ -476,22 +467,6 @@ public class LoginSceneManager : MonoBehaviour
     {
         web3AuthService.Connect();
     }
-    
-    public void OnSkipButtonClicked()
-    {
-        connectWalletPanel.SetActive(false);
-        CreateOpenfortPlayer();
-    }
-
-    public void OnSelfCustodyCloseClicked()
-    {
-        //TODO NEW debug it
-        // Back to log in!
-        ResetFormsAndStatusLabel();
-        
-        connectWalletPanel.SetActive(false);
-        loginPanel.SetActive(true);
-    }
     #endregion
     
     #region PRIVATE_METHODS
@@ -550,8 +525,7 @@ public class LoginSceneManager : MonoBehaviour
                     else
                     {
                         web3AuthService.authCompletedOnce = false;
-                        // There has been some error during web3 authentication and the user needs to repeat the process
-                        connectWalletPanel.SetActive(true);
+                        CreateOpenfortPlayer();
                     }
                 }
                 else
@@ -586,8 +560,7 @@ public class LoginSceneManager : MonoBehaviour
                     else
                     {
                         web3AuthService.authCompletedOnce = false;
-                        // There has been some error during web3 authentication and the user needs to repeat the process
-                        connectWalletPanel.SetActive(true);
+                        CreateOpenfortPlayer();
                     }
                 }
             }
@@ -595,9 +568,9 @@ public class LoginSceneManager : MonoBehaviour
         else
         {
             // It's a new user
-            // We need to create an Openfort Player, either with self-custody account or not. The user will chose it in ConnectWallet panel. 
+            // We need to create an Openfort Player
             web3AuthService.authCompletedOnce = false;
-            connectWalletPanel.SetActive(true);
+            CreateOpenfortPlayer();
         }
     }
 
