@@ -30,6 +30,8 @@ public class GoogleAuthController : PlayFabAuthControllerBase
 
     private bool _initialized;
 
+    private bool _canLogIn = false;
+
     private void Start()
     {
         InitializeGoogleSDK();
@@ -45,13 +47,15 @@ public class GoogleAuthController : PlayFabAuthControllerBase
     #endregion
 
     #region BUTTON_METHODS
-    public void SignIn()
+    public void SignIn(bool canLogIn)
     {
         if (!_initialized)
         {
             Debug.LogError("Google SDK not initialized.");
             return;
         }
+
+        _canLogIn = canLogIn;
         
 #if UNITY_WEBGL && !UNITY_EDITOR
         Debug.Log("Starting Google Sign In...");
@@ -94,14 +98,19 @@ public class GoogleAuthController : PlayFabAuthControllerBase
         // https://developers.google.com/identity/sign-in/web/sign-in
         // TODO In consequence, we're using google custom id as a password, which is not ideal security-wise.
         // TODO This needs to be updated when PlayFab updates LoginWithGoogleAccount to new Google sign in method.
-        
+
+        if (!_canLogIn)
+        {
+            RegisterPlayFabUser(email, customId);
+            return;
+        }
+
         var request = new LoginWithEmailAddressRequest()
         {
             Password = customId,
             Email = email,
             InfoRequestParameters = PlayerCombinedInfoRequestParams
         };
-
         PlayFabClientAPI.LoginWithEmailAddress(request, RaiseLoginSuccess, error =>
         {
             if (error.Error == PlayFabErrorCode.AccountNotFound)
