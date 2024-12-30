@@ -907,7 +907,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d83232ca084c8c4faa9f76a0c720be2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  googleAuthController: {fileID: 1626755858}
+  googleAuthController: {fileID: 0}
   onGuestRegistered:
     m_PersistentCalls:
       m_Calls:
@@ -2812,7 +2812,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &358778154
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2891,7 +2891,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1626755858}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: GoogleAuthController, Assembly-CSharp
         m_MethodName: SignIn
         m_Mode: 6
@@ -7530,84 +7530,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1565140667}
   m_CullTransparentMesh: 1
---- !u!1 &1626755856
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1626755857}
-  - component: {fileID: 1626755858}
-  m_Layer: 0
-  m_Name: GoogleAuthController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1626755857
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1626755856}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2098018407}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1626755858
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1626755856}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b60f0c3d4b15fa45bbb203ff7c774c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerCombinedInfoRequestParams:
-    GetCharacterInventories: 1
-    GetCharacterList: 1
-    GetPlayerProfile: 1
-    GetPlayerStatistics: 1
-    GetTitleData: 1
-    GetUserAccountInfo: 1
-    GetUserData: 1
-    GetUserInventory: 1
-    GetUserReadOnlyData: 1
-    GetUserVirtualCurrency: 1
-    PlayerStatisticNames: []
-    ProfileConstraints:
-      ShowAvatarUrl: 0
-      ShowBannedUntil: 0
-      ShowCampaignAttributions: 0
-      ShowContactEmailAddresses: 0
-      ShowCreated: 0
-      ShowDisplayName: 0
-      ShowExperimentVariants: 0
-      ShowLastLogin: 0
-      ShowLinkedAccounts: 0
-      ShowLocations: 0
-      ShowMemberships: 0
-      ShowOrigination: 0
-      ShowPushNotificationRegistrations: 0
-      ShowStatistics: 0
-      ShowTags: 0
-      ShowTotalValueToDateInUsd: 0
-      ShowValuesToDate: 0
-    TitleDataKeys: []
-    UserDataKeys: []
-    UserReadOnlyDataKeys: []
-  googleClientId: 264294987257-7514prvk38c080aa0fr71k1dtoq7hguj.apps.googleusercontent.com
 --- !u!1 &1674701454
 GameObject:
   m_ObjectHideFlags: 0
@@ -9575,7 +9497,6 @@ Transform:
   - {fileID: 1369211549}
   - {fileID: 131937880}
   - {fileID: 2133881026}
-  - {fileID: 1626755857}
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
