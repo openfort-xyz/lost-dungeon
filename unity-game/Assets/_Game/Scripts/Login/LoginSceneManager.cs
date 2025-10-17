@@ -27,7 +27,7 @@ public class LoginSceneManager : MonoBehaviour
     [Header("Register")]
     public GameObject registerPanel;
     public InputField confirmPassword;
-    
+
     [Header("General")]
     public Text statusTextLabel;
     
@@ -135,6 +135,73 @@ public class LoginSceneManager : MonoBehaviour
             Application.Quit();
         }
     }
+
+    #region WEB3_AUTH_SERVICE_EVENT_HANDLERS
+    public void OnWeb3AuthStateChanged(Web3AuthService.State state)
+    {
+        switch (state)
+        {
+            case Web3AuthService.State.None:
+                break;
+            case Web3AuthService.State.WalletConnecting:
+                statusTextLabel.text = "Connecting...";
+                break;
+            case Web3AuthService.State.WalletConnecting_Web3AuthCompleted:
+                statusTextLabel.text = "Please connect with " + TrimWalletAddress(OFStaticData.OFownerAddressValue);
+                break;
+            case Web3AuthService.State.WalletConnectionCancelled:
+                statusTextLabel.text = "Wallet connection cancelled.";
+                break;
+            case Web3AuthService.State.WalletConnected:
+                statusTextLabel.text = "Wallet connection successful.";
+                break;
+            case Web3AuthService.State.RequestingMessage:
+                statusTextLabel.text = "Requesting message...";
+                break;
+            case Web3AuthService.State.SigningMessage:
+                statusTextLabel.text = "Please sign the message in your wallet.";
+                break;
+            case Web3AuthService.State.VerifyingSignature:
+                statusTextLabel.text = "Sign successful. Verifying signature...";
+                break;
+            case Web3AuthService.State.RegisteringSession:
+                statusTextLabel.text = "Registering openfort session...";
+                break;
+            case Web3AuthService.State.SigningSession:
+                statusTextLabel.text = "Please sign the message in your wallet.";
+                break;
+            case Web3AuthService.State.SessionSigned:
+                statusTextLabel.text = "Session signed successfully. completing process...";
+                break;
+            case Web3AuthService.State.Web3AuthSuccessful:
+                if (string.IsNullOrEmpty(OFStaticData.OFplayerValue))
+                {
+                    Debug.LogError("No OFplayer in StaticData");
+                    statusTextLabel.text = "Error: no OFplayer in StaticData";
+                    return;
+                }
+                PlayerPrefs.SetString(PPStaticData.LastPlayerKey, OFStaticData.OFplayerValue);
+                statusTextLabel.text = "Self-custody ENABLED!";
+                Invoke(nameof(LoadMenuScene), 1f);
+                break;
+            case Web3AuthService.State.WrongOwnerAddress:
+                //TODO?
+                break;
+            case Web3AuthService.State.Disconnecting:
+                statusTextLabel.text = "Disconnecting...";
+                break;
+            case Web3AuthService.State.Disconnected:
+                statusTextLabel.text = "Wallet disconnected. Please try again.";
+                break;
+            case Web3AuthService.State.Disconnected_Web3AuthCompleted:
+                loginPanel.SetActive(true);
+                statusTextLabel.text = "Wallet disconnected. Please log in again.";
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(state), state, null);
+        }
+    }
+    #endregion
     
     #region PLAYFAB_EVENT_HANDLERS
     private void OnLoginSuccess(LoginResult result)
@@ -204,10 +271,11 @@ public class LoginSceneManager : MonoBehaviour
             await OpenfortController.Instance.AuthenticateWithOAuth(result.SessionTicket);
             Debug.Log("Embedded account created");
             
-            LoadMenuScene();
-        }
+            // IMPORTANT! We reset this in order for next user not be biased by it.
+            web3AuthService.authCompletedOnce = false;
+            CreateOpenfortPlayer();
 
-        PlayFabClientAPI.LinkCustomID(linkCustomIDRequest, ResultCallback, error =>
+        }, error =>
         {
             Debug.LogError(error.GenerateErrorReport());
             Debug.Log("We couldn't link a custom ID to the user");
@@ -382,6 +450,11 @@ public class LoginSceneManager : MonoBehaviour
         registerPanel.SetActive(false);
         loginPanel.SetActive(true);
     }
+
+    public void OnConnectWalletClicked()
+    {
+        web3AuthService.Connect();
+    }
     #endregion
     
     #region PRIVATE_METHODS
@@ -425,30 +498,73 @@ public class LoginSceneManager : MonoBehaviour
             {
                 if (userReadOnlyData.ContainsKey(OFStaticData.OFownerAddressKey))
                 {
-                    //TODO-EMB
-                    // **IMPORTANT**
-                    // It's an old non-guest user created before embedded implementation. It has connected an EOA and registered a session.
-                    // Maybe we'll need to register a new session.
-                    // For the moment we will load Menu scene. Let's monitor this
-                    LoadMenuScene();
+                    Debug.Log(e.Message);
+                    Console.WriteLine(e);
+                    //** IMPORTANT **//
+                    // TODO This means this is an old user. Old users don't have OFownerAddressKey saved in PlayFab User Data.
+                    // TODO Check if we need to add this key somehow
+                }
+                
+                // Check if the device has a session key
+                var sessionKey = _openfortClient.LoadSessionKey();
+                if (sessionKey == null)
+                {
+                    // Check if the user that has completed the Web3 Auth successfully at least once
+                    if (userReadOnlyData.ContainsKey(OFStaticData.Web3AuthCompletedOnceKey))
+                    {
+                        // We need to register a new session for the player, without creating a new openfort player as we would lose all the progress for that PlayFab user.
+                        web3AuthService.authCompletedOnce = true;
+                        web3AuthService.Connect();
+                    }
+                    else
+                    {
+                        web3AuthService.authCompletedOnce = false;
+                        CreateOpenfortPlayer();
+                    }
                 }
                 else
                 {
-                    //TODO-EMB
-                    // Probably an embedded account user.
-                    // Let's monitor this.
-                    LoadMenuScene();
+                    // Check if the user that has completed the Web3 Auth successfully at least once
+                    if (userReadOnlyData.ContainsKey(OFStaticData.Web3AuthCompletedOnceKey))
+                    {
+                        web3AuthService.authCompletedOnce = true;
+                        //check if it's the same user as the last that logged in.
+                        //If it's not, we need to remove current session key and go to the process of creating and registering a new one
+                        if (PlayerPrefs.HasKey(PPStaticData.LastPlayerKey))
+                        {
+                            var lastPlayer = PlayerPrefs.GetString(PPStaticData.LastPlayerKey);
+                            if (currentOFplayer == lastPlayer)
+                            {
+                                PlayerPrefs.SetString(PPStaticData.LastPlayerKey, currentOFplayer);
+                                // We're good we can go to Menu
+                                LoadMenuScene();
+                            }
+                            else
+                            {
+                                // We need to create a new session key for the user that tries to log in
+                                web3AuthService.Connect();
+                            }
+                        }
+                        else
+                        {
+                            // We probably have logged out and we need to register a new session key
+                            web3AuthService.Connect();
+                        }
+                    }
+                    else
+                    {
+                        web3AuthService.authCompletedOnce = false;
+                        CreateOpenfortPlayer();
+                    }
                 }
             }
         }
         else
         {
-            //TODO-EMB
-            // Create embedded account
-            await OpenfortController.Instance.AuthenticateWithOAuth(result.SessionTicket);
-            Debug.Log("Embedded account created");
-            
-            LoadMenuScene();
+            // It's a new user
+            // We need to create an Openfort Player
+            web3AuthService.authCompletedOnce = false;
+            CreateOpenfortPlayer();
         }
     }
 
