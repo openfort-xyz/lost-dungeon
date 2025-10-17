@@ -1877,7 +1877,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &552453407
 GameObject:
@@ -2837,7 +2837,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &954300455
 MonoBehaviour:
@@ -3975,7 +3975,7 @@ GameObject:
   - component: {fileID: 1556676547}
   - component: {fileID: 1556676548}
   m_Layer: 0
-  m_Name: GooglePlayAuth
+  m_Name: GooglePlayAuthController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4008,21 +4008,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 962080f4f3858af4981ea606e8e7e068, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerCombinedInfoRequestParams:
+    GetCharacterInventories: 1
+    GetCharacterList: 1
+    GetPlayerProfile: 1
+    GetPlayerStatistics: 1
+    GetTitleData: 1
+    GetUserAccountInfo: 1
+    GetUserData: 1
+    GetUserInventory: 1
+    GetUserReadOnlyData: 1
+    GetUserVirtualCurrency: 1
+    PlayerStatisticNames: []
+    ProfileConstraints:
+      ShowAvatarUrl: 0
+      ShowBannedUntil: 0
+      ShowCampaignAttributions: 0
+      ShowContactEmailAddresses: 0
+      ShowCreated: 0
+      ShowDisplayName: 0
+      ShowExperimentVariants: 0
+      ShowLastLogin: 0
+      ShowLinkedAccounts: 0
+      ShowLocations: 0
+      ShowMemberships: 0
+      ShowOrigination: 0
+      ShowPushNotificationRegistrations: 0
+      ShowStatistics: 0
+      ShowTags: 0
+      ShowTotalValueToDateInUsd: 0
+      ShowValuesToDate: 0
+    TitleDataKeys: []
+    UserDataKeys: []
+    UserReadOnlyDataKeys: []
   OnGooglePlayAuthSuccess:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1672366811}
-        m_TargetAssemblyTypeName: LoginSceneManager, Assembly-CSharp
-        m_MethodName: LoginUserWithGooglePlay
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnGooglePlayAuthError:
     m_PersistentCalls:
       m_Calls:
@@ -4220,7 +4241,7 @@ RectTransform:
   m_Children:
   - {fileID: 1309363022}
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -4239,9 +4260,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6f49b14db16a7646a95ea75693c3116, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  web3AuthService: {fileID: 1204259165}
   googleAuthController: {fileID: 1425921588}
   appleAuthController: {fileID: 177399812}
+  googlePlayAuthController: {fileID: 1556676548}
   infoRequestParams:
     GetCharacterInventories: 1
     GetCharacterList: 1
@@ -4525,7 +4546,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1789068419
 MonoBehaviour:

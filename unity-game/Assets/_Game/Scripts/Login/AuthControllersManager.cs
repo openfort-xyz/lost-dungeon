@@ -8,7 +8,7 @@ public class AuthControllersManager : MonoBehaviour
     [Header("Controllers")]
     public LoginSceneManager loginSceneManager; //TODO we need to change it to DefaultAuthController at some point
     public AppleAuthController appleController;
-    public GooglePlayAuth googlePlayController;
+    public GooglePlayAuthController googlePlayController;
 
     // Not using it as we now use SocialLoginPanel.cs
     /*
