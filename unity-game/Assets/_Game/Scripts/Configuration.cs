@@ -18,7 +18,6 @@ public class Configuration : MonoBehaviour
     [Header("UI")]
     public Button logoutButton;
     public Button registerButton;
-    public Button selfCustodyButton;
     public Button recoveryButton;
     public Button backButton;
     
@@ -151,7 +150,6 @@ public class Configuration : MonoBehaviour
     
     private void EnableButtons(bool status)
     {
-        selfCustodyButton.gameObject.SetActive(status);
         logoutButton.gameObject.SetActive(status);
         backButton.gameObject.SetActive(status);
     }
@@ -159,7 +157,6 @@ public class Configuration : MonoBehaviour
     public void GetPlayFabAccountInfo()
     {
         registerButton.gameObject.SetActive(false);
-        selfCustodyButton.gameObject.SetActive(false);
         
         var request = new GetAccountInfoRequest();
         
@@ -188,7 +185,6 @@ public class Configuration : MonoBehaviour
                             if (userDataResult.Data.ContainsKey("custodial"))
                             {
                                 Debug.Log("Player is custodial.");
-                                selfCustodyButton.gameObject.SetActive(true);
                             }
                             else
                             {
